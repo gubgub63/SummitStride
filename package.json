@@ -1,0 +1,50 @@
+{
+  "name": "coach-ia-hugo",
+  "version": "1.0.0",
+  "description": "Application web d'entraînement Ultra Trail avec génération de plans personnalisés",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "db:generate": "turbo run db:generate",
+    "db:push": "turbo run db:push",
+    "db:migrate": "turbo run db:migrate",
+    "db:studio": "turbo run db:studio",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "turbo": "^1.13.4",
+    "@types/node": "^20.14.10",
+    "typescript": "^5.5.3",
+    "eslint": "^9.7.0",
+    "prettier": "^3.3.3",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-config-prettier": "^9.1.0",
+    "typescript-eslint": "^7.16.1",
+    "@eslint/js": "^9.7.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.7"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

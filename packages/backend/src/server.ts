@@ -1,0 +1,78 @@
+import Fastify from 'fastify'
+import cors from '@fastify/cors'
+import helmet from '@fastify/helmet'
+import sensible from '@fastify/sensible'
+import env from '@fastify/env'
+
+const envSchema = {
+  type: 'object',
+  required: ['NODE_ENV', 'PORT'],
+  properties: {
+    NODE_ENV: {
+      type: 'string',
+      default: 'development'
+    },
+    PORT: {
+      type: 'string',
+      default: '4000'
+    },
+    DATABASE_URL: {
+      type: 'string'
+    }
+  }
+}
+
+const fastify = Fastify({
+  logger: {
+    level: process.env.NODE_ENV === 'production' ? 'warn' : 'info'
+  }
+})
+
+async function start() {
+  try {
+    // Register environment variables
+    await fastify.register(env, {
+      schema: envSchema,
+      dotenv: true
+    })
+
+    // Security plugins
+    await fastify.register(helmet, {
+      contentSecurityPolicy: false
+    })
+
+    // CORS
+    await fastify.register(cors, {
+      origin: process.env.NODE_ENV === 'production'
+        ? ['https://yourdomain.com']
+        : true
+    })
+
+    // Sensible defaults
+    await fastify.register(sensible)
+
+    // Health check route
+    fastify.get('/health', async (request, reply) => {
+      return { status: 'ok', timestamp: new Date().toISOString() }
+    })
+
+    // API routes
+    fastify.get('/api', async (request, reply) => {
+      return {
+        message: 'Coach IA Hugo API',
+        version: '1.0.0',
+        environment: fastify.config.NODE_ENV
+      }
+    })
+
+    // Start server
+    const port = parseInt(fastify.config.PORT, 10)
+    await fastify.listen({ port, host: '0.0.0.0' })
+    fastify.log.info(`🚀 Server ready at http://localhost:${port}`)
+  } catch (err) {
+    fastify.log.error(err)
+    process.exit(1)
+  }
+}
+
+start()
