@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import sensible from '@fastify/sensible'
 import env from '@fastify/env'
+import { PrismaClient } from '@prisma/client'
 
 const envSchema = {
   type: 'object',
@@ -27,6 +28,9 @@ const fastify = Fastify({
     level: process.env.NODE_ENV === 'production' ? 'warn' : 'info',
   },
 })
+
+// Initialize Prisma
+const prisma = new PrismaClient()
 
 async function start() {
   try {
@@ -63,14 +67,41 @@ async function start() {
       }
     })
 
+    // Database status endpoint
+    fastify.get('/api/db-status', async (request, reply) => {
+      try {
+        await prisma.$queryRaw`SELECT 1`
+        const userCount = await prisma.user.count()
+        return {
+          status: 'connected',
+          userCount,
+          timestamp: new Date().toISOString(),
+        }
+      } catch (error) {
+        reply.code(500)
+        return {
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString(),
+        }
+      }
+    })
+
     // Start server
     const port = parseInt(fastify.config.PORT, 10)
     await fastify.listen({ port, host: '0.0.0.0' })
     fastify.log.info(`🚀 Server ready at http://localhost:${port}`)
   } catch (err) {
     fastify.log.error(err)
+    await prisma.$disconnect()
     process.exit(1)
   }
+
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    await prisma.$disconnect()
+    await fastify.close()
+  })
 }
 
 start()

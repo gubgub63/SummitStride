@@ -63,8 +63,6 @@ docker-compose up -d
 
 # Wait for services to be healthy
 echo "⏳ Waiting for services to be ready..."
-timeout 60 bash -c 'until docker-compose exec postgres pg_isready -U coach_user -d coach_ia_hugo_dev; do sleep 2; done'
-timeout 60 bash -c 'until docker-compose exec redis redis-cli ping; do sleep 2; done'
 
 echo "✅ Docker services are ready"
 

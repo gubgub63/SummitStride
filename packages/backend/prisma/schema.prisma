@@ -1,0 +1,303 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Authentication & Profile
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  profile           UserProfile?
+  preferences       UserPreferences?
+  trainingPlans     TrainingPlan[]
+  trainingSessions  TrainingSession[]
+  nutritionPlans    NutritionPlan[]
+  nutritionEntries  NutritionEntry[]
+  raceRegistrations RaceRegistration[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                       String          @id @default(cuid())
+  userId                   String          @unique
+  dateOfBirth              DateTime?
+  weight                   Float?
+  height                   Float?
+  experienceLevel          ExperienceLevel
+  fitnessGoals             String[]
+  medicalConditions        String[]
+  preferredTrainingDays    Int[]
+  maxTrainingHoursPerWeek  Int
+  vma                      Float? // Vitesse Maximale Aérobie
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model UserPreferences {
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  language     String              @default("fr")
+  timezone     String              @default("Europe/Paris")
+  units        Units               @default(METRIC)
+
+  // Notification settings
+  notificationEmail              Boolean @default(true)
+  notificationPush               Boolean @default(true)
+  notificationTrainingReminders  Boolean @default(true)
+  notificationNutritionReminders Boolean @default(false)
+  notificationWeeklyReports      Boolean @default(true)
+
+  // Privacy settings
+  privacyProfilePublic      Boolean @default(false)
+  privacyTrainingDataPublic Boolean @default(false)
+  privacyAllowDataSharing   Boolean @default(false)
+
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+// Training Related Tables
+model TrainingPlan {
+  id           String             @id @default(cuid())
+  userId       String
+  name         String
+  description  String?
+  startDate    DateTime
+  endDate      DateTime
+  targetRaceId String?
+  status       TrainingPlanStatus @default(DRAFT)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  // Relations
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetRace      Course?           @relation(fields: [targetRaceId], references: [id])
+  trainingSessions TrainingSession[]
+
+  @@map("training_plans")
+}
+
+model TrainingSession {
+  id          String            @id @default(cuid())
+  planId      String?
+  userId      String
+  date        DateTime
+  type        TrainingType
+  name        String
+  description String?
+  duration    Int? // in minutes
+  distance    Float? // in kilometers
+  intensity   Intensity
+  completed   Boolean           @default(false)
+
+  // Session Metrics (flattened)
+  actualDuration      Int? // in minutes
+  actualDistance      Float? // in kilometers
+  averageHeartRate    Int?
+  maxHeartRate        Int?
+  calories            Float?
+  elevationGain       Float? // in meters
+  averagePace         Float? // minutes per km
+  perceivedExertion   Int? // 1-10 scale
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relations
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan TrainingPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  @@map("training_sessions")
+}
+
+// Course Related Tables
+model Course {
+  id              String           @id @default(cuid())
+  name            String
+  location        String
+  distance        Float // in kilometers
+  elevationGain   Float // in meters
+  elevationLoss   Float // in meters
+  difficulty      CourseDifficulty
+  description     String?
+  routeData       Json? // Store GPX and route information
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  trainingPlans     TrainingPlan[]
+  raceRegistrations RaceRegistration[]
+
+  @@map("courses")
+}
+
+model RaceRegistration {
+  id       String   @id @default(cuid())
+  userId   String
+  courseId String
+  status   String   @default("registered")
+  goal     String?
+  notes    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("race_registrations")
+}
+
+// Nutrition Related Tables
+model FoodItem {
+  id             String       @id @default(cuid())
+  name           String
+  brand          String?
+  caloriesPer100g Float
+  proteinPer100g Float
+  carbsPer100g   Float
+  fatPer100g     Float
+  fiberPer100g   Float?
+  sugarPer100g   Float?
+  category       FoodCategory
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Relations
+  nutritionEntries NutritionEntry[]
+
+  @@map("food_items")
+}
+
+model NutritionPlan {
+  id                 String  @id @default(cuid())
+  userId             String
+  name               String
+  description        String?
+  dailyCalorieTarget Float
+  proteinTarget      Float // percentage
+  carbsTarget        Float // percentage
+  fatTarget          Float // percentage
+  isActive           Boolean @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("nutrition_plans")
+}
+
+model NutritionEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  foodItemId String
+  date       DateTime
+  mealType   MealType
+  quantity   Float // in grams
+  calories   Float
+  protein    Float
+  carbs      Float
+  fat        Float
+  fiber      Float?
+  sugar      Float?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodItem FoodItem @relation(fields: [foodItemId], references: [id], onDelete: Cascade)
+
+  @@map("nutrition_entries")
+}
+
+// Note: Composite types removed as they're not supported by PostgreSQL provider
+
+// Enums
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum Units {
+  METRIC
+  IMPERIAL
+}
+
+enum TrainingPlanStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+enum TrainingType {
+  ENDURANCE
+  THRESHOLD
+  INTERVAL
+  RECOVERY
+  STRENGTH
+  CROSS_TRAINING
+}
+
+enum Intensity {
+  VERY_LOW
+  LOW
+  MODERATE
+  HIGH
+  VERY_HIGH
+}
+
+enum CourseDifficulty {
+  EASY
+  MODERATE
+  HARD
+  EXTREME
+}
+
+enum FoodCategory {
+  FRUITS
+  VEGETABLES
+  GRAINS
+  PROTEINS
+  DAIRY
+  FATS
+  SPORTS_NUTRITION
+  BEVERAGES
+  SNACKS
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+  PRE_WORKOUT
+  POST_WORKOUT
+  DURING_RACE
+}
