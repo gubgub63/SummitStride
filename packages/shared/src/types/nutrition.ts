@@ -42,7 +42,7 @@ export enum FoodCategory {
   FATS = 'FATS',
   SPORTS_NUTRITION = 'SPORTS_NUTRITION',
   BEVERAGES = 'BEVERAGES',
-  SNACKS = 'SNACKS'
+  SNACKS = 'SNACKS',
 }
 
 export interface NutritionEntry {
@@ -64,5 +64,5 @@ export enum MealType {
   SNACK = 'SNACK',
   PRE_WORKOUT = 'PRE_WORKOUT',
   POST_WORKOUT = 'POST_WORKOUT',
-  DURING_RACE = 'DURING_RACE'
+  DURING_RACE = 'DURING_RACE',
 }

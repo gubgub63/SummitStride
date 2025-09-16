@@ -1,11 +1,18 @@
 import { z } from 'zod'
 
 export const CourseDifficultySchema = z.enum(['EASY', 'MODERATE', 'HARD', 'EXTREME'])
-export const WaypointTypeSchema = z.enum(['START', 'FINISH', 'AID_STATION', 'CHECKPOINT', 'WATER', 'VIEWPOINT'])
+export const WaypointTypeSchema = z.enum([
+  'START',
+  'FINISH',
+  'AID_STATION',
+  'CHECKPOINT',
+  'WATER',
+  'VIEWPOINT',
+])
 
 export const ElevationPointSchema = z.object({
   distance: z.number().min(0),
-  elevation: z.number()
+  elevation: z.number(),
 })
 
 export const WaypointSchema = z.object({
@@ -13,13 +20,13 @@ export const WaypointSchema = z.object({
   lng: z.number().min(-180).max(180),
   elevation: z.number().optional(),
   name: z.string().max(100).optional(),
-  type: WaypointTypeSchema
+  type: WaypointTypeSchema,
 })
 
 export const RouteDataSchema = z.object({
   gpxData: z.string().optional(),
   waypoints: z.array(WaypointSchema),
-  elevationProfile: z.array(ElevationPointSchema)
+  elevationProfile: z.array(ElevationPointSchema),
 })
 
 export const CourseSchema = z.object({
@@ -33,7 +40,7 @@ export const CourseSchema = z.object({
   description: z.string().max(2000).optional(),
   routeData: RouteDataSchema.optional(),
   createdAt: z.date(),
-  updatedAt: z.date()
+  updatedAt: z.date(),
 })
 
 export const CreateCourseSchema = z.object({
@@ -44,7 +51,7 @@ export const CreateCourseSchema = z.object({
   elevationLoss: z.number().min(0),
   difficulty: CourseDifficultySchema,
   description: z.string().max(2000).optional(),
-  routeData: RouteDataSchema.optional()
+  routeData: RouteDataSchema.optional(),
 })
 
 export type CreateCourseInput = z.infer<typeof CreateCourseSchema>

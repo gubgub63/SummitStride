@@ -10,8 +10,8 @@ export default tseslint.config(
       '**/build/**',
       '**/.next/**',
       '**/coverage/**',
-      '**/.turbo/**'
-    ]
+      '**/.turbo/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -22,22 +22,21 @@ export default tseslint.config(
       sourceType: 'module',
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: import.meta.dirname
-      }
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/prefer-const': 'error',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       'prefer-const': 'error',
-      'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn'
-    }
+      'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
+    },
   },
   {
     files: ['**/*.js', '**/*.mjs'],
-    ...tseslint.configs.disableTypeChecked
+    ...tseslint.configs.disableTypeChecked,
   }
 )

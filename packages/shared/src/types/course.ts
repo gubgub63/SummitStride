@@ -16,7 +16,7 @@ export enum CourseDifficulty {
   EASY = 'EASY',
   MODERATE = 'MODERATE',
   HARD = 'HARD',
-  EXTREME = 'EXTREME'
+  EXTREME = 'EXTREME',
 }
 
 export interface RouteData {
@@ -39,7 +39,7 @@ export enum WaypointType {
   AID_STATION = 'AID_STATION',
   CHECKPOINT = 'CHECKPOINT',
   WATER = 'WATER',
-  VIEWPOINT = 'VIEWPOINT'
+  VIEWPOINT = 'VIEWPOINT',
 }
 
 export interface ElevationPoint {

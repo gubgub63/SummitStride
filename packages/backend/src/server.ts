@@ -10,22 +10,22 @@ const envSchema = {
   properties: {
     NODE_ENV: {
       type: 'string',
-      default: 'development'
+      default: 'development',
     },
     PORT: {
       type: 'string',
-      default: '4000'
+      default: '4000',
     },
     DATABASE_URL: {
-      type: 'string'
-    }
-  }
+      type: 'string',
+    },
+  },
 }
 
 const fastify = Fastify({
   logger: {
-    level: process.env.NODE_ENV === 'production' ? 'warn' : 'info'
-  }
+    level: process.env.NODE_ENV === 'production' ? 'warn' : 'info',
+  },
 })
 
 async function start() {
@@ -33,19 +33,17 @@ async function start() {
     // Register environment variables
     await fastify.register(env, {
       schema: envSchema,
-      dotenv: true
+      dotenv: true,
     })
 
     // Security plugins
     await fastify.register(helmet, {
-      contentSecurityPolicy: false
+      contentSecurityPolicy: false,
     })
 
     // CORS
     await fastify.register(cors, {
-      origin: process.env.NODE_ENV === 'production'
-        ? ['https://yourdomain.com']
-        : true
+      origin: process.env.NODE_ENV === 'production' ? ['https://yourdomain.com'] : true,
     })
 
     // Sensible defaults
@@ -61,7 +59,7 @@ async function start() {
       return {
         message: 'Coach IA Hugo API',
         version: '1.0.0',
-        environment: fastify.config.NODE_ENV
+        environment: fastify.config.NODE_ENV,
       }
     })
 

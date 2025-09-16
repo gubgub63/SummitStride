@@ -15,7 +15,7 @@ export enum TrainingPlanStatus {
   DRAFT = 'DRAFT',
   ACTIVE = 'ACTIVE',
   COMPLETED = 'COMPLETED',
-  PAUSED = 'PAUSED'
+  PAUSED = 'PAUSED',
 }
 
 export interface TrainingSession {
@@ -41,7 +41,7 @@ export enum TrainingType {
   INTERVAL = 'INTERVAL',
   RECOVERY = 'RECOVERY',
   STRENGTH = 'STRENGTH',
-  CROSS_TRAINING = 'CROSS_TRAINING'
+  CROSS_TRAINING = 'CROSS_TRAINING',
 }
 
 export enum Intensity {
@@ -49,7 +49,7 @@ export enum Intensity {
   LOW = 'LOW',
   MODERATE = 'MODERATE',
   HIGH = 'HIGH',
-  VERY_HIGH = 'VERY_HIGH'
+  VERY_HIGH = 'VERY_HIGH',
 }
 
 export interface SessionMetrics {

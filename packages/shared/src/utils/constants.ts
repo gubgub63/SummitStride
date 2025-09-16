@@ -3,26 +3,26 @@ export const API_ROUTES = {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
     LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh'
+    REFRESH: '/auth/refresh',
   },
   USERS: {
     PROFILE: '/users/profile',
-    PREFERENCES: '/users/preferences'
+    PREFERENCES: '/users/preferences',
   },
   TRAINING: {
     PLANS: '/training/plans',
     SESSIONS: '/training/sessions',
-    ANALYTICS: '/training/analytics'
+    ANALYTICS: '/training/analytics',
   },
   COURSES: {
     LIST: '/courses',
     SEARCH: '/courses/search',
-    DETAILS: '/courses/:id'
+    DETAILS: '/courses/:id',
   },
   NUTRITION: {
     PLANS: '/nutrition/plans',
-    TRACKING: '/nutrition/tracking'
-  }
+    TRACKING: '/nutrition/tracking',
+  },
 } as const
 
 export const TRAINING_TYPES = {
@@ -31,14 +31,14 @@ export const TRAINING_TYPES = {
   INTERVAL: 'INTERVAL',
   RECOVERY: 'RECOVERY',
   STRENGTH: 'STRENGTH',
-  CROSS_TRAINING: 'CROSS_TRAINING'
+  CROSS_TRAINING: 'CROSS_TRAINING',
 } as const
 
 export const COURSE_DIFFICULTIES = {
   EASY: 'EASY',
   MODERATE: 'MODERATE',
   HARD: 'HARD',
-  EXTREME: 'EXTREME'
+  EXTREME: 'EXTREME',
 } as const
 
 export const UNITS = {
@@ -46,12 +46,12 @@ export const UNITS = {
     DISTANCE: 'km',
     ELEVATION: 'm',
     WEIGHT: 'kg',
-    TEMPERATURE: '°C'
+    TEMPERATURE: '°C',
   },
   IMPERIAL: {
     DISTANCE: 'mi',
     ELEVATION: 'ft',
     WEIGHT: 'lbs',
-    TEMPERATURE: '°F'
-  }
+    TEMPERATURE: '°F',
+  },
 } as const

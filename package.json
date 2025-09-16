@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Application web d'entraînement Ultra Trail avec génération de plans personnalisés",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],

@@ -27,7 +27,7 @@ export enum ExperienceLevel {
   BEGINNER = 'BEGINNER',
   INTERMEDIATE = 'INTERMEDIATE',
   ADVANCED = 'ADVANCED',
-  EXPERT = 'EXPERT'
+  EXPERT = 'EXPERT',
 }
 
 export interface UserPreferences {

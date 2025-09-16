@@ -7,7 +7,7 @@ export const UserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2).max(100),
   createdAt: z.date(),
-  updatedAt: z.date()
+  updatedAt: z.date(),
 })
 
 export const UserProfileSchema = z.object({
@@ -23,20 +23,20 @@ export const UserProfileSchema = z.object({
   maxTrainingHoursPerWeek: z.number().min(1).max(50),
   vma: z.number().min(8).max(25).optional(),
   createdAt: z.date(),
-  updatedAt: z.date()
+  updatedAt: z.date(),
 })
 
 export const CreateUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2).max(100),
-  password: z.string().min(8).max(100)
+  password: z.string().min(8).max(100),
 })
 
 export const UpdateUserProfileSchema = UserProfileSchema.omit({
   id: true,
   userId: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
 }).partial()
 
 export type CreateUserInput = z.infer<typeof CreateUserSchema>

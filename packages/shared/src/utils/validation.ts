@@ -27,11 +27,13 @@ export const validatePassword = (password: string): { valid: boolean; errors: st
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   }
 }
 
-export const validateAge = (dateOfBirth: Date): { valid: boolean; age?: number; error?: string } => {
+export const validateAge = (
+  dateOfBirth: Date
+): { valid: boolean; age?: number; error?: string } => {
   const today = new Date()
   const age = today.getFullYear() - dateOfBirth.getFullYear()
   const monthDiff = today.getMonth() - dateOfBirth.getMonth()

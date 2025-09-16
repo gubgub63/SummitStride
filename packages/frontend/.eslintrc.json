@@ -1,8 +1,5 @@
 {
-  "extends": [
-    "next/core-web-vitals",
-    "../../../eslint.config.js"
-  ],
+  "extends": ["next/core-web-vitals", "../../../eslint.config.js"],
   "parserOptions": {
     "project": "./tsconfig.json"
   },
