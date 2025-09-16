@@ -36,18 +36,38 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 ## Phase 2: Authentification et Gestion Utilisateur
 
 ### 2.1 Système d'authentification
-- [ ] Inscription/Connexion utilisateur
-- [ ] Gestion des sessions
-- [ ] Récupération de mot de passe
-- [ ] Sécurisation des routes
+- [x] Inscription/Connexion utilisateur
+- [x] Gestion des sessions
+- [x] Récupération de mot de passe
+- [x] Sécurisation des routes
+
+**✅ Implémentation terminée:**
+- Endpoints d'inscription et connexion avec validation
+- Hachage sécurisé des mots de passe avec bcrypt
+- Génération et validation de tokens JWT
+- Middleware d'authentification pour routes protégées
+- Système de récupération de mot de passe
+- Routes utilisateur sécurisées (/api/users/profile)
+- Tests fonctionnels validés pour tous les endpoints
 
 ### 2.2 Profil utilisateur
-- [ ] Création du profil détaillé
-- [ ] Niveau d'expérience (débutant, intermédiaire, expert)
-- [ ] Historique sportif
-- [ ] Objectifs personnels
-- [ ] Données physiologiques (âge, poids, VMA, etc.)
-- [ ] Disponibilités d'entraînement
+- [x] Création du profil détaillé
+- [x] Niveau d'expérience (débutant, intermédiaire, expert)
+- [x] Historique sportif
+- [x] Objectifs personnels
+- [x] Données physiologiques (âge, poids, VMA, etc.)
+- [x] Disponibilités d'entraînement
+
+**✅ Implémentation terminée:**
+- Endpoints CRUD complets pour profils détaillés (/api/users/detailed-profile)
+- Validation robuste des données avec messages d'erreur en français
+- Calculs automatiques : âge et BMI
+- Système de complétude du profil avec pourcentage
+- Endpoints utilitaires : niveaux d'expérience, objectifs communs, jours de semaine
+- Types TypeScript complets avec interfaces
+- Support des enum (ExperienceLevel: BEGINNER → EXPERT)
+- Gestion des tableaux (objectifs, conditions médicales, jours préférés)
+- Tests fonctionnels validés pour tous les scenarios
 
 ---
 
