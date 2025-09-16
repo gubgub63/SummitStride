@@ -35,7 +35,27 @@ fi
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-npm install
+
+# Try to install with clean cache first
+npm ci --prefer-offline 2>/dev/null || {
+    echo "🧹 Cleaning npm cache and node_modules..."
+    rm -rf node_modules package-lock.json
+    rm -rf packages/*/node_modules
+    npm cache clean --force
+
+    echo "📦 Installing dependencies (attempt 1/3)..."
+    npm install || {
+        echo "⚠️  Standard installation failed, trying with legacy peer deps..."
+        npm install --legacy-peer-deps || {
+            echo "⚠️  Legacy peer deps failed, trying with force flag..."
+            npm install --force || {
+                echo "❌ All installation attempts failed. Please check the error messages above."
+                echo "💡 You can try running: npm install --legacy-peer-deps manually"
+                exit 1
+            }
+        }
+    }
+}
 
 # Start Docker services
 echo "🐳 Starting Docker services..."

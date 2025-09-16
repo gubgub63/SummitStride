@@ -29,9 +29,6 @@
     "typescript": "^5.5.3",
     "@types/node": "^20.14.10",
     "tsx": "^4.16.2",
-    "prisma": "^5.20.0",
-    "eslint": "^9.7.0",
-    "@typescript-eslint/eslint-plugin": "^7.16.1",
-    "@typescript-eslint/parser": "^7.16.1"
+    "prisma": "^5.20.0"
   }
 }
