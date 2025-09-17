@@ -134,12 +134,6 @@ body {
   font-variant-ligatures: common-ligatures;
 }
 
-/* Remove default margins and paddings for consistent spacing */
-h1, h2, h3, h4, h5, h6, p, ul, ol, li, blockquote, figure, figcaption {
-  margin: 0;
-  padding: 0;
-}
-
 /* Improve heading typography */
 h1, h2, h3, h4, h5, h6 {
   font-weight: var(--font-weight-semibold);

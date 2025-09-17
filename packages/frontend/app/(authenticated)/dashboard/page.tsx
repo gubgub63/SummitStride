@@ -1,14 +1,20 @@
 'use client'
 
 import React from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { useAuth } from '../../../lib/hooks/useAuth'
 import { useProfile } from '../../../lib/hooks/useProfile'
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { user } = useAuth()
   const { completion, needsOnboarding } = useProfile()
+
+  const handleCompleteProfile = () => {
+    router.push('/profile/complete')
+  }
 
   return (
     <div className="space-y-6">
@@ -36,7 +42,7 @@ export default function DashboardPage() {
                   Finalisez-le pour obtenir des recommandations personnalisées.
                 </p>
               </div>
-              <Button variant="default" size="sm">
+              <Button variant="default" size="sm" onClick={handleCompleteProfile}>
                 Compléter le profil
               </Button>
             </div>

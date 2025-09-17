@@ -120,14 +120,14 @@ const userRoutes: FastifyPluginAsync = async fastify => {
         data: {
           userId,
           dateOfBirth: profileData.dateOfBirth ? new Date(profileData.dateOfBirth) : null,
-          weight: profileData.weight,
-          height: profileData.height,
+          weight: profileData.weight ?? null,
+          height: profileData.height ?? null,
           experienceLevel: profileData.experienceLevel,
           fitnessGoals: profileData.fitnessGoals || [],
           medicalConditions: profileData.medicalConditions || [],
           preferredTrainingDays: profileData.preferredTrainingDays || [],
           maxTrainingHoursPerWeek: profileData.maxTrainingHoursPerWeek,
-          vma: profileData.vma
+          vma: profileData.vma ?? null
         }
       })
 
@@ -177,14 +177,14 @@ const userRoutes: FastifyPluginAsync = async fastify => {
       if (profileData.dateOfBirth !== undefined) {
         updateData.dateOfBirth = profileData.dateOfBirth ? new Date(profileData.dateOfBirth) : null
       }
-      if (profileData.weight !== undefined) updateData.weight = profileData.weight
-      if (profileData.height !== undefined) updateData.height = profileData.height
+      if (profileData.weight !== undefined) updateData.weight = profileData.weight ?? null
+      if (profileData.height !== undefined) updateData.height = profileData.height ?? null
       if (profileData.experienceLevel !== undefined) updateData.experienceLevel = profileData.experienceLevel
       if (profileData.fitnessGoals !== undefined) updateData.fitnessGoals = profileData.fitnessGoals
       if (profileData.medicalConditions !== undefined) updateData.medicalConditions = profileData.medicalConditions
       if (profileData.preferredTrainingDays !== undefined) updateData.preferredTrainingDays = profileData.preferredTrainingDays
       if (profileData.maxTrainingHoursPerWeek !== undefined) updateData.maxTrainingHoursPerWeek = profileData.maxTrainingHoursPerWeek
-      if (profileData.vma !== undefined) updateData.vma = profileData.vma
+      if (profileData.vma !== undefined) updateData.vma = profileData.vma ?? null
 
       const updatedProfile = await prisma.userProfile.update({
         where: { userId },
@@ -266,21 +266,21 @@ const userRoutes: FastifyPluginAsync = async fastify => {
   })
 
   // Get available experience levels
-  fastify.get('/experience-levels', async (request, reply) => {
+  fastify.get('/experience-levels', async (_request, reply) => {
     return reply.send({
       experienceLevels: EXPERIENCE_LEVELS
     })
   })
 
   // Get common fitness goals
-  fastify.get('/fitness-goals', async (request, reply) => {
+  fastify.get('/fitness-goals', async (_request, reply) => {
     return reply.send({
       commonGoals: COMMON_FITNESS_GOALS
     })
   })
 
   // Get days of week
-  fastify.get('/days-of-week', async (request, reply) => {
+  fastify.get('/days-of-week', async (_request, reply) => {
     return reply.send({
       daysOfWeek: DAYS_OF_WEEK.map((day, index) => ({
         value: index,

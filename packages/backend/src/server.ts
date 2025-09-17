@@ -58,16 +58,16 @@ async function start() {
     await fastify.register(sensible)
 
     // Health check route
-    fastify.get('/health', async (request, reply) => {
+    fastify.get('/health', async () => {
       return { status: 'ok', timestamp: new Date().toISOString() }
     })
 
     // API routes
-    fastify.get('/api', async (request, reply) => {
+    fastify.get('/api', async () => {
       return {
         message: 'Coach IA Hugo API',
         version: '1.0.0',
-        environment: fastify.config.NODE_ENV,
+        environment: process.env.NODE_ENV || 'development',
       }
     })
 
@@ -84,7 +84,7 @@ async function start() {
     await fastify.register(registrationRoutes, { prefix: '/api/registrations' })
 
     // Database status endpoint
-    fastify.get('/api/db-status', async (request, reply) => {
+    fastify.get('/api/db-status', async (_request, reply) => {
       try {
         await prisma.$queryRaw`SELECT 1`
         const userCount = await prisma.user.count()
@@ -104,7 +104,7 @@ async function start() {
     })
 
     // Start server
-    const port = parseInt(fastify.config.PORT, 10)
+    const port = parseInt(process.env.PORT || '4000', 10)
     await fastify.listen({ port, host: '0.0.0.0' })
     fastify.log.info(`🚀 Server ready at http://localhost:${port}`)
   } catch (err) {

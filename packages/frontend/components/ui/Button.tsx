@@ -120,7 +120,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
 
         <span className={cn(
-          'flex-1',
+          'flex flex-row items-center flex-1',
           (leftIcon || loading) && 'text-left',
           rightIcon && 'text-left'
         )}>

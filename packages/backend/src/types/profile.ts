@@ -48,24 +48,40 @@ export interface UserProfileResponse {
   updatedAt: Date
 }
 
-export const EXPERIENCE_LEVELS = {
-  BEGINNER: 'Débutant - Moins de 6 mois d\'expérience en trail',
-  INTERMEDIATE: 'Intermédiaire - 6 mois à 2 ans d\'expérience',
-  ADVANCED: 'Avancé - 2 à 5 ans d\'expérience régulière',
-  EXPERT: 'Expert - Plus de 5 ans d\'expérience et compétitions'
-} as const
+export const EXPERIENCE_LEVELS = [
+  {
+    value: 'BEGINNER' as ExperienceLevel,
+    label: 'Débutant',
+    description: 'Moins de 6 mois d\'expérience en trail'
+  },
+  {
+    value: 'INTERMEDIATE' as ExperienceLevel,
+    label: 'Intermédiaire',
+    description: '6 mois à 2 ans d\'expérience'
+  },
+  {
+    value: 'ADVANCED' as ExperienceLevel,
+    label: 'Avancé',
+    description: '2 à 5 ans d\'expérience régulière'
+  },
+  {
+    value: 'EXPERT' as ExperienceLevel,
+    label: 'Expert',
+    description: 'Plus de 5 ans d\'expérience et compétitions'
+  }
+] as const
 
 export const COMMON_FITNESS_GOALS = [
-  'Terminer mon premier trail',
-  'Améliorer mon endurance',
-  'Perdre du poids',
-  'Préparer une course spécifique',
-  'Améliorer ma vitesse',
-  'Renforcer mes muscles',
-  'Améliorer ma technique de course',
-  'Prévenir les blessures',
-  'Améliorer ma récupération',
-  'Augmenter mon kilométrage hebdomadaire'
+  { value: 'finish_first_trail', label: 'Terminer mon premier trail' },
+  { value: 'improve_endurance', label: 'Améliorer mon endurance' },
+  { value: 'lose_weight', label: 'Perdre du poids' },
+  { value: 'prepare_specific_race', label: 'Préparer une course spécifique' },
+  { value: 'improve_speed', label: 'Améliorer ma vitesse' },
+  { value: 'strengthen_muscles', label: 'Renforcer mes muscles' },
+  { value: 'improve_technique', label: 'Améliorer ma technique de course' },
+  { value: 'prevent_injuries', label: 'Prévenir les blessures' },
+  { value: 'improve_recovery', label: 'Améliorer ma récupération' },
+  { value: 'increase_weekly_distance', label: 'Augmenter mon kilométrage hebdomadaire' }
 ] as const
 
 export const DAYS_OF_WEEK = [
