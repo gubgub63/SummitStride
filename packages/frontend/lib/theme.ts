@@ -38,9 +38,11 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setThemeState] = React.useState<Theme>(defaultTheme)
   const [resolvedTheme, setResolvedTheme] = React.useState<'light' | 'dark'>('light')
+  const [mounted, setMounted] = React.useState(false)
 
   // Initialize theme from localStorage or system preference
   React.useEffect(() => {
+    setMounted(true)
     const savedTheme = localStorage.getItem(storageKey) as Theme
     if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
       setThemeState(savedTheme)
@@ -71,10 +73,13 @@ export function ThemeProvider({
 
   // Apply theme to document
   React.useEffect(() => {
+    if (!mounted) return
+
     const root = window.document.documentElement
+    root.setAttribute('data-theme', resolvedTheme)
     root.classList.remove('light', 'dark')
     root.classList.add(resolvedTheme)
-  }, [resolvedTheme])
+  }, [resolvedTheme, mounted])
 
   const setTheme = React.useCallback(
     (newTheme: Theme) => {
@@ -93,7 +98,7 @@ export function ThemeProvider({
     [theme, setTheme, resolvedTheme]
   )
 
-  return React.createElement(ThemeContext.Provider, { value: contextValue }, children)
+  return h(ThemeContext.Provider, { value: contextValue }, children)
 }
 
 // Theme Toggle Component

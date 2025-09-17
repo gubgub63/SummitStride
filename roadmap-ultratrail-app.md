@@ -1,7 +1,7 @@
 # Roadmap - Application Web d'Entraînement Ultra Trail
 
 ## Vue d'ensemble du projet
-Application web complète pour aider les ultra-traileurs à se préparer de manière optimale à leurs courses, avec génération de plans d'entraînement personnalisés, suivi via APIs externes, gestion nutritionnelle et planification calendaire.
+Application web complète pour aider les ultra-traileurs à se préparer de manière optimale à leurs courses, avec génération de plans d'entraînement personnalisés, suivi via APIs externes, gestion nutritionnelle et planification calendaire. **Modèle freemium avec système de crédits intelligent et abonnement premium** pour assurer la viabilité économique tout en maximisant l'engagement utilisateur.
 
 ---
 
@@ -213,21 +213,80 @@ Cette phase peut être développée **en parallèle** avec les phases backend su
 
 ---
 
-## Phase 6: Intégrations API Externes
+## Phase 6: Système Premium et Monétisation
 
-### 6.1 Intégration Strava
+### 6.1 Architecture du système de crédits
+- [ ] Tables base de données (UserCredits, CreditTransactions, SubscriptionPlans)
+- [ ] Modèles de consommation par fonctionnalité
+- [ ] Système de rechargement de crédits
+- [ ] Historique des transactions et facturation
+- [ ] Gestion des crédits gratuits (nouveau utilisateur, promotions)
+
+### 6.2 Intégration de paiement
+- [ ] Configuration Stripe pour paiements sécurisés
+- [ ] Packages de crédits (20, 50, 100 crédits avec remises)
+- [ ] Abonnement Premium annuel/mensuel
+- [ ] Gestion des remboursements et litiges
+- [ ] Webhooks Stripe pour synchronisation automatique
+
+### 6.3 Logique métier premium
+- [ ] Middleware de vérification des crédits
+- [ ] Décompte automatique lors d'actions premium
+- [ ] Système de quotas pour comptes gratuits
+- [ ] Alertes de solde faible et suggestions de recharge
+- [ ] Fonctionnalités exclusives Premium (analyses IA avancées)
+
+### 6.4 Interface utilisateur premium
+- [ ] Dashboard de gestion des crédits
+- [ ] Pages d'achat et upgrade
+- [ ] Indicateurs visuels premium/gratuit
+- [ ] Historique des consommations et factures
+- [ ] Centre d'aide pour questions de facturation
+
+**💰 Stratégie de monétisation :**
+```
+🆓 GRATUIT (Engagement maximal)
+├── 1 plan d'entraînement basique/mois
+├── Suivi manuel des séances
+├── Communauté et partage
+└── Base de données courses
+
+💎 SMART CREDITS (Flexibilité)
+├── 20 crédits = 9.90€
+├── 50 crédits = 19.90€ (-20%)
+├── 100 crédits = 34.90€ (-30%)
+└── Crédits n'expirent jamais
+
+🚀 PREMIUM (79€/an)
+├── Plans illimités + IA avancée
+├── Sync multi-plateformes
+├── Coaching virtuel personnalisé
+└── Analytics de performance
+
+📊 Consommation :
+├── Plan IA personnalisé : 15 crédits
+├── Adaptation plan : 5 crédits
+├── Analyse performance : 3 crédits
+└── Plan nutrition : 8 crédits
+```
+
+---
+
+## Phase 7: Intégrations API Externes
+
+### 7.1 Intégration Strava
 - [ ] Configuration OAuth Strava
 - [ ] Synchronisation des activités
 - [ ] Import des données d'entraînement
 - [ ] Analyse des performances réelles vs planifiées
 
-### 6.2 Autres intégrations possibles
+### 7.2 Autres intégrations possibles
 - [ ] Garmin Connect
 - [ ] Polar Flow
 - [ ] Suunto App
 - [ ] TrainingPeaks
 
-### 6.3 Adaptation automatique
+### 7.3 Adaptation automatique
 - [ ] Comparaison performance réelle vs objectif
 - [ ] Ajustement automatique des séances suivantes
 - [ ] Détection de fatigue/surmenage
@@ -235,15 +294,15 @@ Cette phase peut être développée **en parallèle** avec les phases backend su
 
 ---
 
-## Phase 7: Calendrier et Planification
+## Phase 8: Calendrier et Planification
 
-### 7.1 Interface calendaire
+### 8.1 Interface calendaire
 - [ ] Vue calendaire mensuelle/hebdomadaire
 - [ ] Glisser-déposer des séances
 - [ ] Gestion des créneaux disponibles
 - [ ] Notifications et rappels
 
-### 7.2 Flexibilité du planning
+### 8.2 Flexibilité du planning
 - [ ] Reprogrammation des séances manquées
 - [ ] Adaptation aux imprévus
 - [ ] Gestion des périodes de congés
@@ -251,15 +310,15 @@ Cette phase peut être développée **en parallèle** avec les phases backend su
 
 ---
 
-## Phase 8: Nutrition et Gestion des Calories
+## Phase 9: Nutrition et Gestion des Calories
 
-### 8.1 Planification nutritionnelle
+### 9.1 Planification nutritionnelle
 - [ ] Base de données des aliments
 - [ ] Calcul des besoins caloriques selon l'entraînement
 - [ ] Plans alimentaires pré/pendant/post course
 - [ ] Gestion des électrolytes et hydratation
 
-### 8.2 Suivi pendant la course
+### 9.2 Suivi pendant la course
 - [ ] Calcul des besoins énergétiques par segment
 - [ ] Stratégie de ravitaillement
 - [ ] Alertes de nutrition/hydratation
@@ -267,15 +326,15 @@ Cette phase peut être développée **en parallèle** avec les phases backend su
 
 ---
 
-## Phase 9: Suivi et Analyse
+## Phase 10: Suivi et Analyse
 
-### 9.1 Tableau de bord
+### 10.1 Tableau de bord
 - [ ] Visualisation des progrès
 - [ ] Statistiques d'entraînement
 - [ ] Graphiques de performance
 - [ ] Comparaison avec les objectifs
 
-### 9.2 Analyse avancée
+### 10.2 Analyse avancée
 - [ ] Détection de tendances
 - [ ] Prédiction de performance
 - [ ] Recommandations d'amélioration
@@ -283,21 +342,21 @@ Cette phase peut être développée **en parallèle** avec les phases backend su
 
 ---
 
-## Phase 10: Fonctionnalités Avancées
+## Phase 11: Fonctionnalités Avancées
 
-### 10.1 Communauté
+### 11.1 Communauté
 - [ ] Profils publics
 - [ ] Partage de plans d'entraînement
 - [ ] Forums/discussions
 - [ ] Défis communautaires
 
-### 10.2 Coaching virtuel
+### 11.2 Coaching virtuel
 - [ ] IA pour conseils personnalisés
 - [ ] Chatbot d'assistance
 - [ ] Alertes intelligentes
 - [ ] Recommandations proactives
 
-### 10.3 Matériel et équipement
+### 11.3 Matériel et équipement
 - [ ] Recommandations d'équipement
 - [ ] Gestion de l'usure du matériel
 - [ ] Calendrier de remplacement
@@ -305,16 +364,16 @@ Cette phase peut être développée **en parallèle** avec les phases backend su
 
 ---
 
-## Phase 11: Tests et Déploiement
+## Phase 12: Tests et Déploiement
 
-### 11.1 Tests
+### 12.1 Tests
 - [ ] Tests unitaires
 - [ ] Tests d'intégration
 - [ ] Tests utilisateur (beta testeurs ultra-traileurs)
 - [ ] Tests de charge
 - [ ] Tests de sécurité
 
-### 11.2 Déploiement
+### 12.2 Déploiement
 - [ ] Configuration serveur de production
 - [ ] Domaine et certificats SSL
 - [ ] Monitoring et logs
@@ -323,15 +382,15 @@ Cette phase peut être développée **en parallèle** avec les phases backend su
 
 ---
 
-## Phase 12: Maintenance et Évolution
+## Phase 13: Maintenance et Évolution
 
-### 12.1 Maintenance
+### 13.1 Maintenance
 - [ ] Corrections de bugs
 - [ ] Mises à jour de sécurité
 - [ ] Optimisations performances
 - [ ] Sauvegarde des données
 
-### 12.2 Évolutions futures
+### 13.2 Évolutions futures
 - [ ] Application mobile (iOS/Android)
 - [ ] Intégration capteurs IoT
 - [ ] Réalité augmentée pour parcours
@@ -353,6 +412,7 @@ Cette phase peut être développée **en parallèle** avec les phases backend su
 - **Runtime**: Node.js avec Express ou Python avec FastAPI
 - **Base de données**: PostgreSQL avec Prisma ORM
 - **Authentication**: JWT avec Passport.js
+- **Paiements**: Stripe pour processing sécurisé
 - **Cache**: Redis
 - **File Storage**: AWS S3 ou Cloudinary
 
@@ -369,17 +429,19 @@ Cette phase peut être développée **en parallèle** avec les phases backend su
 - **Phase 1-2**: 2-3 semaines
 - **Phase 3-4**: 4-6 semaines
 - **Phase 5**: 3-4 semaines
-- **Phase 6-7**: 4-5 semaines
-- **Phase 8**: 2-3 semaines
-- **Phase 9**: 6-8 semaines
-- **Phase 10**: 2-3 semaines
+- **Phase 6**: 3-4 semaines (Système Premium)
+- **Phase 7-8**: 4-5 semaines
+- **Phase 9**: 2-3 semaines
+- **Phase 10**: 6-8 semaines
+- **Phase 11**: 2-3 semaines
 
-**Total estimé**: 6-8 mois pour un MVP complet
+**Total estimé**: 7-9 mois pour un MVP complet avec monétisation
 
-**📅 Planning recommandé pour l'UI/UX:**
-- **Maintenant (Phase 4.1-4.2)** : Démarrer le design system et l'authentification UI
+**📅 Planning recommandé:**
+- **Maintenant (Phase 4.1-4.2)** : Design system et authentification UI ✅
 - **Après Phase 3.2** : Interfaces de gestion des courses et profils utilisateur
 - **En parallèle de Phase 5** : UI des plans d'entraînement et tableaux de bord
+- **Phase 6 prioritaire** : Système premium avant scaling utilisateurs
 - **Phase 4.8-4.9** : Optimisation mobile et tests UX
 
 ---
@@ -391,3 +453,5 @@ Cette phase peut être développée **en parallèle** avec les phases backend su
 3. **Fiabilité des données**: Validation scientifique des algorithmes d'entraînement
 4. **Performance**: Application rapide même avec beaucoup de données
 5. **Sécurité**: Protection des données personnelles et de santé (RGPD)
+6. **Modèle économique**: Équilibre freemium pour engagement + premium pour monétisation
+7. **Conformité paiements**: Respect PCI DSS et réglementations financières

@@ -18,7 +18,7 @@ const buttonVariants = cva(
         // Primary - Bleu glacier
         default: 'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 focus-visible:ring-primary-600',
 
-        // Secondary - Orange ultra
+        // Secondary - Vert montagne
         secondary: 'bg-secondary-600 text-white hover:bg-secondary-700 active:bg-secondary-800 focus-visible:ring-secondary-600',
 
         // Success - Vert montagne
@@ -36,9 +36,6 @@ const buttonVariants = cva(
         ghost: 'bg-transparent hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring',
         'ghost-primary': 'bg-transparent text-primary-600 hover:bg-primary-50 active:bg-primary-100 focus-visible:ring-primary-600',
         'ghost-secondary': 'bg-transparent text-secondary-600 hover:bg-secondary-50 active:bg-secondary-100 focus-visible:ring-secondary-600',
-
-        // Alpine gradient variant
-        gradient: 'bg-gradient-alpine text-white hover:bg-gradient-alpine-hover focus-visible:ring-primary-600',
 
         // Link style
         link: 'bg-transparent text-primary-600 underline-offset-4 hover:underline focus-visible:ring-primary-600 p-0 h-auto',
