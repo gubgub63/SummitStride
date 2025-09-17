@@ -6,6 +6,8 @@ import env from '@fastify/env'
 import { PrismaClient } from '@prisma/client'
 import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js'
+import courseRoutes from './routes/course.js'
+import registrationRoutes from './routes/registration.js'
 
 const envSchema = {
   type: 'object',
@@ -74,6 +76,12 @@ async function start() {
 
     // User routes (protected)
     await fastify.register(userRoutes, { prefix: '/api/users' })
+
+    // Course routes (protected)
+    await fastify.register(courseRoutes, { prefix: '/api/courses' })
+
+    // Registration routes (protected)
+    await fastify.register(registrationRoutes, { prefix: '/api/registrations' })
 
     // Database status endpoint
     fastify.get('/api/db-status', async (request, reply) => {

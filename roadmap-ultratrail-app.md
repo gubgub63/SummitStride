@@ -74,28 +74,124 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 ## Phase 3: Gestion des Courses
 
 ### 3.1 Base de données des courses
-- [ ] Interface d'ajout de courses
-- [ ] Recherche de courses existantes
-- [ ] Profil détaillé des courses (distance, dénivelé, profil altimétrique)
-- [ ] Catégorisation des courses (trail court, long, ultra)
+- [x] Interface d'ajout de courses
+- [x] Recherche de courses existantes
+- [x] Profil détaillé des courses (distance, dénivelé, profil altimétrique)
+- [x] Catégorisation des courses (trail court, long, ultra)
+
+**✅ Implémentation terminée:**
+- Endpoints CRUD complets pour la gestion des courses (/api/courses)
+- Système de recherche avancée avec filtres multiples (texte, difficulté, distance, dénivelé)
+- Catégorisation automatique : Trail court (<25km), long (25-50km), ultra (>50km)
+- Calcul automatique de difficulté basé sur distance et dénivelé
+- Support des données de parcours (GPX, checkpoints, profil altimétrique)
+- Endpoints utilitaires : difficultés, catégories, statistiques, suggestions de recherche
+- Pagination et tri pour les listes de courses
+- Validation robuste des données avec messages d'erreur
+- Tests fonctionnels validés pour tous les scenarios CRUD
 
 ### 3.2 Inscription aux courses
-- [ ] Sélection de la course cible
-- [ ] Définition de la date objectif
-- [ ] Calcul du temps de préparation disponible
+- [x] Sélection de la course cible
+- [x] Définition de la date objectif
+- [x] Calcul du temps de préparation disponible
+
+**✅ Implémentation terminée:**
+- Endpoints CRUD complets pour l'inscription aux courses (/api/registrations)
+- Validation des dates objectifs avec contraintes temporelles
+- Calcul automatique du temps de préparation avec recommandations
+- Analyse des risques basée sur l'expérience utilisateur et difficulté de course
+- Système de statuts : REGISTERED, PREPARATION, COMPLETED, CANCELLED, DNS, DNF
+- Validation de l'unicité des inscriptions actives par utilisateur/course
+- Endpoints utilitaires : statuts, objectifs communs, analyse de préparation
+- Formatage des réponses avec temps de préparation calculé
+- Tests fonctionnels validés pour tous les endpoints CRUD
 
 ---
 
-## Phase 4: Génération de Plans d'Entraînement
+## Phase 4: Interface Utilisateur et Design (UI/UX)
 
-### 4.1 Algorithme de génération
+### 4.1 Design System et Fondations
+- [ ] Définition de la charte graphique et identité visuelle
+- [ ] Création du design system (couleurs, typographies, espacements)
+- [ ] Composants de base (buttons, inputs, cards, modals)
+- [ ] Système de grille et layout responsive
+- [ ] Guidelines d'accessibilité (WCAG 2.1)
+
+### 4.2 Authentification et Onboarding
+- [ ] Pages de connexion/inscription
+- [ ] Processus d'onboarding utilisateur
+- [ ] Création de profil guidée (wizard)
+- [ ] Dashboard d'accueil personnalisé
+- [ ] Menu de navigation principal
+
+### 4.3 Gestion des Profils Utilisateur
+- [ ] Interface de profil détaillé
+- [ ] Formulaires de mise à jour des données
+- [ ] Visualisation des statistiques personnelles
+- [ ] Gestion des préférences et paramètres
+- [ ] Indicateur de complétude du profil
+
+### 4.4 Catalogue et Recherche de Courses
+- [ ] Interface de liste des courses avec filtres
+- [ ] Fiche détaillée de course (profil altimétrique)
+- [ ] Système de recherche avancée
+- [ ] Carte interactive des courses
+- [ ] Comparateur de courses
+
+### 4.5 Inscription et Gestion des Objectifs
+- [ ] Interface d'inscription à une course
+- [ ] Sélection d'objectifs et dates cibles
+- [ ] Calendrier de préparation visuel
+- [ ] Suivi des inscriptions actives
+- [ ] Notifications et rappels
+
+### 4.6 Plans d'Entraînement (UI)
+- [ ] Visualisation du plan d'entraînement
+- [ ] Calendrier interactif des séances
+- [ ] Interface de suivi des séances
+- [ ] Graphiques de progression
+- [ ] Adaptation du plan en temps réel
+
+### 4.7 Nutrition et Suivi
+- [ ] Interface de suivi nutritionnel
+- [ ] Planificateur de repas
+- [ ] Base de données alimentaire searchable
+- [ ] Calculateur de besoins caloriques
+- [ ] Graphiques de balance nutritionnelle
+
+### 4.8 Responsive et Mobile
+- [ ] Optimisation mobile (responsive design)
+- [ ] Progressive Web App (PWA)
+- [ ] Interface tactile optimisée
+- [ ] Mode hors-ligne basique
+- [ ] Notifications push web
+
+### 4.9 Tests et Optimisation UX
+- [ ] Tests utilisateurs avec ultra-traileurs
+- [ ] Optimisation des parcours utilisateur
+- [ ] Tests d'accessibilité
+- [ ] Performance et loading states
+- [ ] Analytics d'usage et heatmaps
+
+**🎨 Note d'implémentation:**
+Cette phase peut être développée **en parallèle** avec les phases backend suivantes. L'ordre suggéré est :
+1. **4.1-4.2** : Fondations et authentification (à commencer maintenant)
+2. **4.3-4.4** : Profils et courses (APIs déjà disponibles)
+3. **4.5-4.7** : Features avancées (en parallèle du développement backend)
+4. **4.8-4.9** : Optimisation et tests
+
+---
+
+## Phase 5: Génération de Plans d'Entraînement
+
+### 5.1 Algorithme de génération
 - [ ] Analyse du profil utilisateur
 - [ ] Analyse des caractéristiques de la course
 - [ ] Calcul de la charge d'entraînement optimale
 - [ ] Progression adaptée au temps disponible
 - [ ] Types de séances (endurance, seuil, fractionné, spécifique trail)
 
-### 4.2 Personnalisation avancée
+### 5.2 Personnalisation avancée
 - [ ] Adaptation selon le niveau d'expérience
 - [ ] Prise en compte des contraintes temporelles
 - [ ] Intégration du dénivelé spécifique
@@ -104,21 +200,21 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 
 ---
 
-## Phase 5: Intégrations API Externes
+## Phase 6: Intégrations API Externes
 
-### 5.1 Intégration Strava
+### 6.1 Intégration Strava
 - [ ] Configuration OAuth Strava
 - [ ] Synchronisation des activités
 - [ ] Import des données d'entraînement
 - [ ] Analyse des performances réelles vs planifiées
 
-### 5.2 Autres intégrations possibles
+### 6.2 Autres intégrations possibles
 - [ ] Garmin Connect
 - [ ] Polar Flow
 - [ ] Suunto App
 - [ ] TrainingPeaks
 
-### 5.3 Adaptation automatique
+### 6.3 Adaptation automatique
 - [ ] Comparaison performance réelle vs objectif
 - [ ] Ajustement automatique des séances suivantes
 - [ ] Détection de fatigue/surmenage
@@ -126,15 +222,15 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 
 ---
 
-## Phase 6: Calendrier et Planification
+## Phase 7: Calendrier et Planification
 
-### 6.1 Interface calendaire
+### 7.1 Interface calendaire
 - [ ] Vue calendaire mensuelle/hebdomadaire
 - [ ] Glisser-déposer des séances
 - [ ] Gestion des créneaux disponibles
 - [ ] Notifications et rappels
 
-### 6.2 Flexibilité du planning
+### 7.2 Flexibilité du planning
 - [ ] Reprogrammation des séances manquées
 - [ ] Adaptation aux imprévus
 - [ ] Gestion des périodes de congés
@@ -142,15 +238,15 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 
 ---
 
-## Phase 7: Nutrition et Gestion des Calories
+## Phase 8: Nutrition et Gestion des Calories
 
-### 7.1 Planification nutritionnelle
+### 8.1 Planification nutritionnelle
 - [ ] Base de données des aliments
 - [ ] Calcul des besoins caloriques selon l'entraînement
 - [ ] Plans alimentaires pré/pendant/post course
 - [ ] Gestion des électrolytes et hydratation
 
-### 7.2 Suivi pendant la course
+### 8.2 Suivi pendant la course
 - [ ] Calcul des besoins énergétiques par segment
 - [ ] Stratégie de ravitaillement
 - [ ] Alertes de nutrition/hydratation
@@ -158,15 +254,15 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 
 ---
 
-## Phase 8: Suivi et Analyse
+## Phase 9: Suivi et Analyse
 
-### 8.1 Tableau de bord
+### 9.1 Tableau de bord
 - [ ] Visualisation des progrès
 - [ ] Statistiques d'entraînement
 - [ ] Graphiques de performance
 - [ ] Comparaison avec les objectifs
 
-### 8.2 Analyse avancée
+### 9.2 Analyse avancée
 - [ ] Détection de tendances
 - [ ] Prédiction de performance
 - [ ] Recommandations d'amélioration
@@ -174,21 +270,21 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 
 ---
 
-## Phase 9: Fonctionnalités Avancées
+## Phase 10: Fonctionnalités Avancées
 
-### 9.1 Communauté
+### 10.1 Communauté
 - [ ] Profils publics
 - [ ] Partage de plans d'entraînement
 - [ ] Forums/discussions
 - [ ] Défis communautaires
 
-### 9.2 Coaching virtuel
+### 10.2 Coaching virtuel
 - [ ] IA pour conseils personnalisés
 - [ ] Chatbot d'assistance
 - [ ] Alertes intelligentes
 - [ ] Recommandations proactives
 
-### 9.3 Matériel et équipement
+### 10.3 Matériel et équipement
 - [ ] Recommandations d'équipement
 - [ ] Gestion de l'usure du matériel
 - [ ] Calendrier de remplacement
@@ -196,16 +292,16 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 
 ---
 
-## Phase 10: Tests et Déploiement
+## Phase 11: Tests et Déploiement
 
-### 10.1 Tests
+### 11.1 Tests
 - [ ] Tests unitaires
 - [ ] Tests d'intégration
 - [ ] Tests utilisateur (beta testeurs ultra-traileurs)
 - [ ] Tests de charge
 - [ ] Tests de sécurité
 
-### 10.2 Déploiement
+### 11.2 Déploiement
 - [ ] Configuration serveur de production
 - [ ] Domaine et certificats SSL
 - [ ] Monitoring et logs
@@ -214,15 +310,15 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 
 ---
 
-## Phase 11: Maintenance et Évolution
+## Phase 12: Maintenance et Évolution
 
-### 11.1 Maintenance
+### 12.1 Maintenance
 - [ ] Corrections de bugs
 - [ ] Mises à jour de sécurité
 - [ ] Optimisations performances
 - [ ] Sauvegarde des données
 
-### 11.2 Évolutions futures
+### 12.2 Évolutions futures
 - [ ] Application mobile (iOS/Android)
 - [ ] Intégration capteurs IoT
 - [ ] Réalité augmentée pour parcours
@@ -266,6 +362,12 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 - **Phase 10**: 2-3 semaines
 
 **Total estimé**: 6-8 mois pour un MVP complet
+
+**📅 Planning recommandé pour l'UI/UX:**
+- **Maintenant (Phase 4.1-4.2)** : Démarrer le design system et l'authentification UI
+- **Après Phase 3.2** : Interfaces de gestion des courses et profils utilisateur
+- **En parallèle de Phase 5** : UI des plans d'entraînement et tableaux de bord
+- **Phase 4.8-4.9** : Optimisation mobile et tests UX
 
 ---
 
