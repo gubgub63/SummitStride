@@ -1,4 +1,4 @@
-import { ExperienceLevel } from '@prisma/client'
+import { ExperienceLevel } from '@coach-ia-hugo/shared'
 
 export interface CreateUserProfileRequest {
   dateOfBirth?: string // ISO date string

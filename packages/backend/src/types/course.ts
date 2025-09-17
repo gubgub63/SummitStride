@@ -1,4 +1,4 @@
-import { CourseDifficulty } from '@prisma/client'
+import { CourseDifficulty } from '@coach-ia-hugo/shared'
 
 export interface CreateCourseRequest {
   name: string

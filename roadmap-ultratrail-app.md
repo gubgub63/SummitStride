@@ -131,11 +131,21 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 - Page de démonstration interactive du design system
 
 ### 4.2 Authentification et Onboarding
-- [ ] Pages de connexion/inscription
-- [ ] Processus d'onboarding utilisateur
-- [ ] Création de profil guidée (wizard)
-- [ ] Dashboard d'accueil personnalisé
-- [ ] Menu de navigation principal
+- [x] Pages de connexion/inscription
+- [x] Processus d'onboarding utilisateur
+- [x] Création de profil guidée (wizard)
+- [x] Dashboard d'accueil personnalisé
+- [x] Menu de navigation principal
+
+**✅ Implémentation terminée:**
+- Infrastructure complète d'authentification avec Context et hooks
+- Services API pour auth et gestion des profils utilisateur
+- Pages de connexion, inscription et récupération de mot de passe
+- Navigation principale avec menu utilisateur et indicateur de profil
+- Layout authentifié avec protection des routes
+- Composants de formulaires avec validation temps réel
+- Gestion des états de loading et d'erreur
+- Integration complète avec le backend Fastify existant
 
 ### 4.3 Gestion des Profils Utilisateur
 - [ ] Interface de profil détaillé

@@ -1,4 +1,4 @@
-import { CourseDifficulty } from '@prisma/client'
+import { CourseDifficulty } from '@coach-ia-hugo/shared'
 import { CreateCourseRequest, UpdateCourseRequest, TrailCategory, CourseResponse } from '../types/course.js'
 
 export class CourseUtils {

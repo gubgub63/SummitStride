@@ -6,7 +6,7 @@ import {
   RaceRegistrationStatus
 } from '../types/registration.js'
 import { TrailCategory } from '../types/course.js'
-import { ExperienceLevel } from '@prisma/client'
+import { ExperienceLevel } from '@coach-ia-hugo/shared'
 
 export class RegistrationUtils {
   static validateRegistrationData(data: CreateRaceRegistrationRequest | UpdateRaceRegistrationRequest): string[] {
