@@ -26,7 +26,7 @@ interface StatCardProps {
 function StatCard({ title, value, subtitle, icon, trend }: StatCardProps) {
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600">{title}</p>
@@ -89,12 +89,12 @@ export function ProfileStats() {
   if (!stats) return null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold mb-4">
+        <h2 className="text-lg font-semibold mb-3">
           Statistiques générales
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total séances"
             value={stats.totalSessions}
@@ -148,10 +148,10 @@ export function ProfileStats() {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold mb-4">
+        <h3 className="text-lg font-semibold mb-3">
           Cette semaine
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Distance"
             value={formatDistance(stats.currentWeekDistance)}
@@ -182,7 +182,7 @@ export function ProfileStats() {
 
       {stats.lastActivityDate && (
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Dernière activité</p>

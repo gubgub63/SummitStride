@@ -109,9 +109,15 @@ export class CourseUtils {
       ]
     }
 
-    // Difficulty filter
-    if (filters.difficulty && filters.difficulty.length > 0) {
-      where.difficulty = { in: filters.difficulty }
+    // Difficulty filter - ensure it's always an array
+    if (filters.difficulty) {
+      const difficultyArray = Array.isArray(filters.difficulty)
+        ? filters.difficulty
+        : [filters.difficulty]
+
+      if (difficultyArray.length > 0) {
+        where.difficulty = { in: difficultyArray }
+      }
     }
 
     // Distance range
@@ -141,24 +147,30 @@ export class CourseUtils {
       where.location = { contains: filters.location, mode: 'insensitive' }
     }
 
-    // Category filter (based on distance)
-    if (filters.category && filters.category.length > 0) {
-      const distanceConditions = []
+    // Category filter (based on distance) - ensure it's always an array
+    if (filters.category) {
+      const categoryArray = Array.isArray(filters.category)
+        ? filters.category
+        : [filters.category]
 
-      if (filters.category.includes(TrailCategory.SHORT)) {
-        distanceConditions.push({ distance: { lt: 25 } })
-      }
-      if (filters.category.includes(TrailCategory.LONG)) {
-        distanceConditions.push({ distance: { gte: 25, lte: 50 } })
-      }
-      if (filters.category.includes(TrailCategory.ULTRA)) {
-        distanceConditions.push({ distance: { gt: 50 } })
-      }
+      if (categoryArray.length > 0) {
+        const distanceConditions = []
 
-      if (distanceConditions.length > 0) {
-        where.OR = where.OR
-          ? [...where.OR, ...distanceConditions]
-          : distanceConditions
+        if (categoryArray.includes(TrailCategory.SHORT)) {
+          distanceConditions.push({ distance: { lt: 25 } })
+        }
+        if (categoryArray.includes(TrailCategory.LONG)) {
+          distanceConditions.push({ distance: { gte: 25, lte: 50 } })
+        }
+        if (categoryArray.includes(TrailCategory.ULTRA)) {
+          distanceConditions.push({ distance: { gt: 50 } })
+        }
+
+        if (distanceConditions.length > 0) {
+          where.OR = where.OR
+            ? [...where.OR, ...distanceConditions]
+            : distanceConditions
+        }
       }
     }
 

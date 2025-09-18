@@ -249,10 +249,10 @@ export default function ProfilePage() {
       case 'overview':
         return (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
+            <div>
               <ProfileStats />
             </div>
-            <div className="space-y-6">
+            <div>
               <ActivitySummary />
             </div>
           </div>
@@ -294,7 +294,7 @@ export default function ProfilePage() {
               </svg>
             </div>
             <div>
-              <h4 className="text-sm font-medium text-blue-900!">Données de développement</h4>
+              <h4 className="text-sm font-medium text-blue-900">Données de développement</h4>
               <p className="text-sm text-blue-800 mt-1">
                 Les statistiques et données d'activité affichées sont actuellement des données de démonstration.
                 Elles seront remplacées par vos vraies données d'entraînement une fois les APIs backend développées.

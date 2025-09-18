@@ -7,11 +7,12 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 - **Phase 1**: Architecture et Base ✅ **TERMINÉE**
 - **Phase 2**: Authentification et Profils ✅ **TERMINÉE**
 - **Phase 3**: Course et Inscription ✅ **TERMINÉE**
-- **Phase 4**: Interface Utilisateur - **EN COURS** (3/8 sections terminées)
+- **Phase 4**: Interface Utilisateur - **EN COURS** (4/8 sections terminées)
   - 4.1 Design System ✅ TERMINÉ
   - 4.2 Authentification et Onboarding ✅ TERMINÉ
-  - 4.3 Gestion des Profils Utilisateur ✅ **TERMINÉ**
-  - 4.4 à 4.8 - À venir
+  - 4.3 Gestion des Profils Utilisateur ✅ TERMINÉ
+  - 4.4 Catalogue et Recherche de Courses ✅ **TERMINÉ**
+  - 4.5 à 4.8 - À venir
 - **Phase 5**: Training Plans - **PRÉVU**
 - **Phase 6**: Intelligence Artificielle - **PRÉVU**
 
@@ -182,12 +183,36 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 - `GET /api/training-sessions?limit=5&completed=true` - Activités récentes
 - `GET /api/training-sessions?limit=3&upcoming=true` - Activités planifiées
 
-### 4.4 Catalogue et Recherche de Courses
-- [ ] Interface de liste des courses avec filtres
-- [ ] Fiche détaillée de course (profil altimétrique)
-- [ ] Système de recherche avancée
-- [ ] Carte interactive des courses
-- [ ] Comparateur de courses
+### 4.4 Catalogue et Recherche de Courses ✅
+- [x] Interface de liste des courses avec filtres
+- [x] Fiche détaillée de course (profil altimétrique)
+- [x] Système de recherche avancée
+- [x] Carte interactive des courses
+- [x] Comparateur de courses
+
+**✅ Implémentation terminée:**
+- Interface complète de catalogue avec recherche, filtres et pagination
+- Service API frontend intégré avec les endpoints backend développés en Phase 3
+- Hook `useCourses` pour gestion d'état et cache des données
+- Composants de recherche avec autocomplétion et suggestions
+- Panneau de filtres avancés (difficulté, catégorie, distance, dénivelé, lieu)
+- Page de détail avec profil altimétrique (stub avec visualisation de base)
+- Pages stub pour carte interactive et comparateur avec interface complète
+- Intégration parfaite avec le design system Alpine Tech existant
+- Navigation responsive et accessibilité WCAG 2.1
+- Stubs documentés pour fonctionnalités avancées futures
+
+**🔧 APIs backend utilisées (développées en Phase 3):**
+- `GET /api/courses` - Liste avec filtres, tri et pagination
+- `GET /api/courses/:id` - Détail d'une course
+- `GET /api/courses/meta/*` - Métadonnées (difficultés, catégories, statistiques)
+- Service complet avec validation, formatage et gestion d'erreurs
+
+**📋 Stubs documentés pour évolutions futures:**
+- Profil altimétrique interactif (nécessite parsing GPX + librairie de graphiques)
+- Carte interactive (nécessite intégration API cartes + affichage parcours)
+- Comparateur avancé (graphiques comparatifs, analyses de compatibilité)
+- Toutes les fonctionnalités sont marquées avec notes de développement futur
 
 ### 4.5 Inscription et Gestion des Objectifs
 - [ ] Interface d'inscription à une course

@@ -247,7 +247,7 @@ export function ProgressCharts() {
 
         {/* Résumé statistique */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h4 className="text-sm font-medium mb-2 text-black!">
+          <h4 className="text-sm font-medium mb-2 text-gray-900">
             Résumé de la période
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

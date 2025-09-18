@@ -91,7 +91,7 @@ function ActivityItem({ activity, isUpcoming = false }: ActivityItemProps) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center space-x-2">
-          <h4 className="text-sm font-medium truncate text-gray-500!">
+          <h4 className="text-sm font-medium truncate text-gray-900">
             {activity.name}
           </h4>
           <span className={`text-xs px-2 py-1 rounded-full ${
