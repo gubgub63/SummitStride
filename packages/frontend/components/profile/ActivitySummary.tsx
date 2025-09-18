@@ -91,7 +91,7 @@ function ActivityItem({ activity, isUpcoming = false }: ActivityItemProps) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center space-x-2">
-          <h4 className="text-sm font-medium truncate text-gray-900">
+          <h4 className="text-sm font-medium truncate text-gray-500!">
             {activity.name}
           </h4>
           <span className={`text-xs px-2 py-1 rounded-full ${
@@ -216,7 +216,7 @@ export function ActivitySummary() {
               className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                 activeView === 'recent'
                   ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 hover:text-black'
               }`}
             >
               Récentes

@@ -21,38 +21,30 @@ interface LoginFormProps {
 export function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
   const { login, error, clearError } = useAuth()
 
-  const {
-    values,
-    errors,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    isSubmitting,
-  } = useForm<LoginRequest>({
-    initialValues: {
-      email: '',
-      password: '',
-    },
-    validationRules: {
-      email: commonValidations.email,
-      password: commonValidations.password,
-    },
-    onSubmit: async (formData) => {
-      clearError()
-      await login(formData)
-      if (onSuccess) {
-        onSuccess()
-      }
-    },
-  })
+  const { values, errors, handleChange, handleBlur, handleSubmit, isSubmitting } =
+    useForm<LoginRequest>({
+      initialValues: {
+        email: '',
+        password: '',
+      },
+      validationRules: {
+        email: commonValidations.email,
+        password: commonValidations.password,
+      },
+      onSubmit: async formData => {
+        clearError()
+        await login(formData)
+        if (onSuccess) {
+          onSuccess()
+        }
+      },
+    })
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold text-foreground">Connexion</h1>
-        <p className="text-muted-foreground">
-          Connectez-vous à votre compte Coach IA Hugo
-        </p>
+        <p className="text-muted-foreground">Connectez-vous à votre compte Coach IA Hugo</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,7 +59,7 @@ export function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
           type="email"
           placeholder="votre@email.com"
           value={values.email}
-          onChange={(e) => handleChange('email', e.target.value)}
+          onChange={e => handleChange('email', e.target.value)}
           onBlur={() => handleBlur('email')}
           errorMessage={errors.email}
           isRequired
@@ -79,7 +71,7 @@ export function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
           type="password"
           placeholder="••••••••"
           value={values.password}
-          onChange={(e) => handleChange('password', e.target.value)}
+          onChange={e => handleChange('password', e.target.value)}
           onBlur={() => handleBlur('password')}
           errorMessage={errors.password}
           isRequired

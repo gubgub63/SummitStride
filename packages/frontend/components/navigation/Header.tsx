@@ -49,6 +49,12 @@ export function Header() {
               Courses
             </Link>
             <Link
+              href="/registrations"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Inscriptions
+            </Link>
+            <Link
               href="/nutrition"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >

@@ -5,12 +5,13 @@
 
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardContent } from '../../../../components/ui/Card'
 import { Button } from '../../../../components/ui/Button'
 import { ElevationProfile } from '../../../../components/courses/ElevationProfile'
+import { RegistrationModal } from '../../../../components/registrations/RegistrationModal'
 import { useCourses } from '../../../../lib/hooks/useCourses'
 import { courseService } from '../../../../lib/services/courseService'
 
@@ -18,6 +19,8 @@ export default function CourseDetailPage() {
   const params = useParams()
   const router = useRouter()
   const courseId = params.id as string
+
+  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
 
   const {
     selectedCourse,
@@ -126,7 +129,10 @@ export default function CourseDetailPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button className="flex-1 sm:flex-initial">
+            <Button
+              className="flex-1 sm:flex-initial"
+              onClick={() => setIsRegistrationModalOpen(true)}
+            >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
@@ -287,6 +293,19 @@ export default function CourseDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Registration Modal */}
+      {selectedCourse && (
+        <RegistrationModal
+          course={selectedCourse}
+          isOpen={isRegistrationModalOpen}
+          onClose={() => setIsRegistrationModalOpen(false)}
+          onSuccess={() => {
+            // Optionally show success message or redirect
+            console.log('Registration successful!')
+          }}
+        />
+      )}
     </div>
   )
 }

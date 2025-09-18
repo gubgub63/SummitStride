@@ -169,7 +169,6 @@ h6 {
 
 /* Improve link styles */
 a {
-  color: var(--color-primary-600);
   text-decoration: none;
   transition: var(--transition-colors);
 }
