@@ -141,7 +141,7 @@ export function CourseFilters({
                     type="checkbox"
                     checked={filters.difficulty?.includes(key) || false}
                     onChange={(e) => handleDifficultyChange(key, e.target.checked)}
-                    className="rounded border-border text-primary-600 focus:ring-primary-600 focus:ring-offset-0"
+                    className="h-4 w-4 rounded border-2 border-gray-300 text-primary-600 transition-colors duration-200 focus:ring-2 focus:ring-primary-600 focus:ring-offset-0 checked:bg-primary-600 checked:border-primary-600 hover:border-primary-500"
                   />
                   <span className={`ml-3 px-2.5 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(key)}`}>
                     {key}
@@ -163,7 +163,7 @@ export function CourseFilters({
                     type="checkbox"
                     checked={filters.category?.includes(key) || false}
                     onChange={(e) => handleCategoryChange(key, e.target.checked)}
-                    className="rounded border-border text-primary-600 focus:ring-primary-600 focus:ring-offset-0"
+                    className="h-4 w-4 rounded border-2 border-gray-300 text-primary-600 transition-colors duration-200 focus:ring-2 focus:ring-primary-600 focus:ring-offset-0 checked:bg-primary-600 checked:border-primary-600 hover:border-primary-500"
                   />
                   <span className={`ml-3 px-2.5 py-1 rounded-full text-xs font-medium border ${getCategoryColor(key)}`}>
                     {key}

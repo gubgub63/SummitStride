@@ -120,25 +120,45 @@ export class CourseUtils {
       }
     }
 
-    // Distance range
+    // Distance range - convert strings to numbers
     if (filters.minDistance !== undefined || filters.maxDistance !== undefined) {
       where.distance = {}
       if (filters.minDistance !== undefined) {
-        where.distance.gte = filters.minDistance
+        const minDistance = typeof filters.minDistance === 'string'
+          ? parseFloat(filters.minDistance)
+          : filters.minDistance
+        if (!isNaN(minDistance)) {
+          where.distance.gte = minDistance
+        }
       }
       if (filters.maxDistance !== undefined) {
-        where.distance.lte = filters.maxDistance
+        const maxDistance = typeof filters.maxDistance === 'string'
+          ? parseFloat(filters.maxDistance)
+          : filters.maxDistance
+        if (!isNaN(maxDistance)) {
+          where.distance.lte = maxDistance
+        }
       }
     }
 
-    // Elevation range
+    // Elevation range - convert strings to numbers
     if (filters.minElevation !== undefined || filters.maxElevation !== undefined) {
       where.elevationGain = {}
       if (filters.minElevation !== undefined) {
-        where.elevationGain.gte = filters.minElevation
+        const minElevation = typeof filters.minElevation === 'string'
+          ? parseFloat(filters.minElevation)
+          : filters.minElevation
+        if (!isNaN(minElevation)) {
+          where.elevationGain.gte = minElevation
+        }
       }
       if (filters.maxElevation !== undefined) {
-        where.elevationGain.lte = filters.maxElevation
+        const maxElevation = typeof filters.maxElevation === 'string'
+          ? parseFloat(filters.maxElevation)
+          : filters.maxElevation
+        if (!isNaN(maxElevation)) {
+          where.elevationGain.lte = maxElevation
+        }
       }
     }
 

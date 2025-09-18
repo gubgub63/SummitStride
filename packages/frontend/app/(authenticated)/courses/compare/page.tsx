@@ -49,9 +49,33 @@ export default function CourseComparePage() {
   const selectedCourseData = courses.filter(course => selectedCourses.includes(course.id))
 
   const comparisonModes = [
-    { id: 'overview', name: 'Vue d\'ensemble', icon: '📊' },
-    { id: 'detailed', name: 'Détaillé', icon: '📋' },
-    { id: 'charts', name: 'Graphiques', icon: '📈' }
+    {
+      id: 'overview',
+      name: 'Vue d\'ensemble',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      )
+    },
+    {
+      id: 'detailed',
+      name: 'Détaillé',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      )
+    },
+    {
+      id: 'charts',
+      name: 'Graphiques',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      )
+    }
   ]
 
   return (
@@ -98,27 +122,27 @@ export default function CourseComparePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                 <div className="flex items-center space-x-2">
                   <span className="text-green-600">✓</span>
-                  <span>Comparaison détaillée des caractéristiques</span>
+                  <span className="text-orange-800">Comparaison détaillée des caractéristiques</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-green-600">✓</span>
-                  <span>Superposition des profils altimétrique</span>
+                  <span className="text-orange-800">Superposition des profils altimétrique</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-green-600">✓</span>
-                  <span>Analyse de compatibilité avec votre profil</span>
+                  <span className="text-orange-800">Analyse de compatibilité avec votre profil</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-green-600">✓</span>
-                  <span>Recommandations de préparation</span>
+                  <span className="text-orange-800">Recommandations de préparation</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-green-600">✓</span>
-                  <span>Export des comparaisons en PDF</span>
+                  <span className="text-orange-800">Export des comparaisons en PDF</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-green-600">✓</span>
-                  <span>Historique des comparaisons</span>
+                  <span className="text-orange-800">Historique des comparaisons</span>
                 </div>
               </div>
             </div>
@@ -233,25 +257,24 @@ export default function CourseComparePage() {
             <div className="space-y-6">
               {/* Comparison mode selector */}
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-foreground">Mode de comparaison :</span>
-                    <div className="flex space-x-1">
+                <CardContent className="p-0">
+                  <div className="border-b border-border">
+                    <nav className="flex space-x-8 px-6">
                       {comparisonModes.map((mode) => (
                         <button
                           key={mode.id}
                           onClick={() => setComparisonMode(mode.id as any)}
-                          className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                          className={`flex items-center space-x-2 py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                             comparisonMode === mode.id
-                              ? 'bg-primary-600 text-white'
-                              : 'bg-accent hover:bg-accent/80'
+                              ? 'border-primary-600 text-primary-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                           }`}
                         >
-                          <span className="mr-1">{mode.icon}</span>
-                          {mode.name}
+                          {mode.icon}
+                          <span>{mode.name}</span>
                         </button>
                       ))}
-                    </div>
+                    </nav>
                   </div>
                 </CardContent>
               </Card>
@@ -335,8 +358,16 @@ export default function CourseComparePage() {
 
                   {comparisonMode !== 'overview' && (
                     <div className="mt-6 p-6 bg-muted/50 rounded-lg text-center">
-                      <div className="text-4xl mb-2">
-                        {comparisonMode === 'detailed' ? '📋' : '📈'}
+                      <div className="flex justify-center mb-4">
+                        {comparisonMode === 'detailed' ? (
+                          <svg className="w-12 h-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-12 h-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                        )}
                       </div>
                       <h4 className="font-medium text-foreground mb-2">
                         {comparisonMode === 'detailed' ? 'Vue détaillée' : 'Graphiques comparatifs'}
