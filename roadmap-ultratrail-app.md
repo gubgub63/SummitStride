@@ -7,13 +7,14 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 - **Phase 1**: Architecture et Base ✅ **TERMINÉE**
 - **Phase 2**: Authentification et Profils ✅ **TERMINÉE**
 - **Phase 3**: Course et Inscription ✅ **TERMINÉE**
-- **Phase 4**: Interface Utilisateur - **EN COURS** (5/8 sections terminées)
+- **Phase 4**: Interface Utilisateur - **EN COURS** (5.5/8 sections terminées)
   - 4.1 Design System ✅ TERMINÉ
   - 4.2 Authentification et Onboarding ✅ TERMINÉ
   - 4.3 Gestion des Profils Utilisateur ✅ TERMINÉ
   - 4.4 Catalogue et Recherche de Courses ✅ TERMINÉ
   - 4.5 Inscription et Gestion des Objectifs ✅ **TERMINÉ**
-  - 4.6 à 4.8 - À venir
+  - 4.6 Plans d'Entraînement (UI) ⭐ **EN COURS** - Infrastructure prête, composant d'apprentissage à finaliser
+  - 4.7 à 4.8 - À venir
 - **Phase 5**: Training Plans - **PRÉVU**
 - **Phase 6**: Intelligence Artificielle - **PRÉVU**
 
@@ -251,12 +252,37 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 5. **Widgets dashboard** - Composants pour suivi des objectifs
 6. **Interface responsive** - Design mobile-first et accessibilité WCAG 2.1
 
-### 4.6 Plans d'Entraînement (UI)
-- [ ] Visualisation du plan d'entraînement
-- [ ] Calendrier interactif des séances
-- [ ] Interface de suivi des séances
-- [ ] Graphiques de progression
-- [ ] Adaptation du plan en temps réel
+### 4.6 Plans d'Entraînement (UI) ⭐ **EN COURS**
+- [x] Types TypeScript pour l'entraînement (TrainingPlan, TrainingSession)
+- [x] Données mockées pour développement et tests
+- [x] Page principale TrainingPlanDashboard avec statistiques
+- [x] **Composant d'apprentissage WeeklyPlanWidget** (à compléter par l'utilisateur)
+- [x] Intégration avec la navigation existante
+- [ ] Calendrier interactif des séances (Phase future)
+- [ ] Interface de suivi des séances (Phase future)
+- [ ] Graphiques de progression (Phase future)
+- [ ] Adaptation du plan en temps réel (Phase future)
+
+**✅ Implémentation en cours :**
+- Infrastructure complète Phase 4.6 préparée pour apprentissage React
+- Composant éducatif `WeeklyPlanWidget.tsx` avec instructions détaillées
+- Types TypeScript complets (SessionType, SessionIntensity, SessionStatus)
+- Données mock réalistes avec séances d'entraînement variées
+- TrainingPlanDashboard avec statistiques et vue d'ensemble
+- Page `/training` intégrée dans l'architecture existante
+
+**🎯 Élément d'apprentissage React pour l'utilisateur :**
+- **WeeklyPlanWidget.tsx** - Composant pédagogique à implémenter
+- **Concepts React à apprendre :** Props, useState, conditional rendering, event handlers, map, CSS conditionnelles
+- **Fonctionnalités :** Affichage 7 jours, sélection de jour, détail de séance, indicateurs visuels
+- **Support fourni :** Types, données mock, fonctions utilitaires, instructions détaillées
+
+**📁 Fichiers créés :**
+- `types/training.ts` - Types complets avec utilitaires
+- `lib/data/mockTrainingData.ts` - Données de développement
+- `components/training/TrainingPlanDashboard.tsx` - Interface principale
+- `components/training/WeeklyPlanWidget.tsx` - Composant d'apprentissage
+- `app/(authenticated)/training/page.tsx` - Point d'entrée
 
 ### 4.7 Nutrition et Suivi
 - [ ] Interface de suivi nutritionnel

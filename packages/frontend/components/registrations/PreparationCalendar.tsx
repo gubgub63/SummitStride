@@ -33,15 +33,6 @@ export function PreparationCalendar({ registration, className = '' }: Preparatio
     const registrationDate = new Date(registration.createdAt) // Use createdAt instead of registrationDate
     const now = new Date()
 
-    // Debug logs
-    console.log('PreparationCalendar Debug:', {
-      targetDate: registration.targetDate,
-      createdAt: registration.createdAt,
-      targetDateParsed: targetDate,
-      registrationDateParsed: registrationDate,
-      isValidTargetDate: !isNaN(targetDate.getTime()),
-      isValidRegistrationDate: !isNaN(registrationDate.getTime())
-    })
 
     // Validate dates
     if (isNaN(targetDate.getTime()) || isNaN(registrationDate.getTime())) {
