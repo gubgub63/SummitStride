@@ -308,37 +308,63 @@ export function NutritionDashboard() {
         </CardContent>
       </Card>
 
-      {/* Actions rapides */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Planificateur de Repas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground text-sm">
-              Créez des plans alimentaires personnalisés pour vos entraînements et courses
-              ultra-trail.
+      {/* Partenaire Nutrition */}
+      <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-900/20">
+        <CardHeader>
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">F</span>
+            </div>
+            <div>
+              <CardTitle className="text-lg">Partenaire Flavora</CardTitle>
+              <p className="text-sm text-muted-foreground">Application IA de nutrition personnalisée</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <p className="text-sm text-foreground">
+              <strong>Flavora</strong> utilise l'intelligence artificielle pour créer des plans alimentaires personnalisés parfaitement adaptés aux besoins des ultra-traileurs.
             </p>
-            <Button className="w-full" disabled>
-              Créer un plan alimentaire
-            </Button>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Suivi Nutritionnel</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground text-sm">
-              Enregistrez vos repas et suivez vos apports nutritionnels quotidiens.
-            </p>
-            <Button variant="outline" className="w-full" disabled>
-              Ajouter un repas
+            <div className="grid gap-2 text-xs">
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                <span>Recettes IA adaptées à vos macronutriments sportifs</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                <span>Optimisation des repas avec vos ingrédients existants</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                <span>Scanner code-barres et suivi nutritionnel précis</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                <span>Planification automatique des repas et listes de courses</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex space-x-2">
+            <Button className="flex-1" asChild>
+              <a href="https://flavora.fr/" target="_blank" rel="noopener noreferrer">
+                Découvrir Flavora
+              </a>
             </Button>
-          </CardContent>
-        </Card>
-      </div>
+            <Button variant="outline" className="flex-1" asChild>
+              <a href="https://apps.apple.com/fr/app/flavora/id6742901179" target="_blank" rel="noopener noreferrer">
+                App Store
+              </a>
+            </Button>
+          </div>
+
+          <div className="text-xs text-muted-foreground bg-white/50 dark:bg-gray-800/50 p-2 rounded">
+            <strong>Spécial ultra-trail :</strong> Flavora adapte automatiquement vos besoins nutritionnels selon vos calculs caloriques Coach IA Hugo pour optimiser vos performances d'endurance.
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
