@@ -35,31 +35,26 @@ import type { WeeklyPlanProps, TrainingSession, DailySession } from '../../types
 import { SESSION_TYPE_LABELS, SESSION_TYPE_COLORS } from '../../types/training'
 import { formatDuration, isToday } from '../../lib/data/mockTrainingData'
 
-export function WeeklyPlanWidget({ weekStartDate, trainingSessions, className = '' }: WeeklyPlanProps) {
-  // 🎯 TON CODE ICI :
-  // 1. Utilise useState pour gérer le jour sélectionné (number | null)
+export function WeeklyPlanWidget({
+  weekStartDate,
+  trainingSessions,
+  className = '',
+}: WeeklyPlanProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
-  // 2. Génère un tableau de 7 jours à partir de weekStartDate
-  // AIDE : Array.from({ length: 7 }, (_, index) => { ... })
-    const days = Array.from({length: 7},(_,index) => {
-        const d = new Date ( weekStartDate )
-        d.setDate(d.getDate() + index)
-        return d
-    }
-    )
-  // 3. Pour chaque jour, trouve s'il y a une séance planifiée
-  // AIDE : trainingSessions.find(session => isSameDay(session.scheduledDate, currentDay))
-
-  // 4. Retourne le JSX avec :
-  //    - Une grille des 7 jours
-  //    - Un détail de la séance sélectionnée (si il y en a une)
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const d = new Date(weekStartDate)
+    d.setDate(d.getDate() + index)
+    return d
+  })
 
   return (
     <div className={`space-y-4 ${className}`}>
       {/* 🎯 Grille des 7 jours - TON CODE ICI */}
       <div className="grid grid-cols-7 gap-2">
         {days.map((currentDay, idx) => {
-          const session = trainingSessions.find(session => isSameDay(session.scheduledDate, currentDay))
+          const session = trainingSessions.find(session =>
+            isSameDay(session.scheduledDate, currentDay)
+          )
           const isCurrentDay = isToday(currentDay)
 
           return (
@@ -70,23 +65,15 @@ export function WeeklyPlanWidget({ weekStartDate, trainingSessions, className = 
               }`}
               onClick={() => setSelectedDay(idx)}
             >
-              <div className="text-xs text-muted-foreground mb-1">
-                {getDayName(currentDay)}
-              </div>
-              <div className="text-sm font-medium">
-                {getDayNumber(currentDay)}
-              </div>
+              <div className="text-xs text-muted-foreground mb-1">{getDayName(currentDay)}</div>
+              <div className="text-sm font-medium">{getDayNumber(currentDay)}</div>
 
               {/* Pastilles */}
               <div className="flex justify-center items-center space-x-1 mt-1">
                 {/* Pastille si séance prévue */}
-                {session && (
-                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                )}
+                {session && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
                 {/* Pastille si jour d'aujourd'hui */}
-                {isCurrentDay && (
-                  <div className="w-2 h-2 rounded-full bg-green-600"></div>
-                )}
+                {isCurrentDay && <div className="w-2 h-2 rounded-full bg-green-600"></div>}
               </div>
             </div>
           )
@@ -94,41 +81,45 @@ export function WeeklyPlanWidget({ weekStartDate, trainingSessions, className = 
       </div>
 
       {/* 🎯 Détail de la séance sélectionnée - TON CODE ICI */}
-      {selectedDay !== null && days[selectedDay] && (() => {
-        const selectedSession = trainingSessions.find(session =>
-          isSameDay(session.scheduledDate, days[selectedDay])
-        )
+      {selectedDay !== null &&
+        days[selectedDay] &&
+        (() => {
+          const selectedSession = trainingSessions.find(session =>
+            isSameDay(session.scheduledDate, days[selectedDay])
+          )
 
-        if (selectedSession) {
-          return (
-            <div className="mt-4 p-4 bg-accent/30 rounded-lg">
-              <div className="text-sm font-medium mb-2">Détail de la séance</div>
-              <div className="space-y-2">
-                <h3 className="font-medium text-foreground">{selectedSession.name}</h3>
-                <p className="text-sm text-muted-foreground">{selectedSession.description}</p>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Durée:</span>
-                  <span className="font-medium">{formatDuration(selectedSession.duration)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Type:</span>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${SESSION_TYPE_COLORS[selectedSession.type]}`}>
-                    {SESSION_TYPE_LABELS[selectedSession.type]}
-                  </span>
+          if (selectedSession) {
+            return (
+              <div className="mt-4 p-4 bg-accent/30 rounded-lg">
+                <div className="text-sm font-medium mb-2">Détail de la séance</div>
+                <div className="space-y-2">
+                  <h3 className="font-medium text-foreground">{selectedSession.name}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedSession.description}</p>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Durée:</span>
+                    <span className="font-medium">{formatDuration(selectedSession.duration)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Type:</span>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${SESSION_TYPE_COLORS[selectedSession.type]}`}
+                    >
+                      {SESSION_TYPE_LABELS[selectedSession.type]}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        } else {
-          return (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <div className="text-center text-muted-foreground text-sm">
-                Aucune séance planifiée pour ce jour
+            )
+          } else {
+            return (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="text-center text-muted-foreground text-sm">
+                  Aucune séance planifiée pour ce jour
+                </div>
               </div>
-            </div>
-          )
-        }
-      })()}
+            )
+          }
+        })()}
 
       {/* Message si aucun jour sélectionné */}
       {selectedDay === null && (
@@ -147,9 +138,11 @@ export function WeeklyPlanWidget({ weekStartDate, trainingSessions, className = 
  */
 function isSameDay(dateString: string, date: Date): boolean {
   const sessionDate = new Date(dateString)
-  return sessionDate.getDate() === date.getDate() &&
-         sessionDate.getMonth() === date.getMonth() &&
-         sessionDate.getFullYear() === date.getFullYear()
+  return (
+    sessionDate.getDate() === date.getDate() &&
+    sessionDate.getMonth() === date.getMonth() &&
+    sessionDate.getFullYear() === date.getFullYear()
+  )
 }
 
 /**

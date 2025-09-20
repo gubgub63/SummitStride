@@ -7,14 +7,15 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 - **Phase 1**: Architecture et Base ✅ **TERMINÉE**
 - **Phase 2**: Authentification et Profils ✅ **TERMINÉE**
 - **Phase 3**: Course et Inscription ✅ **TERMINÉE**
-- **Phase 4**: Interface Utilisateur - **EN COURS** (5.5/8 sections terminées)
+- **Phase 4**: Interface Utilisateur - **EN COURS** (6.5/8 sections terminées)
   - 4.1 Design System ✅ TERMINÉ
   - 4.2 Authentification et Onboarding ✅ TERMINÉ
   - 4.3 Gestion des Profils Utilisateur ✅ TERMINÉ
   - 4.4 Catalogue et Recherche de Courses ✅ TERMINÉ
   - 4.5 Inscription et Gestion des Objectifs ✅ **TERMINÉ**
   - 4.6 Plans d'Entraînement (UI) ⭐ **EN COURS** - Infrastructure prête, composant d'apprentissage à finaliser
-  - 4.7 à 4.8 - À venir
+  - 4.7 Nutrition et Suivi ⭐ **EN COURS** - Infrastructure prête, composant d'apprentissage useEffect à finaliser
+  - 4.8 - À venir
 - **Phase 5**: Training Plans - **PRÉVU**
 - **Phase 6**: Intelligence Artificielle - **PRÉVU**
 
@@ -284,12 +285,43 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 - `components/training/WeeklyPlanWidget.tsx` - Composant d'apprentissage
 - `app/(authenticated)/training/page.tsx` - Point d'entrée
 
-### 4.7 Nutrition et Suivi
-- [ ] Interface de suivi nutritionnel
-- [ ] Planificateur de repas
-- [ ] Base de données alimentaire searchable
-- [ ] Calculateur de besoins caloriques
-- [ ] Graphiques de balance nutritionnelle
+### 4.7 Nutrition et Suivi ⭐ **EN COURS**
+- [x] Types TypeScript pour la nutrition (NutritionProfile, CalorieResult, FoodItem)
+- [x] Données mockées et formules de calcul (MET, validation, recommandations)
+- [x] Page principale NutritionDashboard avec statistiques complètes
+- [x] **Composant d'apprentissage CalorieCalculator** (à compléter par l'utilisateur)
+- [x] Intégration avec la navigation existante (/nutrition)
+- [ ] Base de données alimentaire searchable (Phase future)
+- [ ] Planificateur de repas avancé (Phase future)
+- [ ] Graphiques de balance nutritionnelle (Phase future)
+- [ ] Synchronisation avec wearables (Phase future)
+
+**✅ Implémentation en cours :**
+- Infrastructure complète Phase 4.7 préparée pour apprentissage React avancé
+- Composant éducatif `CalorieCalculator.tsx` avec instructions détaillées useEffect
+- Types TypeScript complets avec système de validation
+- Formules scientifiques MET pour calculs caloriques précis
+- NutritionDashboard avec statistiques temps réel et macronutriments
+- Page `/nutrition` intégrée dans l'architecture existante
+
+**🎯 Élément d'apprentissage React pour l'utilisateur :**
+- **CalorieCalculator.tsx** - Composant avancé à implémenter avec useEffect
+- **Nouveaux concepts React :** useEffect, formulaires contrôlés, validation, calculs temps réel, état complexe
+- **Fonctionnalités :** Formulaire multi-champs, recalcul automatique, validation temps réel, recommandations nutritionnelles
+- **Support fourni :** Formules MET, données d'activités, fonctions de validation, types complets
+
+**📁 Fichiers créés :**
+- `types/nutrition.ts` - Types complets nutrition avec utilitaires
+- `lib/data/mockNutritionData.ts` - Données et formules scientifiques
+- `components/nutrition/NutritionDashboard.tsx` - Interface principale complète
+- `components/nutrition/CalorieCalculator.tsx` - Composant d'apprentissage useEffect
+- `app/(authenticated)/nutrition/page.tsx` - Point d'entrée
+
+**🧮 Formules et données scientifiques :**
+- **Système MET** (Metabolic Equivalent of Task) pour calculs précis
+- **Activités ultra-trail** : Course, randonnée, vélo avec intensités
+- **Recommandations nutritionnelles** : Hydratation, glucides, électrolytes
+- **Validation complète** : Poids, durée, types d'activités
 
 ### 4.8 Responsive et Mobile
 - [ ] Optimisation mobile (responsive design)
