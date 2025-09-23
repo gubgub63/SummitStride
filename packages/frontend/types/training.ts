@@ -21,8 +21,9 @@ export interface TrainingSession {
   planId: string
   name: string
   description: string
-  scheduledDate: string // ISO date string
+  date: string // ISO date string
   duration: number // minutes
+  distance: number
   type: SessionType
   intensity: SessionIntensity
   status: SessionStatus
@@ -35,8 +36,8 @@ export interface TrainingSession {
 
 export type SessionType =
   | 'EASY_RUN'           // Course facile
-  | 'LONG_RUN'           // Sortie longue
-  | 'INTERVAL_TRAINING'  // Fractionné
+  | 'ENDURANCE'           // Sortie longue
+  | 'INTERVAL'  // Fractionné
   | 'TEMPO_RUN'          // Course au seuil
   | 'HILL_TRAINING'      // Côtes
   | 'RECOVERY_RUN'       // Récupération
@@ -74,8 +75,8 @@ export interface DailySession {
 // Utilitaires pour les couleurs et labels
 export const SESSION_TYPE_LABELS: Record<SessionType, string> = {
   'EASY_RUN': 'Course facile',
-  'LONG_RUN': 'Sortie longue',
-  'INTERVAL_TRAINING': 'Fractionné',
+  'ENDURANCE': 'Sortie longue',
+  'INTERVAL': 'Fractionné',
   'TEMPO_RUN': 'Course au seuil',
   'HILL_TRAINING': 'Côtes',
   'RECOVERY_RUN': 'Récupération',
@@ -86,8 +87,8 @@ export const SESSION_TYPE_LABELS: Record<SessionType, string> = {
 
 export const SESSION_TYPE_COLORS: Record<SessionType, string> = {
   'EASY_RUN': 'bg-blue-100 text-blue-800',
-  'LONG_RUN': 'bg-purple-100 text-purple-800',
-  'INTERVAL_TRAINING': 'bg-red-100 text-red-800',
+  'ENDURANCE': 'bg-purple-100 text-purple-800',
+  'INTERVAL': 'bg-red-100 text-red-800',
   'TEMPO_RUN': 'bg-orange-100 text-orange-800',
   'HILL_TRAINING': 'bg-yellow-100 text-yellow-800',
   'RECOVERY_RUN': 'bg-green-100 text-green-800',

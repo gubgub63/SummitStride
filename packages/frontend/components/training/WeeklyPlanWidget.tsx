@@ -52,9 +52,7 @@ export function WeeklyPlanWidget({
       {/* 🎯 Grille des 7 jours - TON CODE ICI */}
       <div className="grid grid-cols-7 gap-2">
         {days.map((currentDay, idx) => {
-          const session = trainingSessions.find(session =>
-            isSameDay(session.scheduledDate, currentDay)
-          )
+          const session = trainingSessions.find(session => isSameDay(session.date, currentDay))
           const isCurrentDay = isToday(currentDay)
 
           return (
@@ -80,12 +78,11 @@ export function WeeklyPlanWidget({
         })}
       </div>
 
-
       {selectedDay !== null &&
         days[selectedDay] &&
         (() => {
           const selectedSession = trainingSessions.find(session =>
-            isSameDay(session.scheduledDate, days[selectedDay])
+            isSameDay(session.date, days[selectedDay])
           )
 
           if (selectedSession) {
@@ -106,6 +103,10 @@ export function WeeklyPlanWidget({
                     >
                       {SESSION_TYPE_LABELS[selectedSession.type]}
                     </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Distance:</span>
+                    <span className="font-medium">{selectedSession.distance}km</span>
                   </div>
                 </div>
               </div>
@@ -130,9 +131,6 @@ export function WeeklyPlanWidget({
     </div>
   )
 }
-
-
-
 
 function isSameDay(dateString: string, date: Date): boolean {
   const sessionDate = new Date(dateString)

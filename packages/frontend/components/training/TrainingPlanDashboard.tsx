@@ -1,6 +1,6 @@
 /**
  * TrainingPlanDashboard - Page principale des plans d'entraînement
- * Phase 4.6 - Plans d'Entraînement (UI)
+ * Phase 5.1 - Intégration avec les vraies APIs
  */
 
 'use client'
@@ -10,17 +10,27 @@ import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { WeeklyPlanWidget } from './WeeklyPlanWidget'
-import {
-  mockTrainingPlan,
-  mockWeeklyTrainingSessions,
-  getCurrentWeekStart,
-  mockTrainingStats,
-  formatDuration
-} from '../../lib/data/mockTrainingData'
+import { useTrainingStats, useTrainingPlans, useCurrentWeekSessions } from '../../lib/hooks/useTraining'
+import { getCurrentWeekStart } from '../../lib/data/mockTrainingData'
 import { SESSION_TYPE_LABELS, SESSION_TYPE_COLORS } from '../../types/training'
+import trainingService from '../../lib/services/trainingService'
 
 export function TrainingPlanDashboard() {
+  const { stats, loading: statsLoading, error: statsError } = useTrainingStats()
+  const { plans, loading: plansLoading } = useTrainingPlans()
+  const { sessions: weekSessions, loading: sessionsLoading } = useCurrentWeekSessions()
+
   const weekStart = getCurrentWeekStart()
+  const activePlan = plans.find(plan => plan.status === 'ACTIVE')
+
+  // Fallback vers les mock data si pas de données réelles
+  const displayStats = stats || {
+    activePlans: 0,
+    weeklySessionsCompleted: 0,
+    weeklySessionsTotal: 0,
+    monthlyDistance: 0,
+    recentActivity: []
+  }
 
   return (
     <div className="space-y-6">
@@ -42,7 +52,9 @@ export function TrainingPlanDashboard() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockTrainingStats.activePlans}</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? '...' : displayStats.activePlans}
+            </div>
             <p className="text-xs text-muted-foreground">Plan en cours</p>
           </CardContent>
         </Card>
@@ -56,7 +68,7 @@ export function TrainingPlanDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockTrainingStats.weeklySessionsCompleted}/{mockTrainingStats.weeklySessionsTotal}
+              {statsLoading ? '...' : `${displayStats.weeklySessionsCompleted}/${displayStats.weeklySessionsTotal}`}
             </div>
             <p className="text-xs text-muted-foreground">Complétées cette semaine</p>
           </CardContent>
@@ -70,7 +82,9 @@ export function TrainingPlanDashboard() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockTrainingStats.monthlyDistance} km</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? '...' : `${displayStats.monthlyDistance} km`}
+            </div>
             <p className="text-xs text-muted-foreground">Ce mois-ci</p>
           </CardContent>
         </Card>
@@ -84,10 +98,17 @@ export function TrainingPlanDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockTrainingStats.nextSession ? formatDuration(mockTrainingStats.nextSession.duration) : '--'}
+              {statsLoading ? '...' : (
+                displayStats.nextSession ?
+                  trainingService.formatDuration(displayStats.nextSession.duration || 60) :
+                  '--'
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
-              {mockTrainingStats.nextSession ? SESSION_TYPE_LABELS[mockTrainingStats.nextSession.type] : 'Aucune séance planifiée'}
+              {displayStats.nextSession ?
+                SESSION_TYPE_LABELS[displayStats.nextSession.type] :
+                'Aucune séance planifiée'
+              }
             </p>
           </CardContent>
         </Card>
@@ -102,34 +123,56 @@ export function TrainingPlanDashboard() {
               <CardTitle className="text-lg">Plan Actuel</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-medium text-foreground">{mockTrainingPlan.name}</h3>
-                <p className="text-sm text-muted-foreground">{mockTrainingPlan.description}</p>
-              </div>
+              {plansLoading ? (
+                <div className="text-center py-4">
+                  <div className="text-sm text-muted-foreground">Chargement...</div>
+                </div>
+              ) : activePlan ? (
+                <div className="space-y-2">
+                  <h3 className="font-medium text-foreground">{activePlan.name}</h3>
+                  <p className="text-sm text-muted-foreground">{activePlan.description}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <h3 className="font-medium text-foreground">Aucun plan actif</h3>
+                  <p className="text-sm text-muted-foreground">Créez ou générez un plan d'entraînement pour commencer</p>
+                </div>
+              )}
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Durée:</span>
-                  <span className="font-medium">16 semaines</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Statut:</span>
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Actif
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Progression:</span>
-                  <span className="font-medium">Semaine 5/16</span>
-                </div>
-              </div>
+              {activePlan && (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Durée:</span>
+                      <span className="font-medium">
+                        {Math.ceil(
+                          (new Date(activePlan.endDate).getTime() - new Date(activePlan.startDate).getTime()) /
+                          (7 * 24 * 60 * 60 * 1000)
+                        )} semaines
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Statut:</span>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {activePlan.status}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Début:</span>
+                      <span className="font-medium">
+                        {new Date(activePlan.startDate).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                  </div>
 
-              <div className="pt-2">
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div className="bg-primary-600 h-2 rounded-full" style={{ width: '31%' }} />
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">31% complété</div>
-              </div>
+                  <div className="pt-2">
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div className="bg-primary-600 h-2 rounded-full" style={{ width: '25%' }} />
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">En cours...</div>
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2 pt-2">
                 <Button variant="outline" className="w-full" size="sm">
@@ -152,7 +195,8 @@ export function TrainingPlanDashboard() {
             <CardContent>
               <WeeklyPlanWidget
                 weekStartDate={weekStart}
-                trainingSessions={mockWeeklyTrainingSessions}
+                trainingSessions={weekSessions}
+                loading={sessionsLoading}
               />
             </CardContent>
           </Card>
@@ -166,27 +210,40 @@ export function TrainingPlanDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {mockTrainingStats.recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center justify-between p-3 bg-accent/30 rounded-lg">
-                <div className="space-y-1">
-                  <div className="font-medium text-sm">{activity.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(activity.date).toLocaleDateString('fr-FR', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+            {statsLoading ? (
+              <div className="text-center py-4 text-muted-foreground">
+                Chargement de l'activité récente...
+              </div>
+            ) : displayStats.recentActivity.length > 0 ? (
+              displayStats.recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center justify-between p-3 bg-accent/30 rounded-lg">
+                  <div className="space-y-1">
+                    <div className="font-medium text-sm">{activity.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(activity.date).toLocaleDateString('fr-FR', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </div>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <div className="text-sm font-medium">
+                      {trainingService.formatDuration(activity.duration || 60)}
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${SESSION_TYPE_COLORS[activity.type]}`}>
+                      {SESSION_TYPE_LABELS[activity.type]}
+                    </span>
                   </div>
                 </div>
-                <div className="text-right space-y-1">
-                  <div className="text-sm font-medium">{formatDuration(activity.duration)}</div>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${SESSION_TYPE_COLORS[activity.type]}`}>
-                    {SESSION_TYPE_LABELS[activity.type]}
-                  </span>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Aucune activité récente</p>
+                <p className="text-sm">Vos séances d'entraînement apparaîtront ici</p>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
