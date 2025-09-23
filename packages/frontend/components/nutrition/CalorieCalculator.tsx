@@ -182,21 +182,21 @@ export function CalorieCalculator({
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Par heure:</span>
-                <div className="font-medium">{result.caloriesPerHour} kcal/h</div>
+                <div className="font-medium text-black">{result.caloriesPerHour} kcal/h</div>
               </div>
               <div>
                 <span className="text-muted-foreground">Hydratation:</span>
-                <div className="font-medium">{result.waterNeeded} ml</div>
+                <div className="font-medium text-black">{result.waterNeeded} ml</div>
               </div>
               {result.carbsNeeded > 0 && (
                 <>
                   <div>
                     <span className="text-muted-foreground">Glucides:</span>
-                    <div className="font-medium">{result.carbsNeeded} g</div>
+                    <div className="font-medium text-black">{result.carbsNeeded} g</div>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Durée:</span>
-                    <div className="font-medium">{formatDuration(duration)}</div>
+                    <div className="font-medium text-black">{formatDuration(duration)}</div>
                   </div>
                 </>
               )}
@@ -205,10 +205,10 @@ export function CalorieCalculator({
             {/* Recommandations */}
             {result.recommendedIntake.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-foreground">Recommandations:</h4>
+                <h4 className="text-sm font-medium text-black!">Recommandations:</h4>
                 {result.recommendedIntake.map((rec, index) => (
                   <div key={index} className="text-xs p-2 bg-white border rounded">
-                    <div className="font-medium text-foreground">
+                    <div className="font-medium text-black">
                       {rec.time}: <span className="text-blue-600">{rec.amount}</span>
                     </div>
                     <div className="text-muted-foreground mt-1">{rec.description}</div>

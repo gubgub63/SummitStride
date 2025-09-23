@@ -9,10 +9,18 @@ import React from 'react'
 import Link from 'next/link'
 import { ThemeToggle } from '../../lib/theme'
 import { UserMenu } from './UserMenu'
+import { MobileNavigation } from './MobileNavigation'
 import { useAuth } from '../../lib/hooks/useAuth'
+import { useResponsive } from '../../lib/hooks/useResponsive'
 
 export function Header() {
   const { isAuthenticated, user } = useAuth()
+  const { isMobile } = useResponsive()
+
+  // Sur mobile, utiliser MobileNavigation
+  if (isMobile && isAuthenticated) {
+    return <MobileNavigation />
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

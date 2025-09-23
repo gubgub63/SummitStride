@@ -80,7 +80,7 @@ export function WeeklyPlanWidget({
         })}
       </div>
 
-      {/* 🎯 Détail de la séance sélectionnée - TON CODE ICI */}
+
       {selectedDay !== null &&
         days[selectedDay] &&
         (() => {
@@ -131,11 +131,9 @@ export function WeeklyPlanWidget({
   )
 }
 
-// 🛠️ FONCTIONS UTILITAIRES FOURNIES :
 
-/**
- * Vérifie si deux dates sont le même jour
- */
+
+
 function isSameDay(dateString: string, date: Date): boolean {
   const sessionDate = new Date(dateString)
   return (

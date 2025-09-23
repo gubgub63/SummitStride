@@ -348,15 +348,18 @@ export function NutritionDashboard() {
           </div>
 
           <div className="flex space-x-2">
-            <Button className="flex-1" asChild>
-              <a href="https://flavora.fr/" target="_blank" rel="noopener noreferrer">
-                Découvrir Flavora
-              </a>
+            <Button
+              className="flex-1"
+              onClick={() => window.open('https://flavora.fr/', '_blank', 'noopener,noreferrer')}
+            >
+              Découvrir Flavora
             </Button>
-            <Button variant="outline" className="flex-1" asChild>
-              <a href="https://apps.apple.com/fr/app/flavora/id6742901179" target="_blank" rel="noopener noreferrer">
-                App Store
-              </a>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => window.open('https://apps.apple.com/fr/app/flavora/id6742901179', '_blank', 'noopener,noreferrer')}
+            >
+              App Store
             </Button>
           </div>
 
