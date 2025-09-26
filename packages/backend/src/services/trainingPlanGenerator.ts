@@ -3,9 +3,17 @@
  * Phase 5.2 - Personnalisation avancée des plans
  */
 
-import { TrainingType, Intensity, TrainingPlanStatus } from '@coach-ia-hugo/shared'
+import {
+  TrainingType,
+  Intensity,
+  TrainingPlanStatus,
+  PlanPhase,
+  TrainingPlanProgress,
+  WeeklyPlanProgress,
+} from '@coach-ia-hugo/shared'
 import { PrismaClient } from '@prisma/client'
 import { trainingCalculations } from '../utils/trainingCalculations.js'
+import { TrainingPlanAnalytics } from './trainingPlanAnalytics.js'
 
 interface UserProfileInput {
   id: string
@@ -75,6 +83,8 @@ interface PlanAnalysis {
   adaptationLevel: 'conservative' | 'moderate' | 'aggressive'
   recoveryRatio: number
   injuryRisk: 'low' | 'medium' | 'high'
+  totals: TrainingPlanProgress
+  weeklyProgression: WeeklyPlanProgress[]
 }
 
 interface SessionAlternative {
@@ -125,7 +135,13 @@ export class TrainingPlanGenerator {
     )
 
     // 4.5. Phase 5.2 - Application de la personnalisation avancée
-    planStructure = this.applyAdvancedPersonalization(planStructure, preferences)
+    planStructure = this.applyAdvancedPersonalization(
+      planStructure,
+      preferences,
+      userAnalysis,
+      raceAnalysis,
+      startDate
+    )
 
     // 5. Création en base de données
     const plan = await this.prisma.trainingPlan.create({
@@ -141,12 +157,35 @@ export class TrainingPlanGenerator {
     })
 
     // 6. Création des séances
-    const sessions = await this.createSessions(plan.id, user.id, planStructure)
+    const sessions = await this.createSessions(
+      plan.id,
+      user.id,
+      planStructure,
+      startDate
+    )
+
+    const metrics = TrainingPlanAnalytics.summarizeSessions(sessions)
+
+    const updatedPlan = await this.prisma.trainingPlan.update({
+      where: { id: plan.id },
+      data: {
+        totalDuration: metrics.totalDuration,
+        totalDistance: metrics.totalDistance,
+        loadScore: metrics.loadScore,
+        progression: metrics.weekly,
+        lastAnalyzedAt: new Date(),
+      },
+    })
 
     return {
-      plan,
+      plan: updatedPlan,
       sessions,
-      analysis: this.generatePlanSummary(planStructure, userAnalysis, raceAnalysis),
+      analysis: this.generatePlanSummary(
+        planStructure,
+        userAnalysis,
+        raceAnalysis,
+        metrics
+      ),
     }
   }
 
@@ -261,26 +300,51 @@ export class TrainingPlanGenerator {
    * Génération d'une semaine d'entraînement
    */
   private generateWeekStructure(params: any) {
-    const { weekNumber, phase, progressionFactor, sessionsPerWeek, userAnalysis, raceAnalysis } = params
+    const {
+      weekNumber,
+      phase,
+      progressionFactor,
+      sessionsPerWeek,
+      userAnalysis,
+      raceAnalysis,
+      preferences,
+    } = params
 
     const sessions = []
     const baseVolume = userAnalysis.trainingCapacity.weeklyHours * progressionFactor
+    const planPhase = this.mapPhaseToPlanPhase(phase)
 
     // Distribution des types de séances selon la phase
-    const sessionDistribution = this.getSessionDistribution(phase, raceAnalysis.category)
+    const sessionDistribution = this.adjustDistributionForPreferences(
+      this.getSessionDistribution(phase, raceAnalysis.category),
+      preferences
+    )
     if (!sessionDistribution) return { weekNumber, phase, sessions: [], totalDuration: 0, totalDistance: 0 }
 
     for (let i = 0; i < sessionsPerWeek; i++) {
       const sessionType = this.selectSessionType(sessionDistribution, i, sessionsPerWeek)
       const intensity = this.selectIntensity(sessionType, phase, raceAnalysis.targetIntensities)
+      let duration = this.calculateSessionDuration(sessionType, baseVolume, sessionsPerWeek)
+      if (preferences.maxSessionDuration) {
+        duration = Math.min(duration, preferences.maxSessionDuration)
+      }
+
+      const distance = this.calculateSessionDistance(
+        sessionType,
+        intensity,
+        duration,
+        raceAnalysis
+      )
 
       const session = {
         type: sessionType,
         intensity,
-        duration: this.calculateSessionDuration(sessionType, baseVolume, sessionsPerWeek),
-        distance: this.calculateSessionDistance(sessionType, intensity, raceAnalysis),
+        duration,
+        distance,
         name: this.generateSessionName(sessionType, intensity, weekNumber),
         description: this.generateSessionDescription(sessionType, intensity, phase),
+        phase: planPhase,
+        weekNumber,
       }
 
       sessions.push(session)
@@ -289,6 +353,7 @@ export class TrainingPlanGenerator {
     return {
       weekNumber,
       phase,
+      planPhase,
       sessions,
       totalDuration: sessions.reduce((sum, s) => sum + s.duration, 0),
       totalDistance: sessions.reduce((sum, s) => sum + (s.distance || 0), 0),
@@ -298,15 +363,26 @@ export class TrainingPlanGenerator {
   /**
    * Création des séances en base de données
    */
-  private async createSessions(planId: string, userId: string, planStructure: any[]) {
+  private async createSessions(
+    planId: string,
+    userId: string,
+    planStructure: any[],
+    startDate: Date
+  ) {
     const sessions = []
-    const startDate = new Date()
+    const baseDate = new Date(startDate)
 
     for (const week of planStructure) {
       for (let sessionIndex = 0; sessionIndex < week.sessions.length; sessionIndex++) {
         const session = week.sessions[sessionIndex]
-        const sessionDate = new Date(startDate)
-        sessionDate.setDate(startDate.getDate() + (week.weekNumber - 1) * 7 + sessionIndex * 2)
+        const sessionDate = new Date(baseDate)
+        const scheduledDay = session.scheduledDay ?? sessionIndex % 7
+        sessionDate.setDate(
+          baseDate.getDate() + (week.weekNumber - 1) * 7 + scheduledDay
+        )
+
+        const planPhase = session.phase ?? this.mapPhaseToPlanPhase(week.phase)
+        const plannedLoad = TrainingPlanAnalytics.estimateSessionLoad(session)
 
         const createdSession = await this.prisma.trainingSession.create({
           data: {
@@ -320,6 +396,10 @@ export class TrainingPlanGenerator {
             distance: session.distance,
             intensity: session.intensity,
             completed: false,
+            phase: planPhase,
+            weekNumber: week.weekNumber,
+            dayOfWeek: scheduledDay,
+            plannedLoad,
           },
         })
 
@@ -336,6 +416,21 @@ export class TrainingPlanGenerator {
   async analyzePlan(plan: any): Promise<PlanAnalysis> {
     const sessions = plan.sessions || []
 
+    const metrics = TrainingPlanAnalytics.summarizeSessions(sessions)
+
+    if (plan.id) {
+      await this.prisma.trainingPlan.update({
+        where: { id: plan.id },
+        data: {
+          totalDuration: metrics.totalDuration,
+          totalDistance: metrics.totalDistance,
+          loadScore: metrics.loadScore,
+          progression: metrics.weekly,
+          lastAnalyzedAt: new Date(),
+        },
+      })
+    }
+
     const analysis: PlanAnalysis = {
       totalSessions: sessions.length,
       weeklyVolume: {
@@ -351,6 +446,8 @@ export class TrainingPlanGenerator {
       adaptationLevel: this.assessAdaptationLevel(sessions),
       recoveryRatio: this.calculateRecoveryRatio(sessions),
       injuryRisk: this.assessInjuryRisk(sessions, plan),
+      totals: metrics,
+      weeklyProgression: metrics.weekly,
     }
 
     return analysis
@@ -446,6 +543,59 @@ export class TrainingPlanGenerator {
     return distributions[phase] || distributions.base
   }
 
+  private adjustDistributionForPreferences(
+    distribution: Record<TrainingType, number>,
+    preferences: GenerationPreferences
+  ): Record<TrainingType, number> {
+    const adjusted: Record<TrainingType, number> = { ...distribution }
+
+    if (preferences.includeStrength === false) {
+      adjusted[TrainingType.STRENGTH] = 0
+    }
+
+    if (preferences.includeCrossTraining === false) {
+      adjusted[TrainingType.CROSS_TRAINING] = 0
+    }
+
+    if (preferences.focusAreas?.includes('strength')) {
+      adjusted[TrainingType.STRENGTH] = (adjusted[TrainingType.STRENGTH] || 0) + 0.1
+    }
+
+    if (preferences.focusAreas?.includes('endurance')) {
+      adjusted[TrainingType.ENDURANCE] = (adjusted[TrainingType.ENDURANCE] || 0) + 0.1
+    }
+
+    if (preferences.focusAreas?.includes('speed')) {
+      adjusted[TrainingType.INTERVAL] = (adjusted[TrainingType.INTERVAL] || 0) + 0.1
+      adjusted[TrainingType.THRESHOLD] = (adjusted[TrainingType.THRESHOLD] || 0) + 0.05
+    }
+
+    if (preferences.focusAreas?.includes('technical')) {
+      adjusted[TrainingType.STRENGTH] = (adjusted[TrainingType.STRENGTH] || 0) + 0.05
+      adjusted[TrainingType.CROSS_TRAINING] = (adjusted[TrainingType.CROSS_TRAINING] || 0) + 0.05
+    }
+
+    const total = Object.values(adjusted).reduce((sum, value) => sum + value, 0)
+
+    if (total === 0) {
+      return {
+        [TrainingType.ENDURANCE]: 1,
+        [TrainingType.THRESHOLD]: 0,
+        [TrainingType.INTERVAL]: 0,
+        [TrainingType.RECOVERY]: 0,
+        [TrainingType.STRENGTH]: 0,
+        [TrainingType.CROSS_TRAINING]: 0,
+      }
+    }
+
+    const normalizedEntries = Object.entries(adjusted).map(([key, value]) => [
+      key,
+      value / total,
+    ])
+
+    return Object.fromEntries(normalizedEntries) as Record<TrainingType, number>
+  }
+
   private selectSessionType(distribution: Record<TrainingType, number>, _sessionIndex: number, _totalSessions: number): TrainingType {
     // Logique simplifiée : sélection basée sur la distribution et l'index
     const types = Object.keys(distribution) as TrainingType[]
@@ -494,7 +644,12 @@ export class TrainingPlanGenerator {
     return Math.round(sessionVolume * 60 * (typeMultipliers[sessionType] || 1.0))
   }
 
-  private calculateSessionDistance(sessionType: TrainingType, intensity: Intensity, _raceAnalysis: any): number | undefined {
+  private calculateSessionDistance(
+    sessionType: TrainingType,
+    intensity: Intensity,
+    durationMinutes: number,
+    raceAnalysis: any
+  ): number | undefined {
     if (sessionType === TrainingType.STRENGTH) return undefined
 
     const baseSpeed = 10 // km/h base
@@ -506,9 +661,13 @@ export class TrainingPlanGenerator {
       [Intensity.VERY_HIGH]: 1.4,
     }
 
-    // Calcul simplifié basé sur l'intensité
-    const duration = this.calculateSessionDuration(sessionType, 4, 4) / 60 // en heures
-    const speed = baseSpeed * (intensityMultipliers[intensity] || 1.0)
+    const duration = Math.max(durationMinutes, 25) / 60 // en heures
+    let speed = baseSpeed * (intensityMultipliers[intensity] || 1.0)
+
+    if (raceAnalysis?.elevationRatio && sessionType !== TrainingType.CROSS_TRAINING) {
+      const climbPenalty = Math.min(raceAnalysis.elevationRatio / 100, 0.3)
+      speed *= 1 - climbPenalty
+    }
 
     return Math.round(duration * speed * 10) / 10 // Arrondi à 0.1 km
   }
@@ -690,7 +849,12 @@ export class TrainingPlanGenerator {
     return recommendations
   }
 
-  private generatePlanSummary(planStructure: any[], userAnalysis: any, raceAnalysis: any) {
+  private generatePlanSummary(
+    planStructure: any[],
+    userAnalysis: any,
+    raceAnalysis: any,
+    metrics: TrainingPlanProgress
+  ) {
     return {
       totalWeeks: planStructure.length,
       totalSessions: planStructure.reduce((sum, week) => sum + week.sessions.length, 0),
@@ -698,6 +862,8 @@ export class TrainingPlanGenerator {
       peakWeek: Math.ceil(planStructure.length * 0.75),
       difficultyLevel: raceAnalysis.difficultyScore,
       userLevel: userAnalysis.experienceMultiplier,
+      totals: metrics,
+      weeklyProgression: metrics.weekly,
     }
   }
 
@@ -751,6 +917,21 @@ export class TrainingPlanGenerator {
     if (weekNumber < phases.base + phases.build) return 'build'
     if (weekNumber < phases.base + phases.build + phases.peak) return 'peak'
     return 'taper'
+  }
+
+  private mapPhaseToPlanPhase(phase: string): PlanPhase {
+    switch (phase) {
+      case 'base':
+        return PlanPhase.BASE
+      case 'build':
+        return PlanPhase.BUILD
+      case 'peak':
+        return PlanPhase.PEAK
+      case 'taper':
+        return PlanPhase.TAPER
+      default:
+        return PlanPhase.RECOVERY
+    }
   }
 
   private getMaxSessionsForLevel(experienceMultiplier: number): number {
@@ -918,12 +1099,18 @@ export class TrainingPlanGenerator {
 
     return planStructure.map(week => ({
       ...week,
-      sessions: week.sessions.map((session: any) => ({
-        ...session,
-        duration: Math.round(session.duration * modifier),
-        // Ajuste l'intensité selon la préférence
-        intensity: this.adjustIntensityLevel(session.intensity, preferences.intensityPreference!)
-      }))
+      sessions: week.sessions.map((session: any) => {
+        const targetDuration = Math.round((session.duration || 0) * modifier)
+        const adjustedSession = this.adjustSessionDuration(session, targetDuration)
+
+        return {
+          ...adjustedSession,
+          intensity: this.adjustIntensityLevel(
+            session.intensity,
+            preferences.intensityPreference!
+          ),
+        }
+      })
     }))
   }
 
@@ -992,36 +1179,85 @@ export class TrainingPlanGenerator {
    */
   private adaptForTimeConstraints(
     planStructure: any[],
-    constraints: GenerationPreferences['timeConstraints']
+    constraints: GenerationPreferences['timeConstraints'],
+    preferredDays?: number[],
+    startDate?: Date
   ): any[] {
-    if (!constraints) return planStructure
+    if (!constraints && !preferredDays?.length) return planStructure
 
-    return planStructure.map(week => ({
-      ...week,
-      sessions: week.sessions.map((session: any, index: number) => {
-        const dayOfWeek = index % 7
+    return planStructure.map((week, weekIndex) => {
+      const weekStart = startDate ? new Date(startDate) : undefined
+      if (weekStart) {
+        weekStart.setDate(weekStart.getDate() + weekIndex * 7)
+      }
 
-        // Adapte selon les jours de travail
-        if (constraints.workDays?.includes(dayOfWeek)) {
-          return {
-            ...session,
-            duration: Math.min(session.duration, 60), // Max 1h les jours de travail
-            description: `${session.description} (version courte)`
+      const sessionDaySequence = preferredDays && preferredDays.length > 0
+        ? [...preferredDays]
+        : undefined
+
+      let sequenceIndex = 0
+
+      const sessions = week.sessions.map((session: any, index: number) => {
+        const assignedDay = sessionDaySequence
+          ? sessionDaySequence[sequenceIndex++ % sessionDaySequence.length]!
+          : index % 7
+
+        let adaptedSession = {
+          ...session,
+          scheduledDay: assignedDay,
+        }
+
+        if (constraints?.workDays?.includes(assignedDay)) {
+          const adjusted = this.adjustSessionDuration(
+            adaptedSession,
+            Math.min(adaptedSession.duration || 0, 60)
+          )
+          adaptedSession = {
+            ...adjusted,
+            description: `${adjusted.description} (version courte jour de travail)`,
+            isCondensed: true,
           }
         }
 
-        // Adapte les weekends
-        if ([0, 6].includes(dayOfWeek) && constraints.maxWeekendDuration) {
-          return {
-            ...session,
-            duration: Math.min(session.duration, constraints.maxWeekendDuration),
-            description: `${session.description} (weekend adapté)`
+        if ([0, 6].includes(assignedDay) && constraints?.maxWeekendDuration) {
+          const adjusted = this.adjustSessionDuration(
+            adaptedSession,
+            Math.min(adaptedSession.duration || 0, constraints.maxWeekendDuration)
+          )
+          adaptedSession = {
+            ...adjusted,
+            description: `${adjusted.description} (weekend adapté)`,
           }
         }
 
-        return session
+        if (constraints?.vacationPeriods?.length && weekStart) {
+          const sessionDate = new Date(weekStart)
+          sessionDate.setDate(sessionDate.getDate() + assignedDay)
+
+          const isVacation = constraints.vacationPeriods.some((period) =>
+            sessionDate >= period.start && sessionDate <= period.end
+          )
+
+          if (isVacation) {
+            const adjusted = this.adjustSessionDuration(
+              adaptedSession,
+              Math.round((adaptedSession.duration || 0) * 0.6)
+            )
+            adaptedSession = {
+              ...adjusted,
+              description: `${adjusted.description} (adaptée période de repos)`,
+            }
+          }
+        }
+
+        return adaptedSession
       })
-    }))
+
+      return {
+        ...week,
+        sessions,
+      }
+    })
   }
 
   /**
@@ -1029,31 +1265,48 @@ export class TrainingPlanGenerator {
    */
   private applyAdvancedPersonalization(
     planStructure: any[],
-    preferences: GenerationPreferences
+    preferences: GenerationPreferences,
+    userAnalysis: any,
+    raceAnalysis: any,
+    startDate: Date
   ): any[] {
-    let adaptedPlan = planStructure
+    let adaptedPlan = [...planStructure]
 
-    // Adaptation selon l'intensité préférée
+    adaptedPlan = this.injectRecoveryWeeks(adaptedPlan, startDate)
+    adaptedPlan = this.adaptForExperienceLevel(adaptedPlan, userAnalysis)
+    adaptedPlan = this.applyFocusAreas(adaptedPlan, preferences.focusAreas)
+    adaptedPlan = this.adaptForElevation(adaptedPlan, raceAnalysis)
+
+    if (preferences.maxSessionDuration) {
+      adaptedPlan = this.enforceSessionCaps(adaptedPlan, preferences.maxSessionDuration)
+    }
+
     if (preferences.intensityPreference) {
       adaptedPlan = this.adaptPlanIntensity(adaptedPlan, preferences)
     }
 
-    // Adaptation selon l'historique de blessures
     if (preferences.injuryHistory?.length) {
       adaptedPlan = this.adaptForInjuryHistory(adaptedPlan, preferences.injuryHistory)
     }
 
-    // Adaptation selon les contraintes temporelles
-    if (preferences.timeConstraints) {
-      adaptedPlan = this.adaptForTimeConstraints(adaptedPlan, preferences.timeConstraints)
+    if (preferences.timeConstraints || preferences.preferredDays?.length) {
+      adaptedPlan = this.adaptForTimeConstraints(
+        adaptedPlan,
+        preferences.timeConstraints,
+        preferences.preferredDays,
+        startDate
+      )
     }
 
-    // Augmentation de la récupération si nécessaire
     if (preferences.recoveryNeeds === 'high') {
       adaptedPlan = this.increaseRecoveryFocus(adaptedPlan)
     }
 
-    return adaptedPlan
+    if (preferences.adaptToWeather) {
+      adaptedPlan = this.addWeatherContingencies(adaptedPlan)
+    }
+
+    return this.recalculatePlanMetrics(adaptedPlan)
   }
 
   /**
@@ -1065,17 +1318,242 @@ export class TrainingPlanGenerator {
       sessions: week.sessions.map((session: any, index: number) => {
         // Ajoute une séance de récupération tous les 3 jours
         if (index % 3 === 2) {
+          const adjusted = this.adjustSessionDuration(
+            session,
+            Math.min(session.duration || 0, 45)
+          )
+
           return {
-            ...session,
+            ...adjusted,
             type: TrainingType.RECOVERY,
             intensity: Intensity.VERY_LOW,
-            duration: Math.min(session.duration, 45),
-            description: 'Récupération active - footing léger ou étirements'
+            description: 'Récupération active - footing léger ou étirements',
+            recoveryFocus: true,
           }
         }
         return session
       })
     }))
+  }
+
+  private injectRecoveryWeeks(planStructure: any[], startDate: Date): any[] {
+    return planStructure.map((week, index) => {
+      if (week.phase === 'taper') return week
+      if ((index + 1) % 4 !== 0) return week
+
+      const adjustedSessions = week.sessions.map((session: any) => {
+        const reducedTarget = Math.round((session.duration || 0) * 0.75)
+        const adjusted = this.adjustSessionDuration(session, reducedTarget)
+
+        return {
+          ...adjusted,
+          description: `${adjusted.description} (semaine de décharge)`,
+          deloadWeek: true,
+        }
+      })
+
+      return {
+        ...week,
+        deload: true,
+        deloadStart: new Date(startDate.getTime() + index * 7 * 24 * 60 * 60 * 1000),
+        sessions: adjustedSessions,
+      }
+    })
+  }
+
+  private adaptForExperienceLevel(planStructure: any[], userAnalysis: any): any[] {
+    const experienceMultiplier = userAnalysis.experienceMultiplier || 1
+
+    return planStructure.map(week => {
+      const sessions = week.sessions.map((session: any) => {
+        if (experienceMultiplier <= 0.8) {
+          const targetDuration = Math.round((session.duration || 0) * 0.9)
+          const adjusted = this.adjustSessionDuration(session, targetDuration)
+          return {
+            ...adjusted,
+            description: `${adjusted.description} (volume adapté débutant)`
+          }
+        }
+
+        if (experienceMultiplier >= 1.3 && session.intensity !== Intensity.VERY_LOW) {
+          const targetDuration = Math.round((session.duration || 0) * 1.1)
+          const adjusted = this.adjustSessionDuration(session, targetDuration)
+          return {
+            ...adjusted,
+            description: `${adjusted.description} (volume avancé)`
+          }
+        }
+
+        return session
+      })
+
+      return {
+        ...week,
+        sessions,
+      }
+    })
+  }
+
+  private applyFocusAreas(planStructure: any[], focusAreas?: GenerationPreferences['focusAreas']): any[] {
+    if (!focusAreas || focusAreas.length === 0) return planStructure
+
+    return planStructure.map(week => {
+      const sessions = [...week.sessions]
+
+      if (focusAreas.includes('strength')) {
+        const strengthIndex = sessions.findIndex((session: any) => session.type === TrainingType.STRENGTH)
+        if (strengthIndex === -1 && sessions.length > 0) {
+          const targetIndex = sessions.findIndex((session: any) => session.type === TrainingType.ENDURANCE)
+          if (targetIndex >= 0) {
+            const session = sessions[targetIndex]
+            sessions[targetIndex] = {
+              ...session,
+              type: TrainingType.STRENGTH,
+              intensity: Intensity.MODERATE,
+              description: `${session.description} (convertie en renforcement spécifique trail)`
+            }
+          }
+        }
+      }
+
+      if (focusAreas.includes('speed')) {
+        const intervalIndex = sessions.findIndex((session: any) => session.type === TrainingType.INTERVAL)
+        if (intervalIndex >= 0) {
+          sessions[intervalIndex] = {
+            ...sessions[intervalIndex],
+            description: `${sessions[intervalIndex].description} (mettre l'accent sur la vitesse)`
+          }
+        }
+      }
+
+      if (focusAreas.includes('technical')) {
+        const enduranceSession = sessions.find((session: any) => session.type === TrainingType.ENDURANCE)
+        if (enduranceSession) {
+          enduranceSession.description = `${enduranceSession.description} (terrain technique, travail proprioception)`
+          enduranceSession.technicalFocus = true
+        }
+      }
+
+      if (focusAreas.includes('endurance')) {
+        const longRunIndex = sessions
+          .map((session: any) => session.duration || 0)
+          .indexOf(Math.max(...sessions.map((session: any) => session.duration || 0)))
+
+        if (longRunIndex >= 0) {
+          const session = sessions[longRunIndex]
+          const targetDuration = Math.round((session.duration || 0) * 1.1)
+          sessions[longRunIndex] = {
+            ...this.adjustSessionDuration(session, targetDuration),
+            description: `${session.description} (sortie longue accentuée)`
+          }
+        }
+      }
+
+      return {
+        ...week,
+        sessions,
+      }
+    })
+  }
+
+  private adaptForElevation(planStructure: any[], raceAnalysis: any): any[] {
+    if (!raceAnalysis?.elevationRatio || raceAnalysis.elevationRatio < 15) {
+      return planStructure
+    }
+
+    return planStructure.map(week => {
+      const sessions = week.sessions.map((session: any) => {
+        if (session.type === TrainingType.ENDURANCE) {
+          return {
+            ...session,
+            description: `${session.description} (inclure dénivelé spécifique)`
+          }
+        }
+
+        if (session.type === TrainingType.INTERVAL) {
+          return {
+            ...session,
+            description: `${session.description} (ajouter côtes courtes)`
+          }
+        }
+
+        return session
+      })
+
+      return {
+        ...week,
+        elevationFocused: true,
+        sessions,
+      }
+    })
+  }
+
+  private enforceSessionCaps(planStructure: any[], maxDuration: number): any[] {
+    return planStructure.map(week => ({
+      ...week,
+      sessions: week.sessions.map((session: any) => {
+        if (!session.duration || session.duration <= maxDuration) return session
+        return this.adjustSessionDuration(session, maxDuration)
+      }),
+    }))
+  }
+
+  private addWeatherContingencies(planStructure: any[]): any[] {
+    return planStructure.map(week => ({
+      ...week,
+      sessions: week.sessions.map((session: any) => {
+        if (session.type === TrainingType.INTERVAL || session.type === TrainingType.THRESHOLD) {
+          return {
+            ...session,
+            contingencies: this.generateSessionAlternatives(session, { weather: 'rain' })
+          }
+        }
+        return session
+      })
+    }))
+  }
+
+  private recalculatePlanMetrics(planStructure: any[]): any[] {
+    return planStructure.map(week => {
+      const totalDuration = week.sessions.reduce(
+        (sum: number, session: any) => sum + (session.duration || 0),
+        0
+      )
+
+      const totalDistance = week.sessions.reduce(
+        (sum: number, session: any) => sum + (session.distance || 0),
+        0
+      )
+
+      return {
+        ...week,
+        totalDuration,
+        totalDistance: Math.round(totalDistance * 10) / 10,
+      }
+    })
+  }
+
+  private adjustSessionDuration(session: any, targetDuration: number) {
+    const safeDuration = Math.max(Math.round(targetDuration), 20)
+    const currentDuration = session.duration || safeDuration
+
+    if (currentDuration === safeDuration) {
+      return {
+        ...session,
+        duration: safeDuration,
+      }
+    }
+
+    const ratio = safeDuration / Math.max(currentDuration, 1)
+    const adjustedDistance = session.distance
+      ? Math.round((session.distance * ratio) * 10) / 10
+      : session.distance
+
+    return {
+      ...session,
+      duration: safeDuration,
+      distance: adjustedDistance,
+    }
   }
 }
 

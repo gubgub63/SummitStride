@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { TrainingPlan, TrainingSession } from '@coach-ia-hugo/shared'
+import { TrainingPlan, TrainingPlanStatus, TrainingSession } from '@coach-ia-hugo/shared'
 import trainingService from '../services/trainingService'
 
 interface UseTrainingPlansReturn {
@@ -15,6 +15,7 @@ interface UseTrainingPlansReturn {
   createPlan: (data: any) => Promise<TrainingPlan>
   generatePlan: (data: any) => Promise<any>
   deletePlan: (id: string) => Promise<void>
+  updatePlanStatus: (id: string, status: TrainingPlanStatus) => Promise<TrainingPlan>
 }
 
 interface UseTrainingSessionsReturn {
@@ -104,6 +105,23 @@ export function useTrainingPlans(): UseTrainingPlansReturn {
     }
   }, [])
 
+  const updatePlanStatus = useCallback(async (
+    id: string,
+    status: TrainingPlanStatus
+  ): Promise<TrainingPlan> => {
+    setError(null)
+
+    try {
+      const updatedPlan = await trainingService.updateTrainingPlanStatus(id, status)
+      setPlans(prev => prev.map(plan => (plan.id === id ? updatedPlan : plan)))
+      return updatedPlan
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour du statut du plan'
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    }
+  }, [])
+
   useEffect(() => {
     refreshPlans()
   }, [refreshPlans])
@@ -116,6 +134,7 @@ export function useTrainingPlans(): UseTrainingPlansReturn {
     createPlan,
     generatePlan,
     deletePlan,
+    updatePlanStatus,
   }
 }
 

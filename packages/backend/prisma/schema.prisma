@@ -90,12 +90,19 @@ model TrainingPlan {
   endDate      DateTime
   targetRaceId String?
   status       TrainingPlanStatus @default(DRAFT)
+  sourceTemplateId String?
+  totalDuration Int?
+  totalDistance Float?
+  loadScore     Int?
+  progression   Json?
+  lastAnalyzedAt DateTime?
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
   // Relations
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   targetRace      Course?           @relation(fields: [targetRaceId], references: [id])
+  sourceTemplate  TrainingPlanTemplate? @relation(fields: [sourceTemplateId], references: [id], onDelete: SetNull)
   trainingSessions TrainingSession[]
 
   @@map("training_plans")
@@ -113,6 +120,11 @@ model TrainingSession {
   distance    Float? // in kilometers
   intensity   Intensity
   completed   Boolean           @default(false)
+  templateSessionId String?
+  phase        PlanPhase?
+  weekNumber   Int?
+  dayOfWeek    Int?
+  plannedLoad  Int?
 
   // Session Metrics (flattened)
   actualDuration      Int? // in minutes
@@ -130,8 +142,48 @@ model TrainingSession {
   // Relations
   user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan TrainingPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  templateSession TrainingSessionTemplate? @relation("TemplateSessions", fields: [templateSessionId], references: [id], onDelete: SetNull)
 
   @@map("training_sessions")
+}
+
+model TrainingPlanTemplate {
+  id               String      @id @default(cuid())
+  name             String
+  description      String?
+  targetCategory   String
+  targetExperience ExperienceLevel?
+  durationWeeks    Int
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  // Relations
+  sessions      TrainingSessionTemplate[]
+  trainingPlans TrainingPlan[]
+
+  @@map("training_plan_templates")
+}
+
+model TrainingSessionTemplate {
+  id             String     @id @default(cuid())
+  planTemplateId String
+  phase          PlanPhase
+  weekOffset     Int
+  dayOfWeek      Int
+  type           TrainingType
+  intensity      Intensity
+  duration       Int?
+  distance       Float?
+  description    String?
+  focusAreas     String[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  // Relations
+  planTemplate    TrainingPlanTemplate   @relation(fields: [planTemplateId], references: [id], onDelete: Cascade)
+  trainingSessions TrainingSession[]     @relation("TemplateSessions")
+
+  @@map("training_session_templates")
 }
 
 // Course Related Tables
@@ -256,6 +308,14 @@ enum TrainingPlanStatus {
   ACTIVE
   COMPLETED
   PAUSED
+}
+
+enum PlanPhase {
+  BASE
+  BUILD
+  PEAK
+  TAPER
+  RECOVERY
 }
 
 enum TrainingType {

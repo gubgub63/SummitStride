@@ -5,9 +5,141 @@
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
-import { TrainingPlanStatus, TrainingType, Intensity } from '@coach-ia-hugo/shared'
+import { TrainingPlanStatus, TrainingType, Intensity, PlanPhase } from '@coach-ia-hugo/shared'
 import { authMiddleware } from '../middleware/auth'
 import { TrainingPlanGenerator } from '../services/trainingPlanGenerator'
+import { TrainingPlanAnalytics } from '../services/trainingPlanAnalytics'
+
+const toDate = (value: unknown) => {
+  if (value instanceof Date) return value
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value)
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed
+    }
+  }
+  return value
+}
+
+const vacationPeriodSchema = z.object({
+  start: z.preprocess(toDate, z.date()),
+  end: z.preprocess(toDate, z.date()),
+})
+
+const generationPreferencesSchema = z.object({
+  sessionsPerWeek: z.number().min(1).max(7).optional(),
+  preferredDays: z.array(z.number().min(0).max(6)).optional(),
+  maxSessionDuration: z.number().positive().optional(),
+  includeStrength: z.boolean().optional(),
+  includeCrossTraining: z.boolean().optional(),
+  intensityPreference: z.enum(['conservative', 'moderate', 'aggressive']).optional(),
+  recoveryNeeds: z.enum(['low', 'medium', 'high']).optional(),
+  injuryHistory: z.array(z.string()).optional(),
+  focusAreas: z.array(z.enum(['endurance', 'strength', 'technical', 'speed'])).optional(),
+  adaptToWeather: z.boolean().optional(),
+  timeConstraints: z.object({
+    workDays: z.array(z.number().min(0).max(6)).optional(),
+    maxWeekendDuration: z.number().positive().optional(),
+    vacationPeriods: z.array(vacationPeriodSchema).optional(),
+  }).optional(),
+}).default({})
+
+const EXPERIENCE_FITNESS_MAP: Record<string, number> = {
+  BEGINNER: 3,
+  INTERMEDIATE: 5,
+  ADVANCED: 7,
+  EXPERT: 8,
+}
+
+const normalizeDayArray = (days?: Array<number | string>) => {
+  if (!days) return undefined
+  const normalized = days
+    .map((day) => {
+      if (typeof day === 'number') return day
+      const parsed = Number.parseInt(day, 10)
+      return Number.isNaN(parsed) ? undefined : parsed
+    })
+    .filter((day): day is number => day !== undefined)
+
+  return normalized.length > 0 ? normalized : undefined
+}
+
+const buildUserProfileInput = (userRecord: any, overrides: any = {}) => {
+  const profile = userRecord?.profile
+  const experienceLevel =
+    overrides.experienceLevel || profile?.experienceLevel || 'INTERMEDIATE'
+
+  const availableTrainingDaysOverride = normalizeDayArray(overrides.availableTrainingDays)
+  const preferredTrainingDays = normalizeDayArray(profile?.preferredTrainingDays)
+
+  const availableTrainingDays =
+    availableTrainingDaysOverride?.map((day) => day.toString()) ||
+    preferredTrainingDays?.map((day) => day.toString()) ||
+    ['1', '3', '5']
+
+  const derivedFitness = EXPERIENCE_FITNESS_MAP[experienceLevel] || 5
+
+  return {
+    experienceLevel,
+    currentFitnessLevel: overrides.currentFitnessLevel || derivedFitness,
+    vma: overrides.vma ?? profile?.vma ?? 14,
+    weight: overrides.weight ?? profile?.weight ?? undefined,
+    weeklyTrainingHours:
+      overrides.weeklyTrainingHours ?? profile?.maxTrainingHoursPerWeek ?? 6,
+    availableTrainingDays,
+    goals: overrides.goals ?? profile?.fitnessGoals ?? ['PERFORMANCE'],
+    medicalConditions: overrides.medicalConditions ?? profile?.medicalConditions ?? [],
+  }
+}
+
+const buildGenerationPreferences = (
+  rawPreferences: z.infer<typeof generationPreferencesSchema>,
+  profile: any,
+  userProfileInput: ReturnType<typeof buildUserProfileInput>
+) => {
+  const preferredDays = normalizeDayArray(rawPreferences.preferredDays) || normalizeDayArray(profile?.preferredTrainingDays)
+
+  const inferredSessionsPerWeek = rawPreferences.sessionsPerWeek ?? Math.min(
+    preferredDays?.length || userProfileInput.availableTrainingDays.length || 4,
+    7
+  )
+
+  const weeklyHours = userProfileInput.weeklyTrainingHours || profile?.maxTrainingHoursPerWeek || 6
+  const computedSessionCap = Math.round((weeklyHours / inferredSessionsPerWeek) * 60)
+  const safeSessionCap = Math.min(Math.max(computedSessionCap, 30), 180)
+  const inferredMaxSessionDuration = rawPreferences.maxSessionDuration ?? safeSessionCap
+
+  const injuryHistory = rawPreferences.injuryHistory
+    ? Array.from(
+        new Set([
+          ...rawPreferences.injuryHistory,
+          ...(userProfileInput.medicalConditions || []),
+        ])
+      )
+    : userProfileInput.medicalConditions
+
+  const baseTimeConstraints = rawPreferences.timeConstraints
+    ? {
+        ...rawPreferences.timeConstraints,
+        workDays: normalizeDayArray(rawPreferences.timeConstraints.workDays) || undefined,
+        vacationPeriods: rawPreferences.timeConstraints.vacationPeriods || undefined,
+      }
+    : undefined
+
+  return {
+    sessionsPerWeek: inferredSessionsPerWeek,
+    preferredDays,
+    maxSessionDuration: inferredMaxSessionDuration,
+    includeStrength: rawPreferences.includeStrength ?? true,
+    includeCrossTraining: rawPreferences.includeCrossTraining ?? false,
+    intensityPreference: rawPreferences.intensityPreference ?? 'moderate',
+    recoveryNeeds: rawPreferences.recoveryNeeds ?? 'medium',
+    injuryHistory,
+    focusAreas: rawPreferences.focusAreas ?? [],
+    adaptToWeather: rawPreferences.adaptToWeather ?? false,
+    timeConstraints: baseTimeConstraints,
+  }
+}
 
 // Schémas de validation
 const createTrainingPlanSchema = z.object({
@@ -33,13 +165,32 @@ const generatePlanSchema = z.object({
   targetRaceId: z.string(),
   startDate: z.string().transform((str) => new Date(str)),
   endDate: z.string().transform((str) => new Date(str)),
-  preferences: z.object({
-    sessionsPerWeek: z.number().min(1).max(7).default(4),
-    preferredDays: z.array(z.number().min(0).max(6)).optional(),
-    maxSessionDuration: z.number().positive().default(120), // minutes
-    includeStrength: z.boolean().default(true),
-    includeCrossTraining: z.boolean().default(false),
-  }).optional().default({}),
+  preferences: generationPreferencesSchema.optional().default({}),
+})
+
+const sessionTemplateInputSchema = z.object({
+  phase: z.nativeEnum(PlanPhase),
+  weekOffset: z.number().int().min(0),
+  dayOfWeek: z.number().int().min(0).max(6),
+  type: z.nativeEnum(TrainingType),
+  intensity: z.nativeEnum(Intensity),
+  duration: z.number().int().positive().optional(),
+  distance: z.number().positive().optional(),
+  description: z.string().max(500).optional(),
+  focusAreas: z.array(z.string().min(1)).optional().default([]),
+})
+
+const planTemplateInputSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  targetCategory: z.string().min(1),
+  targetExperience: z.string().optional(),
+  durationWeeks: z.number().int().min(1),
+  sessions: z.array(sessionTemplateInputSchema).min(1),
+})
+
+const updatePlanStatusSchema = z.object({
+  status: z.nativeEnum(TrainingPlanStatus),
 })
 
 export async function trainingRoutes(fastify: FastifyInstance) {
@@ -442,17 +593,17 @@ export async function trainingRoutes(fastify: FastifyInstance) {
         const validatedData = generatePlanSchema.parse(request.body)
 
         // Récupération des données utilisateur et course
-        const [userProfile, targetRace] = await Promise.all([
+        const [userRecord, targetRace] = await Promise.all([
           fastify.prisma.user.findUnique({
             where: { id: user.userId || user.id },
-            include: { preferences: true },
+            include: { profile: true, preferences: true },
           }),
           fastify.prisma.course.findUnique({
             where: { id: validatedData.targetRaceId },
           }),
         ])
 
-        if (!userProfile) {
+        if (!userRecord) {
           return reply.code(400).send({
             success: false,
             error: 'Profil utilisateur incomplet. Veuillez compléter votre profil d\'abord.',
@@ -466,32 +617,18 @@ export async function trainingRoutes(fastify: FastifyInstance) {
           })
         }
 
-        // Adaptation du profil utilisateur
-        const adaptedUserProfile = {
-          experienceLevel: 'INTERMEDIATE', // Default value - should come from user profile
-          currentFitnessLevel: 3, // Default value - should come from user profile
-          vma: 15, // Default value - should come from user profile
-          weight: 70, // Default value - should come from user profile
-          weeklyTrainingHours: 6, // Default value - should come from user profile
-          availableTrainingDays: ['1', '2', '3', '4', '5'], // Default value - should come from user profile
-          goals: ['PERFORMANCE'], // Default value - should come from user profile
-          medicalConditions: [], // Default value - should come from user profile
-        }
-
-        // Adaptation des préférences
-        const adaptedPreferences = {
-          sessionsPerWeek: validatedData.preferences?.sessionsPerWeek || 4,
-          ...(validatedData.preferences?.preferredDays && { preferredDays: validatedData.preferences.preferredDays }),
-          maxSessionDuration: validatedData.preferences?.maxSessionDuration || 120,
-          includeStrength: validatedData.preferences?.includeStrength || true,
-          includeCrossTraining: validatedData.preferences?.includeCrossTraining || false,
-        }
+        const userProfileInput = buildUserProfileInput(userRecord)
+        const adaptedPreferences = buildGenerationPreferences(
+          validatedData.preferences,
+          userRecord.profile,
+          userProfileInput
+        )
 
         // Génération du plan avec l'algorithme
         const generatedPlan = await trainingPlanGenerator.generatePlan({
           user: {
             id: user.userId || user.id,
-            profile: adaptedUserProfile,
+            profile: userProfileInput,
           },
           targetRace,
           startDate: validatedData.startDate,
@@ -563,6 +700,111 @@ export async function trainingRoutes(fastify: FastifyInstance) {
       }
     )
 
+    // GET /api/training-plans/:id/progression - Progression agrégée
+    fastify.get<{ Params: { id: string } }>(
+      '/training-plans/:id/progression',
+      async (request, reply) => {
+        try {
+          const user = (request as any).user
+          const { id } = request.params
+
+          const plan = await fastify.prisma.trainingPlan.findFirst({
+            where: {
+              id,
+              userId: user.userId || user.id,
+            },
+            include: {
+              trainingSessions: {
+                orderBy: { date: 'asc' },
+              },
+            },
+          })
+
+          if (!plan) {
+            return reply.code(404).send({
+              success: false,
+              error: 'Plan d\'entraînement non trouvé',
+            })
+          }
+
+          const metrics = TrainingPlanAnalytics.summarizeSessions(plan.trainingSessions)
+
+          await fastify.prisma.trainingPlan.update({
+            where: { id: plan.id },
+            data: {
+              totalDuration: metrics.totalDuration,
+              totalDistance: metrics.totalDistance,
+              loadScore: metrics.loadScore,
+              progression: metrics.weekly,
+              lastAnalyzedAt: new Date(),
+            },
+          })
+
+          reply.send({
+            success: true,
+            data: metrics,
+          })
+        } catch (error) {
+          fastify.log.error(error)
+          reply.code(500).send({
+            success: false,
+            error: 'Erreur lors du calcul de la progression',
+          })
+        }
+      }
+    )
+
+    // PATCH /api/training-plans/:id/status - Mise à jour du statut
+    fastify.patch<{ Params: { id: string } }>(
+      '/training-plans/:id/status',
+      async (request, reply) => {
+        try {
+          const user = (request as any).user
+          const { id } = request.params
+          const { status } = updatePlanStatusSchema.parse(request.body)
+
+          const updated = await fastify.prisma.trainingPlan.updateMany({
+            where: {
+              id,
+              userId: user.userId || user.id,
+            },
+            data: { status },
+          })
+
+          if (updated.count === 0) {
+            return reply.code(404).send({
+              success: false,
+              error: 'Plan d\'entraînement non trouvé',
+            })
+          }
+
+          const plan = await fastify.prisma.trainingPlan.findUnique({
+            where: { id },
+          })
+
+          reply.send({
+            success: true,
+            data: plan,
+            message: 'Statut du plan mis à jour',
+          })
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            return reply.code(400).send({
+              success: false,
+              error: 'Données invalides',
+              details: error.errors,
+            })
+          }
+
+          fastify.log.error(error)
+          reply.code(500).send({
+            success: false,
+            error: 'Erreur lors de la mise à jour du statut',
+          })
+        }
+      }
+    )
+
     // ============================
     // PHASE 5.2 - PERSONNALISATION AVANCÉE
     // ============================
@@ -616,34 +858,34 @@ export async function trainingRoutes(fastify: FastifyInstance) {
         const user = (request as any).user
         const body = request.body as any
 
-        const advancedPreferences = {
-          ...body.preferences,
-          // Phase 5.2 - Nouvelles options
-          intensityPreference: body.intensityPreference || 'moderate',
-          recoveryNeeds: body.recoveryNeeds || 'medium',
-          injuryHistory: body.injuryHistory || [],
-          focusAreas: body.focusAreas || ['endurance'],
-          adaptToWeather: body.adaptToWeather || false,
-          timeConstraints: body.timeConstraints || {}
+        const mergedPreferences = {
+          ...(body.preferences || {}),
+          intensityPreference:
+            body.intensityPreference ?? body.preferences?.intensityPreference,
+          recoveryNeeds: body.recoveryNeeds ?? body.preferences?.recoveryNeeds,
+          injuryHistory: body.injuryHistory ?? body.preferences?.injuryHistory,
+          focusAreas: body.focusAreas ?? body.preferences?.focusAreas,
+          adaptToWeather: body.adaptToWeather ?? body.preferences?.adaptToWeather,
+          timeConstraints: body.timeConstraints || body.preferences?.timeConstraints,
         }
 
         const validatedData = generatePlanSchema.parse({
           ...body,
-          preferences: advancedPreferences
+          preferences: mergedPreferences,
         })
 
         // Récupération des données utilisateur et course
-        const [userProfile, targetRace] = await Promise.all([
+        const [userRecord, targetRace] = await Promise.all([
           fastify.prisma.user.findUnique({
             where: { id: user.userId || user.id },
-            include: { preferences: true },
+            include: { profile: true, preferences: true },
           }),
           fastify.prisma.course.findUnique({
             where: { id: validatedData.targetRaceId },
           }),
         ])
 
-        if (!userProfile) {
+        if (!userRecord) {
           return reply.code(400).send({
             success: false,
             error: 'Profil utilisateur incomplet. Veuillez compléter votre profil d\'abord.',
@@ -657,28 +899,23 @@ export async function trainingRoutes(fastify: FastifyInstance) {
           })
         }
 
-        // Adaptation du profil utilisateur avec données personnalisées
-        const adaptedUserProfile = {
-          experienceLevel: body.userProfile?.experienceLevel || 'INTERMEDIATE',
-          currentFitnessLevel: body.userProfile?.currentFitnessLevel || 3,
-          vma: body.userProfile?.vma || 15,
-          weight: body.userProfile?.weight || 70,
-          weeklyTrainingHours: body.userProfile?.weeklyTrainingHours || 6,
-          availableTrainingDays: body.userProfile?.availableTrainingDays || ['1', '2', '3', '4', '5'],
-          goals: body.userProfile?.goals || ['PERFORMANCE'],
-          medicalConditions: body.userProfile?.medicalConditions || [],
-        }
+        const userProfileInput = buildUserProfileInput(userRecord, body.userProfile)
+        const adaptedPreferences = buildGenerationPreferences(
+          validatedData.preferences,
+          userRecord.profile,
+          userProfileInput
+        )
 
         // Génération du plan avec personnalisation avancée
         const generatedPlan = await trainingPlanGenerator.generatePlan({
           user: {
             id: user.userId || user.id,
-            profile: adaptedUserProfile,
+            profile: userProfileInput,
           },
           targetRace,
           startDate: validatedData.startDate,
           endDate: validatedData.endDate,
-          preferences: advancedPreferences,
+          preferences: adaptedPreferences,
         })
 
         reply.code(201).send({
@@ -702,5 +939,234 @@ export async function trainingRoutes(fastify: FastifyInstance) {
         })
       }
     })
+
+    // ============================
+    // PLAN TEMPLATES MANAGEMENT
+    // ============================
+
+    // GET /api/training-plan-templates - Liste des templates
+    fastify.get('/training-plan-templates', async (_request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const templates = await fastify.prisma.trainingPlanTemplate.findMany({
+          include: {
+            sessions: {
+              orderBy: [{ weekOffset: 'asc' }, { dayOfWeek: 'asc' }],
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+
+        reply.send({
+          success: true,
+          data: templates,
+        })
+      } catch (error) {
+        fastify.log.error(error)
+        reply.code(500).send({
+          success: false,
+          error: 'Erreur lors de la récupération des templates',
+        })
+      }
+    })
+
+    // GET /api/training-plan-templates/:id - Détail d'un template
+    fastify.get<{ Params: { id: string } }>(
+      '/training-plan-templates/:id',
+      async (request, reply) => {
+        try {
+          const { id } = request.params
+
+          const template = await fastify.prisma.trainingPlanTemplate.findUnique({
+            where: { id },
+            include: {
+              sessions: {
+                orderBy: [{ weekOffset: 'asc' }, { dayOfWeek: 'asc' }],
+              },
+            },
+          })
+
+          if (!template) {
+            return reply.code(404).send({
+              success: false,
+              error: 'Template introuvable',
+            })
+          }
+
+          reply.send({
+            success: true,
+            data: template,
+          })
+        } catch (error) {
+          fastify.log.error(error)
+          reply.code(500).send({
+            success: false,
+            error: 'Erreur lors de la récupération du template',
+          })
+        }
+      }
+    )
+
+    // POST /api/training-plan-templates - Création d'un template
+    fastify.post('/training-plan-templates', async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const body = planTemplateInputSchema.parse(request.body)
+
+        const template = await fastify.prisma.$transaction(async (tx) => {
+          const createdTemplate = await tx.trainingPlanTemplate.create({
+            data: {
+              name: body.name,
+              description: body.description ?? null,
+              targetCategory: body.targetCategory,
+              targetExperience: body.targetExperience ?? null,
+              durationWeeks: body.durationWeeks,
+            },
+          })
+
+          await Promise.all(
+            body.sessions.map((session) =>
+              tx.trainingSessionTemplate.create({
+                data: {
+                  planTemplateId: createdTemplate.id,
+                  phase: session.phase,
+                  weekOffset: session.weekOffset,
+                  dayOfWeek: session.dayOfWeek,
+                  type: session.type,
+                  intensity: session.intensity,
+                  duration: session.duration ?? null,
+                  distance: session.distance ?? null,
+                  description: session.description ?? null,
+                  focusAreas: session.focusAreas ?? [],
+                },
+              })
+            )
+          )
+
+          return tx.trainingPlanTemplate.findUnique({
+            where: { id: createdTemplate.id },
+            include: {
+              sessions: {
+                orderBy: [{ weekOffset: 'asc' }, { dayOfWeek: 'asc' }],
+              },
+            },
+          })
+        })
+
+        reply.code(201).send({
+          success: true,
+          data: template,
+          message: 'Template créé avec succès',
+        })
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Données invalides',
+            details: error.errors,
+          })
+        }
+
+        fastify.log.error(error)
+        reply.code(500).send({
+          success: false,
+          error: 'Erreur lors de la création du template',
+        })
+      }
+    })
+
+    const planTemplateUpdateSchema = planTemplateInputSchema.partial()
+
+    // PUT /api/training-plan-templates/:id - Mise à jour d'un template
+    fastify.put<{ Params: { id: string } }>(
+      '/training-plan-templates/:id',
+      async (request, reply) => {
+        try {
+          const { id } = request.params
+          const body = planTemplateUpdateSchema.parse(request.body)
+
+          const template = await fastify.prisma.$transaction(async (tx) => {
+            const updatedTemplate = await tx.trainingPlanTemplate.update({
+              where: { id },
+              data: {
+                name: body.name ?? undefined,
+                description: body.description ?? undefined,
+                targetCategory: body.targetCategory ?? undefined,
+                targetExperience: body.targetExperience ?? undefined,
+                durationWeeks: body.durationWeeks ?? undefined,
+              },
+            })
+
+            if (body.sessions) {
+              await tx.trainingSessionTemplate.deleteMany({
+                where: { planTemplateId: id },
+              })
+
+              await Promise.all(
+                body.sessions.map((session) =>
+                  tx.trainingSessionTemplate.create({
+                    data: {
+                      planTemplateId: id,
+                      phase: session.phase,
+                      weekOffset: session.weekOffset,
+                      dayOfWeek: session.dayOfWeek,
+                      type: session.type,
+                      intensity: session.intensity,
+                      duration: session.duration ?? null,
+                      distance: session.distance ?? null,
+                      description: session.description ?? null,
+                      focusAreas: session.focusAreas ?? [],
+                    },
+                  })
+                )
+              )
+            }
+
+            return tx.trainingPlanTemplate.findUnique({
+              where: { id: updatedTemplate.id },
+              include: {
+                sessions: {
+                  orderBy: [{ weekOffset: 'asc' }, { dayOfWeek: 'asc' }],
+                },
+              },
+            })
+          })
+
+          if (!template) {
+            return reply.code(404).send({
+              success: false,
+              error: 'Template introuvable',
+            })
+          }
+
+          reply.send({
+            success: true,
+            data: template,
+            message: 'Template mis à jour avec succès',
+          })
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            return reply.code(400).send({
+              success: false,
+              error: 'Données invalides',
+              details: error.errors,
+            })
+          }
+
+          if ((error as any)?.code === 'P2025') {
+            return reply.code(404).send({
+              success: false,
+              error: 'Template introuvable',
+            })
+          }
+
+          fastify.log.error(error)
+          reply.code(500).send({
+            success: false,
+            error: 'Erreur lors de la mise à jour du template',
+          })
+        }
+      }
+    )
+
+    // TODO: Ajoutez une route DELETE /api/training-plan-templates/:id pour compléter la gestion des templates.
   })
 }

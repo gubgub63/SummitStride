@@ -405,19 +405,45 @@ La Phase 4 (Interface Utilisateur) est maintenant **complètement terminée** av
 - ✅ Tests fonctionnels : plan généré avec 52 sessions pour 75km ultra-trail
 - ✅ Service frontend pour intégration complète API
 
-### 5.2 Personnalisation des plans
-- [ ] Adaptation selon le niveau d'expérience
-- [ ] Prise en compte des contraintes temporelles
-- [ ] Intégration du dénivelé spécifique
-- [ ] Plans de récupération et tapering
-- [ ] Séances alternatives (mauvais temps, blessure)
+### 5.2 Personnalisation des plans ✅ **TERMINÉ**
+- [x] Adaptation selon le niveau d'expérience
+- [x] Prise en compte des contraintes temporelles
+- [x] Intégration du dénivelé spécifique
+- [x] Plans de récupération et tapering
+- [x] Séances alternatives (mauvais temps, blessure)
+
+**✅ Implémentation réalisée :**
+- Analyse automatique du profil (`experienceLevel`, capacité horaire, historique médical) avec ajustement de volume/intensité
+- Préférences enrichies (jours favoris, limites de durée, focus endurance/vitesse/technique/force)
+- Gestion des contraintes : adaptation semaines décharge, week-ends limités, périodes de vacances, jours de travail
+- Renforcement spécifique montagne via intégration du ratio dénivelé/distance et annotation des séances
+- Génération systématique d'alternatives météo/blessure et insertion de semaines de récupération
+
+**🔗 Endpoints concernés :**
+- `POST /api/training-plans/generate`
+- `POST /api/training-plans/generate-advanced`
+
+**📁 Fichiers clés :**
+- `packages/backend/src/routes/training.ts`
+- `packages/backend/src/services/trainingPlanGenerator.ts`
 
 ### 5.3 Backend des plans d'entraînement
-- [ ] Modèles de données pour plans et séances
-- [ ] API CRUD complète pour plans d'entraînement
-- [ ] Système de templates de séances
-- [ ] Calculs de progression et périodisation
-- [ ] Gestion des adaptations et modifications
+- [x] Modèles de données pour plans et séances
+- [x] API CRUD complète pour plans d'entraînement
+- [x] Système de templates de séances
+- [x] Calculs de progression et périodisation
+- [x] Gestion des adaptations et modifications
+
+**✅ Implémentation réalisée :**
+- Extension Prisma (`TrainingPlanTemplate`, `TrainingSessionTemplate`, métadonnées progression) + génération Prisma à lancer (`npm run db:generate`)
+- Nouvelles routes Fastify : progression agrégée (`GET /api/training-plans/:id/progression`), mise à jour de statut (`PATCH /api/training-plans/:id/status`), gestion des templates (`GET|POST|PUT /api/training-plan-templates`)
+- Service Analytics centralisé (`TrainingPlanAnalytics`) pour charges, volumes, semaines décharge et synchronisation automatique des métriques
+- Générateur mis à jour : planification par phase `PlanPhase`, charges planifiées, stockage progression JSON, insertion automatique dans les nouvelles colonnes
+- Service frontend enrichi (progression, statut, templates) + types partagés (`PlanPhase`, `TrainingPlanProgress`, templates)
+
+**🎯 À faire (apprentissage recommandé) :** implémenter la route `DELETE /api/training-plan-templates/:id` côté backend + méthode correspondante côté `trainingService` pour finaliser le cycle de vie des templates.
+
+**⚠️ À intégrer côté UI :** ajouter dans le dashboard `TrainingPlanDashboard` les formulaires/boutons pour (1) créer/générer un plan en appelant `trainingService.generateTrainingPlan`, (2) activer/suspendre un plan via `updatePlanStatus`, et (3) gérer les templates (listing + actions) afin de connecter les nouvelles APIs au front.
 
 **📋 Backend requis pour Phase 4.6 UI :**
 - Tables TrainingPlan et TrainingSession déjà créées ✅

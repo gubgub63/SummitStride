@@ -3,7 +3,16 @@
  * Phase 5.1 - Intégration frontend-backend
  */
 
-import { TrainingPlan, TrainingSession, TrainingType, Intensity } from '@coach-ia-hugo/shared'
+import {
+  TrainingPlan,
+  TrainingPlanProgress,
+  TrainingPlanTemplate,
+  TrainingPlanStatus,
+  TrainingSession,
+  TrainingType,
+  Intensity,
+  PlanPhase,
+} from '@coach-ia-hugo/shared'
 
 interface GeneratePlanRequest {
   targetRaceId: string
@@ -52,7 +61,33 @@ interface TrainingPlanAnalysis {
   progressionRate: number
   peakWeek: Date
   recommendations: string[]
+  adaptationLevel: 'conservative' | 'moderate' | 'aggressive'
+  recoveryRatio: number
+  injuryRisk: 'low' | 'medium' | 'high'
+  totals: TrainingPlanProgress
+  weeklyProgression: TrainingPlanProgress['weekly']
 }
+
+interface CreateTemplateRequest {
+  name: string
+  description?: string
+  targetCategory: string
+  targetExperience?: string
+  durationWeeks: number
+  sessions: Array<{
+    phase: PlanPhase
+    weekOffset: number
+    dayOfWeek: number
+    type: TrainingType
+    intensity: Intensity
+    duration?: number
+    distance?: number
+    description?: string
+    focusAreas?: string[]
+  }>
+}
+
+type UpdateTemplateRequest = Partial<CreateTemplateRequest>
 
 interface ApiResponse<T> {
   success: boolean
@@ -174,12 +209,12 @@ class TrainingService {
   async generateTrainingPlan(data: GeneratePlanRequest): Promise<{
     plan: TrainingPlan
     sessions: TrainingSession[]
-    analysis: any
+    analysis: TrainingPlanAnalysis
   }> {
     const response = await this.makeRequest<{
       plan: TrainingPlan
       sessions: TrainingSession[]
-      analysis: any
+      analysis: TrainingPlanAnalysis
     }>('/training-plans/generate', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -200,6 +235,35 @@ class TrainingService {
 
     if (!response.data) {
       throw new Error('Erreur lors de l\'analyse du plan')
+    }
+
+    return response.data
+  }
+
+  /**
+   * Récupère la progression agrégée d'un plan
+   */
+  async getTrainingPlanProgression(id: string): Promise<TrainingPlanProgress> {
+    const response = await this.makeRequest<TrainingPlanProgress>(`/training-plans/${id}/progression`)
+
+    if (!response.data) {
+      throw new Error('Erreur lors du calcul de la progression')
+    }
+
+    return response.data
+  }
+
+  /**
+   * Met à jour le statut d'un plan
+   */
+  async updateTrainingPlanStatus(id: string, status: TrainingPlanStatus): Promise<TrainingPlan> {
+    const response = await this.makeRequest<TrainingPlan>(`/training-plans/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    })
+
+    if (!response.data) {
+      throw new Error('Erreur lors de la mise à jour du statut du plan')
     }
 
     return response.data
@@ -293,6 +357,53 @@ class TrainingService {
 
     if (!response.data) {
       throw new Error('Erreur lors de la validation de la séance')
+    }
+
+    return response.data
+  }
+
+  // ============================
+  // PLAN TEMPLATES
+  // ============================
+
+  async listTrainingPlanTemplates(): Promise<TrainingPlanTemplate[]> {
+    const response = await this.makeRequest<TrainingPlanTemplate[]>('/training-plan-templates')
+    return response.data || []
+  }
+
+  async getTrainingPlanTemplate(id: string): Promise<TrainingPlanTemplate | null> {
+    try {
+      const response = await this.makeRequest<TrainingPlanTemplate>(`/training-plan-templates/${id}`)
+      return response.data || null
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('404')) {
+        return null
+      }
+      throw error
+    }
+  }
+
+  async createTrainingPlanTemplate(data: CreateTemplateRequest): Promise<TrainingPlanTemplate> {
+    const response = await this.makeRequest<TrainingPlanTemplate>('/training-plan-templates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+
+    if (!response.data) {
+      throw new Error('Erreur lors de la création du template')
+    }
+
+    return response.data
+  }
+
+  async updateTrainingPlanTemplate(id: string, data: UpdateTemplateRequest): Promise<TrainingPlanTemplate> {
+    const response = await this.makeRequest<TrainingPlanTemplate>(`/training-plan-templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+
+    if (!response.data) {
+      throw new Error('Erreur lors de la mise à jour du template')
     }
 
     return response.data
