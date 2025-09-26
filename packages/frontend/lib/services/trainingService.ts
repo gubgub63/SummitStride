@@ -135,6 +135,10 @@ class TrainingService {
     return localStorage.getItem('auth_token')
   }
 
+  isAuthenticated(): boolean {
+    return Boolean(this.getAuthToken())
+  }
+
   // ============================
   // TRAINING PLANS
   // ============================
@@ -407,6 +411,12 @@ class TrainingService {
     }
 
     return response.data
+  }
+
+  async deleteTrainingPlanTemplate(id: string): Promise<void> {
+    await this.makeRequest(`/training-plan-templates/${id}`, {
+      method: 'DELETE',
+    })
   }
 
   // ============================

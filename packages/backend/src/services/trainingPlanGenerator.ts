@@ -13,6 +13,7 @@ import {
 } from '@coach-ia-hugo/shared'
 import { PrismaClient } from '@prisma/client'
 import { trainingCalculations } from '../utils/trainingCalculations.js'
+import { ensurePlanInfrastructure } from '../utils/schemaGuard.js'
 import { TrainingPlanAnalytics } from './trainingPlanAnalytics.js'
 
 interface UserProfileInput {
@@ -116,6 +117,8 @@ export class TrainingPlanGenerator {
    */
   async generatePlan(input: GenerationInput) {
     const { user, targetRace, startDate, endDate, preferences } = input
+
+    await ensurePlanInfrastructure(this.prisma)
 
     // 1. Analyse du profil utilisateur
     const userAnalysis = this.analyzeUserProfile(user.profile)

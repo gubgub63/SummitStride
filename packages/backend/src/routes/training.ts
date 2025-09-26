@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { TrainingPlanStatus, TrainingType, Intensity, PlanPhase } from '@coach-ia-hugo/shared'
 import { authMiddleware } from '../middleware/auth'
 import { TrainingPlanGenerator } from '../services/trainingPlanGenerator'
+import { ensureTemplateInfrastructure } from '../utils/schemaGuard.js'
 import { TrainingPlanAnalytics } from '../services/trainingPlanAnalytics'
 
 const toDate = (value: unknown) => {
@@ -947,6 +948,7 @@ export async function trainingRoutes(fastify: FastifyInstance) {
     // GET /api/training-plan-templates - Liste des templates
     fastify.get('/training-plan-templates', async (_request: FastifyRequest, reply: FastifyReply) => {
       try {
+        await ensureTemplateInfrastructure(fastify.prisma)
         const templates = await fastify.prisma.trainingPlanTemplate.findMany({
           include: {
             sessions: {
@@ -974,6 +976,7 @@ export async function trainingRoutes(fastify: FastifyInstance) {
       '/training-plan-templates/:id',
       async (request, reply) => {
         try {
+          await ensureTemplateInfrastructure(fastify.prisma)
           const { id } = request.params
 
           const template = await fastify.prisma.trainingPlanTemplate.findUnique({
@@ -1009,9 +1012,16 @@ export async function trainingRoutes(fastify: FastifyInstance) {
     // POST /api/training-plan-templates - Création d'un template
     fastify.post('/training-plan-templates', async (request: FastifyRequest, reply: FastifyReply) => {
       try {
+        await ensureTemplateInfrastructure(fastify.prisma)
         const body = planTemplateInputSchema.parse(request.body)
 
         const template = await fastify.prisma.$transaction(async (tx) => {
+          if (!(tx as any).trainingSessionTemplate?.create) {
+            throw fastify.httpErrors.internalServerError(
+              'Modèle trainingSessionTemplate non disponible. Lancez `npx prisma generate` puis redémarrez le serveur.'
+            )
+          }
+
           const createdTemplate = await tx.trainingPlanTemplate.create({
             data: {
               name: body.name,
@@ -1066,9 +1076,12 @@ export async function trainingRoutes(fastify: FastifyInstance) {
         }
 
         fastify.log.error(error)
-        reply.code(500).send({
+        const statusCode = (error as any)?.statusCode ?? 500
+        reply.code(statusCode).send({
           success: false,
-          error: 'Erreur lors de la création du template',
+          error:
+            (error as any)?.message ||
+            'Erreur lors de la création du template. Lancez `npx prisma generate` puis redémarrez le serveur.',
         })
       }
     })
@@ -1079,11 +1092,18 @@ export async function trainingRoutes(fastify: FastifyInstance) {
     fastify.put<{ Params: { id: string } }>(
       '/training-plan-templates/:id',
       async (request, reply) => {
-        try {
-          const { id } = request.params
-          const body = planTemplateUpdateSchema.parse(request.body)
+      try {
+        await ensureTemplateInfrastructure(fastify.prisma)
+        const { id } = request.params
+        const body = planTemplateUpdateSchema.parse(request.body)
 
           const template = await fastify.prisma.$transaction(async (tx) => {
+            if (!(tx as any).trainingSessionTemplate?.create) {
+              throw fastify.httpErrors.internalServerError(
+                'Modèle trainingSessionTemplate non disponible. Lancez `npx prisma generate` puis redémarrez le serveur.'
+              )
+            }
+
             const updatedTemplate = await tx.trainingPlanTemplate.update({
               where: { id },
               data: {
@@ -1159,14 +1179,59 @@ export async function trainingRoutes(fastify: FastifyInstance) {
           }
 
           fastify.log.error(error)
-          reply.code(500).send({
+          const statusCode = (error as any)?.statusCode ?? 500
+          reply.code(statusCode).send({
             success: false,
-            error: 'Erreur lors de la mise à jour du template',
+            error:
+              (error as any)?.message ||
+              'Erreur lors de la mise à jour du template. Lancez `npx prisma generate` puis redémarrez le serveur.',
           })
         }
       }
     )
 
-    // TODO: Ajoutez une route DELETE /api/training-plan-templates/:id pour compléter la gestion des templates.
+    // DELETE /api/training-plan-templates/:id - Suppression d'un template
+    fastify.delete<{ Params: { id: string } }>(
+      '/training-plan-templates/:id',
+      async (request, reply) => {
+        try {
+          await ensureTemplateInfrastructure(fastify.prisma)
+          const { id } = request.params
+
+          const template = await fastify.prisma.trainingPlanTemplate.findUnique({
+            where: { id },
+          })
+
+          if (!template) {
+            return reply.code(404).send({
+              success: false,
+              error: 'Template introuvable',
+            })
+          }
+
+          await fastify.prisma.$transaction(async tx => {
+            await tx.trainingSessionTemplate.deleteMany({ where: { planTemplateId: id } })
+            await tx.trainingPlanTemplate.delete({ where: { id } })
+            await tx.trainingPlan.updateMany({
+              where: { sourceTemplateId: id },
+              data: { sourceTemplateId: null },
+            })
+          })
+
+          reply.send({
+            success: true,
+            message: 'Template supprimé avec succès',
+          })
+        } catch (error) {
+          fastify.log.error(error)
+          reply.code((error as any)?.statusCode ?? 500).send({
+            success: false,
+            error:
+              (error as any)?.message ||
+              'Erreur lors de la suppression du template. Vérifiez les dépendances et réessayez.',
+          })
+        }
+      }
+    )
   })
 }

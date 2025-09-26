@@ -443,7 +443,7 @@ La Phase 4 (Interface Utilisateur) est maintenant **complètement terminée** av
 
 **🎯 À faire (apprentissage recommandé) :** implémenter la route `DELETE /api/training-plan-templates/:id` côté backend + méthode correspondante côté `trainingService` pour finaliser le cycle de vie des templates.
 
-**⚠️ À intégrer côté UI :** ajouter dans le dashboard `TrainingPlanDashboard` les formulaires/boutons pour (1) créer/générer un plan en appelant `trainingService.generateTrainingPlan`, (2) activer/suspendre un plan via `updatePlanStatus`, et (3) gérer les templates (listing + actions) afin de connecter les nouvelles APIs au front.
+**✅ Intégration UI réalisée :** le dashboard `TrainingPlanDashboard` permet désormais de générer un plan, de modifier son statut (activer / pause / terminé), et de gérer les templates (listing, création rapide, suppression).
 
 **📋 Backend requis pour Phase 4.6 UI :**
 - Tables TrainingPlan et TrainingSession déjà créées ✅

@@ -5,35 +5,433 @@
 
 'use client'
 
-import React from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { WeeklyPlanWidget } from './WeeklyPlanWidget'
-import {
-  useTrainingStats,
-  useTrainingPlans,
-  useCurrentWeekSessions,
-} from '../../lib/hooks/useTraining'
+import { useTrainingStats, useTrainingPlans, useTrainingSessions } from '../../lib/hooks/useTraining'
 import { getCurrentWeekStart } from '../../lib/data/mockTrainingData'
 import { SESSION_TYPE_LABELS, SESSION_TYPE_COLORS } from '../../types/training'
 import trainingService from '../../lib/services/trainingService'
+import { registrationService, type Registration } from '../../lib/services/registrationService'
+import {
+  Intensity,
+  PlanPhase,
+  TrainingPlanStatus,
+  TrainingPlanTemplate,
+  TrainingType,
+} from '@coach-ia-hugo/shared'
+
+interface GeneratePlanFormState {
+  targetRaceId: string
+  startDate: string
+  endDate: string
+}
 
 export function TrainingPlanDashboard() {
-  const { stats, loading: statsLoading, error: statsError } = useTrainingStats()
-  const { plans, loading: plansLoading } = useTrainingPlans()
-  const { sessions: weekSessions, loading: sessionsLoading } = useCurrentWeekSessions()
+  const { stats, loading: statsLoading } = useTrainingStats()
+  const {
+    plans,
+    loading: plansLoading,
+    refreshPlans,
+    generatePlan,
+    updatePlanStatus,
+    deletePlan,
+  } = useTrainingPlans()
+  const [generationState, setGenerationState] = useState<{
+    form: GeneratePlanFormState
+    submitting: boolean
+    error: string | null
+    successMessage: string | null
+  }>({
+    form: {
+      targetRaceId: '',
+      startDate: '',
+      endDate: '',
+    },
+    submitting: false,
+    error: null,
+    successMessage: null,
+  })
+  const [templates, setTemplates] = useState<TrainingPlanTemplate[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(false)
+  const [templatesError, setTemplatesError] = useState<string | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [templateSubmitting, setTemplateSubmitting] = useState(false)
+  const [templateSubmitError, setTemplateSubmitError] = useState<string | null>(null)
+  const [deleteSubmittingId, setDeleteSubmittingId] = useState<string | null>(null)
+  const [registrations, setRegistrations] = useState<Registration[]>([])
+  const [registrationsLoading, setRegistrationsLoading] = useState(false)
+  const [registrationsError, setRegistrationsError] = useState<string | null>(null)
+  const [planActionError, setPlanActionError] = useState<string | null>(null)
+  const [planActionLoadingId, setPlanActionLoadingId] = useState<string | null>(null)
+  const [templateForm, setTemplateForm] = useState({
+    name: '',
+    description: '',
+    targetCategory: 'ULTRA_TRAIL',
+    targetExperience: '',
+    durationWeeks: 4,
+    session: {
+      phase: PlanPhase.BASE,
+      weekOffset: 0,
+      dayOfWeek: 1,
+      type: TrainingType.ENDURANCE,
+      intensity: Intensity.MODERATE,
+      duration: 60,
+      distance: 10,
+      description: '',
+    },
+  })
+  const planPhaseOptions = useMemo(() => Object.values(PlanPhase), [])
+  const trainingTypeOptions = useMemo(() => Object.values(TrainingType), [])
+  const intensityOptions = useMemo(() => Object.values(Intensity), [])
 
   const weekStart = getCurrentWeekStart()
-  const activePlan = plans.find(plan => plan.status === 'ACTIVE')
-  console.log(activePlan)
-  // Fallback vers les mock data si pas de données réelles
+  const activePlan = useMemo(
+    () => plans.find(plan => plan.status === TrainingPlanStatus.ACTIVE),
+    [plans]
+  )
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const displayStats = stats || {
     activePlans: 0,
     weeklySessionsCompleted: 0,
     weeklySessionsTotal: 0,
     monthlyDistance: 0,
     recentActivity: [],
+  }
+
+  useEffect(() => {
+    setIsAuthenticated(trainingService.isAuthenticated())
+  }, [])
+
+  useEffect(() => {
+    const selectedPlanExists = selectedPlanId
+      ? plans.some(plan => plan.id === selectedPlanId)
+      : false
+
+    if (activePlan && (!selectedPlanId || selectedPlanId !== activePlan.id)) {
+      setSelectedPlanId(activePlan.id)
+      return
+    }
+
+    if (!selectedPlanExists && plans.length > 0) {
+      setSelectedPlanId(plans[0].id)
+    }
+  }, [activePlan, plans, selectedPlanId])
+
+  const selectedPlan = useMemo(
+    () => plans.find(plan => plan.id === selectedPlanId) || activePlan || plans[0],
+    [plans, selectedPlanId, activePlan]
+  )
+  const selectedPlanFilters = useMemo(
+    () => (selectedPlan ? { planId: selectedPlan.id } : undefined),
+    [selectedPlan?.id]
+  )
+  const {
+    sessions: selectedPlanSessions,
+    loading: sessionsLoading,
+    refreshSessions: refreshSelectedSessions,
+  } = useTrainingSessions(selectedPlanFilters)
+
+  useEffect(() => {
+    if (selectedPlan) {
+      refreshSelectedSessions()
+    }
+  }, [selectedPlan?.id, refreshSelectedSessions])
+
+  const refreshTemplates = useCallback(async () => {
+    if (!trainingService.isAuthenticated()) {
+      setTemplates([])
+      setTemplatesError('Connectez-vous pour charger vos templates.')
+      return
+    }
+
+    try {
+      setTemplatesLoading(true)
+      setTemplatesError(null)
+      const data = await trainingService.listTrainingPlanTemplates()
+      setTemplates(data)
+    } catch (error) {
+      setTemplatesError(
+        error instanceof Error
+          ? error.message
+          : "Impossible de charger les templates pour le moment"
+      )
+    } finally {
+      setTemplatesLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (trainingService.isAuthenticated()) {
+      refreshTemplates()
+    }
+  }, [refreshTemplates])
+
+  useEffect(() => {
+    const loadRegistrations = async () => {
+      if (!trainingService.isAuthenticated()) {
+        setRegistrations([])
+        setRegistrationsError('Connectez-vous pour voir vos courses enregistrées.')
+        return
+      }
+
+      try {
+        setRegistrationsLoading(true)
+        setRegistrationsError(null)
+        const { registrations: regs } = await registrationService.getRegistrations()
+        setRegistrations(regs)
+        if (regs.length > 0) {
+          setGenerationState(prev => ({
+            ...prev,
+            form: {
+              ...prev.form,
+              targetRaceId: prev.form.targetRaceId || regs[0].courseId,
+            },
+          }))
+        }
+      } catch (error) {
+        setRegistrationsError(
+          error instanceof Error ? error.message : 'Impossible de charger vos inscriptions.'
+        )
+      } finally {
+        setRegistrationsLoading(false)
+      }
+    }
+
+    loadRegistrations()
+  }, [isAuthenticated])
+
+  const handleGenerateFormChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target
+    setGenerationState(prevState => ({
+      ...prevState,
+      form: {
+        ...prevState.form,
+        [name]: value,
+      },
+      error: null,
+      successMessage: null,
+    }))
+  }
+
+  const handleTemplateFieldChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = event.target
+    setTemplateForm(prevState => ({
+      ...prevState,
+      [name]: name === 'durationWeeks' ? Number(value) : value,
+    }))
+  }
+
+  const handleTemplateSessionChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = event.target
+    setTemplateForm(prevState => ({
+      ...prevState,
+      session: {
+        ...prevState.session,
+        [name]: ['weekOffset', 'dayOfWeek', 'duration', 'distance'].includes(name)
+          ? Number(value)
+          : value,
+      },
+    }))
+  }
+
+  const handleGeneratePlan = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!isAuthenticated) {
+      setGenerationState(prevState => ({
+        ...prevState,
+        error: 'Connectez-vous pour générer un plan automatiquement.',
+        successMessage: null,
+      }))
+      return
+    }
+
+    if (registrations.length === 0) {
+      setGenerationState(prevState => ({
+        ...prevState,
+        error: 'Inscrivez-vous à une course pour générer un plan personnalisé.',
+        successMessage: null,
+      }))
+      return
+    }
+
+    setGenerationState(prevState => ({
+      ...prevState,
+      submitting: true,
+      error: null,
+      successMessage: null,
+    }))
+
+    try {
+      const { form } = generationState
+      if (!form.targetRaceId || !form.startDate || !form.endDate) {
+        throw new Error('Tous les champs sont requis pour lancer la génération')
+      }
+
+      await generatePlan({
+        targetRaceId: form.targetRaceId,
+        startDate: form.startDate,
+        endDate: form.endDate,
+      })
+
+      setGenerationState({
+        form: {
+          targetRaceId: '',
+          startDate: '',
+          endDate: '',
+        },
+        submitting: false,
+        error: null,
+        successMessage: 'Plan généré avec succès. Actualisez pour voir les nouveaux éléments.',
+      })
+
+      await refreshPlans()
+    } catch (error) {
+      setGenerationState(prevState => ({
+        ...prevState,
+        submitting: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Erreur inattendue lors de la génération du plan",
+      }))
+    }
+  }
+
+  const handleTogglePlanStatus = async (planId: string, status: TrainingPlanStatus) => {
+    try {
+      setPlanActionError(null)
+      setPlanActionLoadingId(planId)
+      await updatePlanStatus(planId, status)
+      await refreshPlans()
+      await refreshSelectedSessions()
+    } catch (error) {
+      setPlanActionError(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de mettre à jour le statut du plan pour le moment.'
+      )
+    }
+    setPlanActionLoadingId(null)
+  }
+
+  const handleDeletePlan = async (planId: string) => {
+    setPlanActionError(null)
+    setPlanActionLoadingId(planId)
+    try {
+      await deletePlan(planId)
+      await refreshPlans()
+      if (selectedPlanId === planId) {
+        setSelectedPlanId(null)
+      }
+      await refreshSelectedSessions()
+    } catch (error) {
+      setPlanActionError(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de supprimer le plan pour le moment.'
+      )
+    } finally {
+      setPlanActionLoadingId(null)
+    }
+  }
+
+  const handleCreateTemplate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!isAuthenticated) {
+      setTemplateSubmitError('Connectez-vous pour créer un template.')
+      return
+    }
+
+    if (!templateForm.name.trim()) {
+      setTemplateSubmitError('Le nom du template est requis.')
+      return
+    }
+
+    setTemplateSubmitting(true)
+    setTemplateSubmitError(null)
+
+    try {
+      await trainingService.createTrainingPlanTemplate({
+        name: templateForm.name,
+        description: templateForm.description || undefined,
+        targetCategory: templateForm.targetCategory,
+        targetExperience: templateForm.targetExperience || undefined,
+        durationWeeks: templateForm.durationWeeks,
+        sessions: [
+          {
+            phase: templateForm.session.phase,
+            weekOffset: templateForm.session.weekOffset,
+            dayOfWeek: templateForm.session.dayOfWeek,
+            type: templateForm.session.type,
+            intensity: templateForm.session.intensity,
+            duration: templateForm.session.duration || undefined,
+            distance: templateForm.session.distance || undefined,
+            description: templateForm.session.description || undefined,
+            focusAreas: [],
+          },
+        ],
+      })
+
+      setTemplateForm({
+        name: '',
+        description: '',
+        targetCategory: 'ULTRA_TRAIL',
+        targetExperience: '',
+        durationWeeks: 4,
+        session: {
+          phase: PlanPhase.BASE,
+          weekOffset: 0,
+          dayOfWeek: 1,
+          type: TrainingType.ENDURANCE,
+          intensity: Intensity.MODERATE,
+          duration: 60,
+          distance: 10,
+          description: '',
+        },
+      })
+
+      await refreshTemplates()
+    } catch (error) {
+      setTemplateSubmitError(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de créer le template pour le moment.'
+      )
+    } finally {
+      setTemplateSubmitting(false)
+    }
+  }
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (!isAuthenticated) {
+      setTemplatesError('Connectez-vous pour supprimer un template.')
+      return
+    }
+
+    setDeleteSubmittingId(templateId)
+    setTemplatesError(null)
+
+    try {
+      await trainingService.deleteTrainingPlanTemplate(templateId)
+      await refreshTemplates()
+    } catch (error) {
+      setTemplatesError(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de supprimer le template pour le moment.'
+      )
+    } finally {
+      setDeleteSubmittingId(null)
+    }
   }
 
   return (
@@ -161,21 +559,21 @@ export function TrainingPlanDashboard() {
 
       {/* Plan actuel */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Informations du plan actuel */}
+        {/* Informations du plan sélectionné */}
         <div className="lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Plan Actuel</CardTitle>
+              <CardTitle className="text-lg">Plan sélectionné</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {plansLoading ? (
                 <div className="text-center py-4">
                   <div className="text-sm text-muted-foreground">Chargement...</div>
                 </div>
-              ) : activePlan ? (
+              ) : selectedPlan ? (
                 <div className="space-y-2">
-                  <h3 className="font-medium text-foreground">{activePlan.name}</h3>
-                  <p className="text-sm text-muted-foreground">{activePlan.description}</p>
+                  <h3 className="font-medium text-foreground">{selectedPlan.name}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedPlan.description || 'Plan sans description'}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -186,51 +584,172 @@ export function TrainingPlanDashboard() {
                 </div>
               )}
 
-              {activePlan && (
-                <>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Durée:</span>
+              {selectedPlan && (
+                <div className="space-y-4">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Durée</span>
                       <span className="font-medium">
                         {Math.ceil(
-                          (new Date(activePlan.endDate).getTime() -
-                            new Date(activePlan.startDate).getTime()) /
+                          (new Date(selectedPlan.endDate).getTime() -
+                            new Date(selectedPlan.startDate).getTime()) /
                             (7 * 24 * 60 * 60 * 1000)
                         )}{' '}
                         semaines
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Statut:</span>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {activePlan.status}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Statut</span>
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                        {selectedPlan.status}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Début:</span>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Début</span>
                       <span className="font-medium">
-                        {new Date(activePlan.startDate).toLocaleDateString('fr-FR')}
+                        {new Date(selectedPlan.startDate).toLocaleDateString('fr-FR')}
                       </span>
                     </div>
                   </div>
 
-                  <div className="pt-2">
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div className="bg-primary-600 h-2 rounded-full" style={{ width: '25%' }} />
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">En cours...</div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedPlan.status === TrainingPlanStatus.ACTIVE ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={planActionLoadingId === selectedPlan.id}
+                        onClick={() =>
+                          handleTogglePlanStatus(selectedPlan.id, TrainingPlanStatus.PAUSED)
+                        }
+                      >
+                        Mettre en pause
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        disabled={planActionLoadingId === selectedPlan.id}
+                        onClick={() =>
+                          handleTogglePlanStatus(selectedPlan.id, TrainingPlanStatus.ACTIVE)
+                        }
+                      >
+                        Activer le plan
+                      </Button>
+                    )}
+                    {selectedPlan.status !== TrainingPlanStatus.COMPLETED && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={planActionLoadingId === selectedPlan.id}
+                        onClick={() =>
+                          handleTogglePlanStatus(selectedPlan.id, TrainingPlanStatus.COMPLETED)
+                        }
+                      >
+                        Marquer terminé
+                      </Button>
+                    )}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={planActionLoadingId === selectedPlan.id}
+                      onClick={() => handleDeletePlan(selectedPlan.id)}
+                    >
+                      {planActionLoadingId === selectedPlan.id ? 'Suppression...' : 'Supprimer'}
+                    </Button>
                   </div>
-                </>
+                </div>
               )}
 
-              <div className="space-y-2 pt-2">
-                <Button variant="outline" className="w-full" size="sm">
-                  Voir le plan complet
-                </Button>
-                <Button variant="ghost" className="w-full" size="sm">
-                  Modifier le plan
-                </Button>
+              {!selectedPlan && (
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>Utilisez le formulaire « Générer un plan IA » à droite pour démarrer.</p>
+                  <p>Vous pourrez ensuite activer le plan depuis cette carte.</p>
+                </div>
+              )}
+              {planActionError && (
+                <p className="text-xs text-destructive">{planActionError}</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Liste des plans */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <CardTitle className="text-lg">Mes plans</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Sélectionnez un plan pour consulter les détails ou l'activer.
+                </p>
               </div>
+              <Button variant="outline" size="sm" onClick={refreshPlans} disabled={plansLoading}>
+                {plansLoading ? 'Actualisation...' : 'Actualiser'}
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {plans.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Aucun plan enregistré pour le moment. Générez-en un via le formulaire à droite.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {plans.map(plan => {
+                    const isSelected = selectedPlan?.id === plan.id
+                    const isActivePlan = plan.status === TrainingPlanStatus.ACTIVE
+                    return (
+                      <div
+                        key={plan.id}
+                        className={`rounded-md border p-3 transition-colors ${
+                          isSelected ? 'border-primary bg-primary/5' : 'border-border bg-background'
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-foreground">{plan.name}</h3>
+                              {isActivePlan && (
+                                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
+                                  Actif
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(plan.startDate).toLocaleDateString('fr-FR')} →{' '}
+                              {new Date(plan.endDate).toLocaleDateString('fr-FR')} • Statut : {plan.status}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                    <Button
+                              variant={isSelected ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setSelectedPlanId(plan.id)}
+                            >
+                              {isSelected ? 'Affiché' : 'Afficher'}
+                            </Button>
+                            {plan.status !== TrainingPlanStatus.ACTIVE && (
+                              <Button
+                                size="sm"
+                                disabled={planActionLoadingId === plan.id}
+                                onClick={() => handleTogglePlanStatus(plan.id, TrainingPlanStatus.ACTIVE)}
+                              >
+                                Activer
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={planActionLoadingId === plan.id}
+                              onClick={() => handleDeletePlan(plan.id)}
+                            >
+                              {planActionLoadingId === plan.id ? 'Suppression...' : 'Supprimer'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -242,11 +761,19 @@ export function TrainingPlanDashboard() {
               <CardTitle className="text-lg">Semaine Courante</CardTitle>
             </CardHeader>
             <CardContent>
-              <WeeklyPlanWidget
-                weekStartDate={weekStart}
-                trainingSessions={weekSessions}
-                loading={sessionsLoading}
-              />
+              {sessionsLoading ? (
+                <p className="text-sm text-muted-foreground">Chargement des séances...</p>
+              ) : selectedPlanSessions.length > 0 ? (
+                <WeeklyPlanWidget weekStartDate={weekStart} trainingSessions={selectedPlanSessions} />
+              ) : selectedPlan ? (
+                <p className="text-sm text-muted-foreground">
+                  Ce plan ne contient pas encore de séances enregistrées.
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Sélectionnez un plan pour voir les séances planifiées.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -302,35 +829,411 @@ export function TrainingPlanDashboard() {
         </CardContent>
       </Card>
 
-      {/* Actions rapides */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Nouveau Plan</CardTitle>
+            <CardTitle>Générer un plan IA</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground text-sm">
-              Créez un nouveau plan d'entraînement personnalisé basé sur vos objectifs et votre
-              niveau.
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Sélectionnez une course parmi vos inscriptions pour que l'IA compose automatiquement
+              un plan adapté.
             </p>
-            <Button className="w-full" disabled>
-              Créer un nouveau plan
-            </Button>
+            <form className="space-y-3" onSubmit={handleGeneratePlan}>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground" htmlFor="targetRaceId">
+                  Course cible
+                </label>
+                {registrationsLoading ? (
+                  <p className="text-sm text-muted-foreground">Chargement de vos inscriptions…</p>
+                ) : registrations.length > 0 ? (
+                  <select
+                    id="targetRaceId"
+                    name="targetRaceId"
+                    value={generationState.form.targetRaceId}
+                    onChange={handleGenerateFormChange}
+                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                  >
+                    {registrations.map(registration => {
+                      const targetDateLabel = registration.targetDate
+                        ? new Date(registration.targetDate).toLocaleDateString('fr-FR')
+                        : 'date à confirmer'
+                      return (
+                        <option key={registration.id} value={registration.courseId}>
+                          {registration.course.name} • {registration.course.distance} km • {targetDateLabel}
+                        </option>
+                      )
+                    })}
+                  </select>
+                ) : (
+                  <p className="text-sm text-destructive">
+                    {registrationsError || 'Aucune inscription active : inscrivez-vous à une course pour générer un plan.'}
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground" htmlFor="startDate">
+                    Début
+                  </label>
+                  <input
+                    id="startDate"
+                    name="startDate"
+                    type="date"
+                    value={generationState.form.startDate}
+                    onChange={handleGenerateFormChange}
+                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground" htmlFor="endDate">
+                    Fin
+                  </label>
+                  <input
+                    id="endDate"
+                    name="endDate"
+                    type="date"
+                    value={generationState.form.endDate}
+                    onChange={handleGenerateFormChange}
+                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                  />
+                </div>
+              </div>
+              {generationState.error && (
+                <p className="text-sm text-destructive">{generationState.error}</p>
+              )}
+              {generationState.successMessage && (
+                <p className="text-sm text-emerald-600">{generationState.successMessage}</p>
+              )}
+              <Button
+                type="submit"
+                disabled={
+                  generationState.submitting || !isAuthenticated || registrations.length === 0
+                }
+                className="w-full"
+              >
+                {isAuthenticated
+                  ? generationState.submitting
+                    ? 'Génération...'
+                    : 'Générer le plan'
+                  : 'Connectez-vous pour générer'}
+              </Button>
+            </form>
+            <div className="grid gap-2 pt-4">
+              <Button asChild>
+                <Link href="/registrations">Accéder aux inscriptions</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/courses">Explorer les courses</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Calendrier</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground text-sm">
-              Visualisez votre planning d'entraînement sur un calendrier complet avec toutes vos
-              séances.
-            </p>
-            <Button variant="outline" className="w-full" disabled>
-              Voir le calendrier
+          <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle>Templates de plan</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Les templates sont des structures pré-configurées (phases, types de séances, durée)
+                que vous pouvez réutiliser lors de la génération de nouveaux plans.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refreshTemplates}
+              disabled={templatesLoading || !isAuthenticated}
+            >
+              {templatesLoading ? 'Chargement...' : 'Actualiser'}
             </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {templatesError && <p className="text-sm text-destructive">{templatesError}</p>}
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+              {templatesLoading && templates.length === 0 && (
+                <p className="text-sm text-muted-foreground">Chargement des templates...</p>
+              )}
+              {!templatesLoading && templates.length === 0 && !templatesError && (
+                <p className="text-sm text-muted-foreground">
+                  Aucun template pour l'instant. Utilisez le formulaire ci-dessous pour en créer un.
+                </p>
+              )}
+              {templates.map(template => (
+                <div key={template.id} className="rounded-md border border-border p-3 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">{template.name}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {template.targetCategory} • {template.durationWeeks} semaines
+                      </p>
+                      {template.targetExperience && (
+                        <p className="text-xs text-muted-foreground">
+                          Expérience cible: {template.targetExperience}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => console.log('TODO: afficher le template', template.id)}
+                      >
+                        Voir
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteTemplate(template.id)}
+                        disabled={deleteSubmittingId === template.id || !isAuthenticated}
+                      >
+                        {deleteSubmittingId === template.id ? 'Suppression...' : 'Supprimer'}
+                      </Button>
+                    </div>
+                  </div>
+                  {template.description && (
+                    <p className="mt-2 text-xs text-muted-foreground">{template.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-4">
+              <h4 className="text-sm font-semibold text-primary">Créer un template rapide</h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Renseignez un template minimal pour vos prochains plans.
+              </p>
+              <form className="mt-3 space-y-3" onSubmit={handleCreateTemplate}>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="template-name">
+                      Nom du template
+                    </label>
+                    <input
+                      id="template-name"
+                      name="name"
+                      type="text"
+                      value={templateForm.name}
+                      onChange={handleTemplateFieldChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                      placeholder="Ex: Base trail 12 semaines"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="template-category">
+                      Catégorie cible
+                    </label>
+                    <input
+                      id="template-category"
+                      name="targetCategory"
+                      type="text"
+                      value={templateForm.targetCategory}
+                      onChange={handleTemplateFieldChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                      placeholder="ULTRA_TRAIL"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="template-durationWeeks">
+                      Durée (semaines)
+                    </label>
+                    <input
+                      id="template-durationWeeks"
+                      name="durationWeeks"
+                      type="number"
+                      min={1}
+                      value={templateForm.durationWeeks}
+                      onChange={handleTemplateFieldChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="template-targetExperience">
+                      Expérience (facultatif)
+                    </label>
+                    <input
+                      id="template-targetExperience"
+                      name="targetExperience"
+                      type="text"
+                      value={templateForm.targetExperience}
+                      onChange={handleTemplateFieldChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                      placeholder="INTERMEDIATE"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-foreground" htmlFor="template-description">
+                    Description (facultatif)
+                  </label>
+                  <textarea
+                    id="template-description"
+                    name="description"
+                    value={templateForm.description}
+                    onChange={handleTemplateFieldChange}
+                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="session-phase">
+                      Phase
+                    </label>
+                    <select
+                      id="session-phase"
+                      name="phase"
+                      value={templateForm.session.phase}
+                      onChange={handleTemplateSessionChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                    >
+                      {planPhaseOptions.map(phase => (
+                        <option key={phase} value={phase}>
+                          {phase}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="session-type">
+                      Type de séance
+                    </label>
+                    <select
+                      id="session-type"
+                      name="type"
+                      value={templateForm.session.type}
+                      onChange={handleTemplateSessionChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                    >
+                      {trainingTypeOptions.map(type => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="session-intensity">
+                      Intensité
+                    </label>
+                    <select
+                      id="session-intensity"
+                      name="intensity"
+                      value={templateForm.session.intensity}
+                      onChange={handleTemplateSessionChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                    >
+                      {intensityOptions.map(intensity => (
+                        <option key={intensity} value={intensity}>
+                          {intensity}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="session-weekOffset">
+                      Semaine (offset)
+                    </label>
+                    <input
+                      id="session-weekOffset"
+                      name="weekOffset"
+                      type="number"
+                      min={0}
+                      value={templateForm.session.weekOffset}
+                      onChange={handleTemplateSessionChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="session-dayOfWeek">
+                      Jour (0=Dimanche)
+                    </label>
+                    <input
+                      id="session-dayOfWeek"
+                      name="dayOfWeek"
+                      type="number"
+                      min={0}
+                      max={6}
+                      value={templateForm.session.dayOfWeek}
+                      onChange={handleTemplateSessionChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="session-duration">
+                      Durée (minutes)
+                    </label>
+                    <input
+                      id="session-duration"
+                      name="duration"
+                      type="number"
+                      min={20}
+                      value={templateForm.session.duration}
+                      onChange={handleTemplateSessionChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="session-distance">
+                      Distance (km)
+                    </label>
+                    <input
+                      id="session-distance"
+                      name="distance"
+                      type="number"
+                      min={0}
+                      value={templateForm.session.distance}
+                      onChange={handleTemplateSessionChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground" htmlFor="session-description">
+                      Note séance (facultatif)
+                    </label>
+                    <textarea
+                      id="session-description"
+                      name="description"
+                      value={templateForm.session.description}
+                      onChange={handleTemplateSessionChange}
+                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                      rows={1}
+                    />
+                  </div>
+                </div>
+
+                {templateSubmitError && (
+                  <p className="text-xs text-destructive">{templateSubmitError}</p>
+                )}
+
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="w-full"
+                  disabled={templateSubmitting || !isAuthenticated}
+                >
+                  {isAuthenticated
+                    ? templateSubmitting
+                      ? 'Enregistrement...'
+                      : 'Créer le template'
+                    : 'Connectez-vous pour créer'}
+                </Button>
+              </form>
+            </div>
           </CardContent>
         </Card>
       </div>
