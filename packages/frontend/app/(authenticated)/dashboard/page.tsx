@@ -6,12 +6,20 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import { Button } from '../../../components/ui/Button'
 import { useAuth } from '../../../lib/hooks/useAuth'
 import { useProfile } from '../../../lib/hooks/useProfile'
+import { useTrainingStats, useTrainingPlans, useTrainingSessions } from '../../../lib/hooks/useTraining'
 
 export default function DashboardPage() {
   const router = useRouter()
   const { user } = useAuth()
   const { completion, needsOnboarding } = useProfile()
-
+  const { stats, loading: statsLoading } = useTrainingStats()
+  const displayStats = stats || {
+    activePlans: 0,
+    weeklySessionsCompleted: 0,
+    weeklySessionsTotal: 0,
+    monthlyDistance: 0,
+    recentActivity: [],
+  }
   const handleCompleteProfile = () => {
     router.push('/profile/complete')
   }
@@ -60,8 +68,10 @@ export default function DashboardPage() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Aucun plan en cours</p>
+            <div className="text-2xl font-bold">
+              {statsLoading ? '...' : displayStats.activePlans}
+            </div>
+            <p className="text-xs text-muted-foreground">Plan en cours</p>
           </CardContent>
         </Card>
 

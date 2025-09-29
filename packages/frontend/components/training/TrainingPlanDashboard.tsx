@@ -64,8 +64,6 @@ export function TrainingPlanDashboard() {
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [registrationsLoading, setRegistrationsLoading] = useState(false)
   const [registrationsError, setRegistrationsError] = useState<string | null>(null)
-  const [planActionError, setPlanActionError] = useState<string | null>(null)
-  const [planActionLoadingId, setPlanActionLoadingId] = useState<string | null>(null)
   const [templateForm, setTemplateForm] = useState({
     name: '',
     description: '',
@@ -100,22 +98,17 @@ export function TrainingPlanDashboard() {
     monthlyDistance: 0,
     recentActivity: [],
   }
-
   useEffect(() => {
     setIsAuthenticated(trainingService.isAuthenticated())
   }, [])
 
   useEffect(() => {
-    const selectedPlanExists = selectedPlanId
-      ? plans.some(plan => plan.id === selectedPlanId)
-      : false
-
     if (activePlan && (!selectedPlanId || selectedPlanId !== activePlan.id)) {
       setSelectedPlanId(activePlan.id)
       return
     }
 
-    if (!selectedPlanExists && plans.length > 0) {
+    if (!selectedPlanId && plans.length > 0) {
       setSelectedPlanId(plans[0].id)
     }
   }, [activePlan, plans, selectedPlanId])
@@ -133,12 +126,6 @@ export function TrainingPlanDashboard() {
     loading: sessionsLoading,
     refreshSessions: refreshSelectedSessions,
   } = useTrainingSessions(selectedPlanFilters)
-
-  useEffect(() => {
-    if (selectedPlan) {
-      refreshSelectedSessions()
-    }
-  }, [selectedPlan?.id, refreshSelectedSessions])
 
   const refreshTemplates = useCallback(async () => {
     if (!trainingService.isAuthenticated()) {
@@ -307,39 +294,10 @@ export function TrainingPlanDashboard() {
 
   const handleTogglePlanStatus = async (planId: string, status: TrainingPlanStatus) => {
     try {
-      setPlanActionError(null)
-      setPlanActionLoadingId(planId)
       await updatePlanStatus(planId, status)
       await refreshPlans()
-      await refreshSelectedSessions()
     } catch (error) {
-      setPlanActionError(
-        error instanceof Error
-          ? error.message
-          : 'Impossible de mettre à jour le statut du plan pour le moment.'
-      )
-    }
-    setPlanActionLoadingId(null)
-  }
-
-  const handleDeletePlan = async (planId: string) => {
-    setPlanActionError(null)
-    setPlanActionLoadingId(planId)
-    try {
-      await deletePlan(planId)
-      await refreshPlans()
-      if (selectedPlanId === planId) {
-        setSelectedPlanId(null)
-      }
-      await refreshSelectedSessions()
-    } catch (error) {
-      setPlanActionError(
-        error instanceof Error
-          ? error.message
-          : 'Impossible de supprimer le plan pour le moment.'
-      )
-    } finally {
-      setPlanActionLoadingId(null)
+      console.error('Impossible de mettre à jour le statut du plan', error)
     }
   }
 
@@ -617,7 +575,6 @@ export function TrainingPlanDashboard() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        disabled={planActionLoadingId === selectedPlan.id}
                         onClick={() =>
                           handleTogglePlanStatus(selectedPlan.id, TrainingPlanStatus.PAUSED)
                         }
@@ -627,7 +584,6 @@ export function TrainingPlanDashboard() {
                     ) : (
                       <Button
                         size="sm"
-                        disabled={planActionLoadingId === selectedPlan.id}
                         onClick={() =>
                           handleTogglePlanStatus(selectedPlan.id, TrainingPlanStatus.ACTIVE)
                         }
@@ -639,7 +595,6 @@ export function TrainingPlanDashboard() {
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={planActionLoadingId === selectedPlan.id}
                         onClick={() =>
                           handleTogglePlanStatus(selectedPlan.id, TrainingPlanStatus.COMPLETED)
                         }
@@ -650,10 +605,9 @@ export function TrainingPlanDashboard() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      disabled={planActionLoadingId === selectedPlan.id}
                       onClick={() => handleDeletePlan(selectedPlan.id)}
                     >
-                      {planActionLoadingId === selectedPlan.id ? 'Suppression...' : 'Supprimer'}
+                      Supprimer
                     </Button>
                   </div>
                 </div>
@@ -664,9 +618,6 @@ export function TrainingPlanDashboard() {
                   <p>Utilisez le formulaire « Générer un plan IA » à droite pour démarrer.</p>
                   <p>Vous pourrez ensuite activer le plan depuis cette carte.</p>
                 </div>
-              )}
-              {planActionError && (
-                <p className="text-xs text-destructive">{planActionError}</p>
               )}
             </CardContent>
           </Card>
@@ -719,7 +670,7 @@ export function TrainingPlanDashboard() {
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                    <Button
+                            <Button
                               variant={isSelected ? 'default' : 'outline'}
                               size="sm"
                               onClick={() => setSelectedPlanId(plan.id)}
@@ -729,7 +680,6 @@ export function TrainingPlanDashboard() {
                             {plan.status !== TrainingPlanStatus.ACTIVE && (
                               <Button
                                 size="sm"
-                                disabled={planActionLoadingId === plan.id}
                                 onClick={() => handleTogglePlanStatus(plan.id, TrainingPlanStatus.ACTIVE)}
                               >
                                 Activer
@@ -738,10 +688,9 @@ export function TrainingPlanDashboard() {
                             <Button
                               size="sm"
                               variant="destructive"
-                              disabled={planActionLoadingId === plan.id}
                               onClick={() => handleDeletePlan(plan.id)}
                             >
-                              {planActionLoadingId === plan.id ? 'Suppression...' : 'Supprimer'}
+                              Supprimer
                             </Button>
                           </div>
                         </div>

@@ -84,7 +84,7 @@ export function WeeklyPlanWidget({
           const selectedSession = trainingSessions.find(session =>
             isSameDay(session.date, days[selectedDay])
           )
-
+          console.log(selectedSession)
           if (selectedSession) {
             return (
               <div className="mt-4 p-4 bg-accent/30 rounded-lg">
@@ -104,10 +104,12 @@ export function WeeklyPlanWidget({
                       {SESSION_TYPE_LABELS[selectedSession.type]}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Distance:</span>
-                    <span className="font-medium">{selectedSession.distance}km</span>
-                  </div>
+                  {selectedSession.distance && (
+                    <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Distance:</span>
+                        <span className="font-medium">{selectedSession.distance} km</span>
+                    </div>
+                    )}
                 </div>
               </div>
             )
