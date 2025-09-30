@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Formulaire de Récupération de Mot de Passe - Coach IA Hugo
+ * Formulaire de Récupération de Mot de Passe - SummitStride
  * Composant pour la demande de réinitialisation de mot de passe
  */
 

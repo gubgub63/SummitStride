@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Coach IA Hugo - Votre entraîneur ultra-trail intelligent',
+  title: 'SummitStride - Votre entraîneur ultra-trail intelligent',
   description: 'Application d\'entraînement ultra-trail personnalisée avec IA. Créez vos plans d\'entraînement optimisés, suivez vos progrès et atteignez vos objectifs.',
 }
 

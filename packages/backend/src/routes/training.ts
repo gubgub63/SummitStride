@@ -5,7 +5,7 @@
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
-import { TrainingPlanStatus, TrainingType, Intensity, PlanPhase } from '@coach-ia-hugo/shared'
+import { TrainingPlanStatus, TrainingType, Intensity, PlanPhase } from '@summitstride/shared'
 import { authMiddleware } from '../middleware/auth'
 import { TrainingPlanGenerator } from '../services/trainingPlanGenerator'
 import { ensureTemplateInfrastructure } from '../utils/schemaGuard.js'

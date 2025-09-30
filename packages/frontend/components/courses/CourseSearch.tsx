@@ -1,5 +1,5 @@
 /**
- * CourseSearch Component - Coach IA Hugo
+ * CourseSearch Component - SummitStride
  * Barre de recherche avec autocomplétion pour les courses
  */
 

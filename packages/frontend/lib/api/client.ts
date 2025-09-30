@@ -1,5 +1,5 @@
 /**
- * API Client - Coach IA Hugo
+ * API Client - SummitStride
  * Client HTTP centralisé avec gestion des tokens et erreurs
  */
 

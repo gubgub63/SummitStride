@@ -1,5 +1,5 @@
 /**
- * PreparationCalendar Component - Coach IA Hugo
+ * PreparationCalendar Component - SummitStride
  * Calendrier visuel de préparation pour une inscription
  */
 

@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Context d'Authentification - Coach IA Hugo
+ * Context d'Authentification - SummitStride
  * Gestion globale de l'état d'authentification et des utilisateurs
  */
 

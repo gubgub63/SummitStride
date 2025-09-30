@@ -1,5 +1,5 @@
 /**
- * Profile Edit Page - Coach IA Hugo
+ * Profile Edit Page - SummitStride
  * Page dédiée à l'édition du profil utilisateur
  */
 

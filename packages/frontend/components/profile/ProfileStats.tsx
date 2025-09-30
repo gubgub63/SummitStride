@@ -1,5 +1,5 @@
 /**
- * ProfileStats Component - Coach IA Hugo
+ * ProfileStats Component - SummitStride
  * Affiche les statistiques générales d'entraînement de l'utilisateur
  *
  * TODO: Replace with real API when backend statistics endpoints are available

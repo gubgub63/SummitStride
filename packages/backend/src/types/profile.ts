@@ -1,4 +1,4 @@
-import { ExperienceLevel } from '@coach-ia-hugo/shared'
+import { ExperienceLevel } from '@summitstride/shared'
 
 export interface CreateUserProfileRequest {
   dateOfBirth?: string // ISO date string

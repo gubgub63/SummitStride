@@ -1,5 +1,5 @@
 /**
- * Types d'Authentification - Coach IA Hugo
+ * Types d'Authentification - SummitStride
  * Types TypeScript pour l'authentification et gestion utilisateur
  */
 

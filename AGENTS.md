@@ -4,13 +4,13 @@
 This Turborepo hosts three workspaces under `packages/`: `backend` (Fastify API + Prisma schema in `prisma/`), `frontend` (Next.js app inside `app/`), and `shared` (cross-package TypeScript contracts built from `src/` to `dist/`). Documentation lives in `docs/`, automation scripts in `scripts/`, and container assets in `docker/`. Keep assets such as images in `packages/frontend/public` and seed data in root scripts like `seed-test-data.js`.
 
 ## Build, Test, and Development Commands
-Install once at the root with `npm install`. Use `npm run dev` to launch all workspaces in parallel; scope a single package with `npm run dev -- --filter=@coach-ia-hugo/backend` (or `frontend`, `shared`). Core maintenance commands are:
+Install once at the root with `npm install`. Use `npm run dev` to launch all workspaces in parallel; scope a single package with `npm run dev -- --filter=@summitstride/backend` (or `frontend`, `shared`). Core maintenance commands are:
 ```bash
 npm run build             # turbo run build across workspaces
 npm run lint              # lint TypeScript/JS with shared config
 npm run type-check        # ensure TypeScript correctness
 npm run format:check      # verify Prettier formatting
-npm run db:migrate -- --filter=@coach-ia-hugo/backend  # run Prisma migrations
+npm run db:migrate -- --filter=@summitstride/backend  # run Prisma migrations
 ```
 
 ## Coding Style & Naming Conventions

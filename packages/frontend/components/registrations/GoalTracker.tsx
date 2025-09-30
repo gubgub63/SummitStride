@@ -1,5 +1,5 @@
 /**
- * GoalTracker Component - Coach IA Hugo
+ * GoalTracker Component - SummitStride
  * Widget de suivi des objectifs d'inscription
  */
 

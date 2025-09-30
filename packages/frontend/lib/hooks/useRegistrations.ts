@@ -1,5 +1,5 @@
 /**
- * useRegistrations Hook - Coach IA Hugo
+ * useRegistrations Hook - SummitStride
  * Hook pour gérer les inscriptions aux courses
  */
 

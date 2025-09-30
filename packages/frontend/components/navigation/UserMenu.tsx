@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Menu Utilisateur - Coach IA Hugo
+ * Menu Utilisateur - SummitStride
  * Dropdown menu avec profil utilisateur et actions
  */
 

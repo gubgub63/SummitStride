@@ -1,5 +1,5 @@
 /**
- * Hook d'Authentification - Coach IA Hugo
+ * Hook d'Authentification - SummitStride
  * Hook principal pour la gestion de l'authentification
  */
 

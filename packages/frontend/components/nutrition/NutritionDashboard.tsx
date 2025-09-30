@@ -124,8 +124,8 @@ export function NutritionDashboard() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{ profile?.weight } kg</div>
-            <p className="text-xs text-muted-foreground">Âge: { profile?.age } ans</p>
+            <div className="text-2xl font-bold">{profile?.weight} kg</div>
+            <p className="text-xs text-muted-foreground">Âge: {profile?.age} ans</p>
           </CardContent>
         </Card>
 
@@ -312,19 +312,69 @@ export function NutritionDashboard() {
       <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-900/20">
         <CardHeader>
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">F</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+              <svg
+                width="512"
+                height="512"
+                viewBox="0 0 512 512"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <mask
+                  id="mask0_2_302"
+                  mask-type="luminance"
+                  maskUnits="userSpaceOnUse"
+                  x="0"
+                  y="0"
+                  width="512"
+                  height="512"
+                >
+                  <rect width="512" height="512" fill="white" />
+                </mask>
+                <g mask="url(#mask0_2_302)">
+                  <rect
+                    x="-128"
+                    y="-128"
+                    width="768"
+                    height="768"
+                    fill="url(#paint0_linear_2_302)"
+                  />
+                  <path
+                    d="M167.111 416H344.889M389.333 256L433.778 149.333M331.556 96C336.356 97.7778 345.778 105.422 344.889 120.178C343.822 134.933 328.356 141.511 327.111 156.089C326.222 169.956 333.156 178.133 340.089 184.889M242.667 96C247.467 97.7778 256.889 105.422 255.822 120.178C254.933 134.933 239.289 141.511 238.4 156.089C237.333 169.956 244.267 178.133 251.2 184.889M153.778 96C158.578 97.7778 168 105.422 167.111 120.178C166.044 134.933 150.578 141.511 149.333 156.089C148.444 169.956 155.378 178.133 162.489 184.889M256 416C298.435 416 339.131 399.143 369.137 369.137C399.143 339.131 416 298.435 416 256H96C96 298.435 112.857 339.131 142.863 369.137C172.869 399.143 213.565 416 256 416Z"
+                    stroke="white"
+                    stroke-width="29"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </g>
+                <defs>
+                  <linearGradient
+                    id="paint0_linear_2_302"
+                    x1="640"
+                    y1="-128"
+                    x2="-128"
+                    y2="625.778"
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop offset="0.03125" stop-color="#FD901B" />
+                    <stop offset="0.826923" stop-color="#F0738E" />
+                  </linearGradient>
+                </defs>
+              </svg>
             </div>
             <div>
               <CardTitle className="text-lg">Partenaire Flavora</CardTitle>
-              <p className="text-sm text-muted-foreground">Application IA de nutrition personnalisée</p>
+              <p className="text-sm text-muted-foreground">
+                Application IA de nutrition personnalisée
+              </p>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
             <p className="text-sm text-foreground">
-              <strong>Flavora</strong> utilise l'intelligence artificielle pour créer des plans alimentaires personnalisés parfaitement adaptés aux besoins des ultra-traileurs.
+              <strong>Flavora</strong> utilise l'intelligence artificielle pour créer des plans
+              alimentaires personnalisés parfaitement adaptés aux besoins des ultra-traileurs.
             </p>
 
             <div className="grid gap-2 text-xs">
@@ -357,14 +407,22 @@ export function NutritionDashboard() {
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() => window.open('https://apps.apple.com/fr/app/flavora/id6742901179', '_blank', 'noopener,noreferrer')}
+              onClick={() =>
+                window.open(
+                  'https://apps.apple.com/fr/app/flavora/id6742901179',
+                  '_blank',
+                  'noopener,noreferrer'
+                )
+              }
             >
               App Store
             </Button>
           </div>
 
           <div className="text-xs text-muted-foreground bg-white/50 dark:bg-gray-800/50 p-2 rounded">
-            <strong>Spécial ultra-trail :</strong> Flavora adapte automatiquement vos besoins nutritionnels selon vos calculs caloriques Coach IA Hugo pour optimiser vos performances d'endurance.
+            <strong>Spécial ultra-trail :</strong> Flavora adapte automatiquement vos besoins
+            nutritionnels selon vos calculs caloriques SummitStride pour optimiser vos performances
+            d'endurance.
           </div>
         </CardContent>
       </Card>

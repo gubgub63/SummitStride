@@ -1,5 +1,5 @@
 /**
- * Course Compare Page - Coach IA Hugo
+ * Course Compare Page - SummitStride
  * Comparateur de courses (STUB)
  *
  * TODO: Implémentation complète nécessitera:

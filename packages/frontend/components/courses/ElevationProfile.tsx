@@ -1,5 +1,5 @@
 /**
- * ElevationProfile Component - Coach IA Hugo
+ * ElevationProfile Component - SummitStride
  * Affichage du profil altimétrique d'une course (STUB)
  *
  * TODO: Implémentation complète nécessitera:

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Coach IA Hugo is a French ultra-trail coaching application that helps ultra-trail runners prepare optimally for races with personalized training plans, external API integrations, nutritional management, and calendar planning.
+SummitStride is a French ultra-trail coaching application that helps ultra-trail runners prepare optimally for races with personalized training plans, external API integrations, nutritional management, and calendar planning.
 
 ## Architecture
 
@@ -54,7 +54,7 @@ docker-compose up -d     # Start PostgreSQL + Redis containers
 
 ## Package-Specific Commands
 
-### Frontend (@coach-ia-hugo/frontend)
+### Frontend (@summitstride/frontend)
 ```bash
 cd packages/frontend
 npm run dev              # Start dev server with Turbopack (port 3000)
@@ -62,7 +62,7 @@ npm run build            # Build with Turbopack
 npm run type-check       # TypeScript check
 ```
 
-### Backend (@coach-ia-hugo/backend)
+### Backend (@summitstride/backend)
 ```bash
 cd packages/backend
 npm run dev              # Start with tsx watch (port 4000)
@@ -70,7 +70,7 @@ npm run build            # Compile TypeScript to dist/
 npm run type-check       # TypeScript check
 ```
 
-### Shared Package (@coach-ia-hugo/shared)
+### Shared Package (@summitstride/shared)
 Must be built before other packages can use it:
 ```bash
 cd packages/shared
@@ -90,7 +90,7 @@ npm run dev              # Watch mode for development
 - Shared types defined in `packages/shared/src/types/`
 - Zod schemas in `packages/shared/src/schemas/` for runtime validation
 - Database models defined in `packages/backend/prisma/schema.prisma`
-- Frontend and backend import shared types from `@coach-ia-hugo/shared`
+- Frontend and backend import shared types from `@summitstride/shared`
 
 ### Database Schema
 - User authentication and profiles
@@ -109,7 +109,7 @@ npm run dev              # Watch mode for development
 
 1. **Setup**: Run `docker-compose up -d` for database services
 2. **Dependencies**: Run `npm install` in root for all packages
-3. **Shared Package**: Build shared package first with `npm run build --workspace=@coach-ia-hugo/shared`
+3. **Shared Package**: Build shared package first with `npm run build --workspace=@summitstride/shared`
 4. **Development**: Use `npm run dev` to start all services in parallel
 5. **Type Checking**: Always run `npm run type-check` before committing
 6. **Code Quality**: Pre-commit hooks run linting and formatting automatically

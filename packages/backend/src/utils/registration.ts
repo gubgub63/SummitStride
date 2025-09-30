@@ -6,7 +6,7 @@ import {
   RaceRegistrationStatus
 } from '../types/registration.js'
 import { TrailCategory } from '../types/course.js'
-import { ExperienceLevel } from '@coach-ia-hugo/shared'
+import { ExperienceLevel } from '@summitstride/shared'
 
 export class RegistrationUtils {
   static validateRegistrationData(data: CreateRaceRegistrationRequest | UpdateRaceRegistrationRequest): string[] {

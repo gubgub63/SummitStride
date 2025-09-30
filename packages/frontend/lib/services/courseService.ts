@@ -1,5 +1,5 @@
 /**
- * Course Service - Coach IA Hugo
+ * Course Service - SummitStride
  * Service pour les appels API liés aux courses
  *
  * Backend APIs disponibles (développées en Phase 3):

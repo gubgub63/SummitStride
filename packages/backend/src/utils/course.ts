@@ -1,4 +1,4 @@
-import { CourseDifficulty } from '@coach-ia-hugo/shared'
+import { CourseDifficulty } from '@summitstride/shared'
 import { CreateCourseRequest, UpdateCourseRequest, TrailCategory, CourseResponse } from '../types/course.js'
 
 export class CourseUtils {

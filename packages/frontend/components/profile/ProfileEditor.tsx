@@ -1,5 +1,5 @@
 /**
- * ProfileEditor Component - Coach IA Hugo
+ * ProfileEditor Component - SummitStride
  * Composant pour éditer les données personnelles du profil utilisateur
  *
  * Uses existing API endpoints for profile management

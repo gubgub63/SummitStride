@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Coach IA Hugo - Setup Script
+# SummitStride - Setup Script
 # This script sets up the development environment
 
 set -e
 
-echo "🚀 Setting up Coach IA Hugo development environment..."
+echo "🚀 Setting up SummitStride development environment..."
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
@@ -68,7 +68,7 @@ echo "✅ Docker services are ready"
 
 # Build shared package
 echo "🔨 Building shared package..."
-npm run build --workspace=@coach-ia-hugo/shared
+npm run build --workspace=@summitstride/shared
 
 # Setup git hooks
 echo "🪝 Setting up git hooks..."

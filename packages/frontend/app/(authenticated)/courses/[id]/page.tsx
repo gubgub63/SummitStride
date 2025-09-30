@@ -1,5 +1,5 @@
 /**
- * Course Detail Page - Coach IA Hugo
+ * Course Detail Page - SummitStride
  * Page de détail d'une course avec profil altimétrique et actions
  */
 

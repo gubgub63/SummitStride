@@ -1,4 +1,4 @@
-import { CourseDifficulty } from '@coach-ia-hugo/shared'
+import { CourseDifficulty } from '@summitstride/shared'
 
 export interface CreateCourseRequest {
   name: string

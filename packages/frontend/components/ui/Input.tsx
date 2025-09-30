@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils';
  * Input Component - Alpine Tech Design System
  *
  * A versatile input component with validation states and icons,
- * designed for the Coach IA Hugo ultra-trail application.
+ * designed for the SummitStride ultra-trail application.
  */
 
 const inputVariants = cva(

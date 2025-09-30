@@ -4,7 +4,7 @@ import * as React from 'react'
 const h = React.createElement
 /**
  * Theme Management - Alpine Tech Design System
- * Coach IA Hugo - Theme Provider and Hook for Light/Dark Mode
+ * SummitStride - Theme Provider and Hook for Light/Dark Mode
  */
 
 type Theme = 'light' | 'dark' | 'system'
@@ -34,7 +34,7 @@ interface ThemeProviderProps {
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
-  storageKey = 'coach-ia-hugo-theme',
+  storageKey = 'summitstride-theme',
 }: ThemeProviderProps) {
   const [theme, setThemeState] = React.useState<Theme>(defaultTheme)
   const [resolvedTheme, setResolvedTheme] = React.useState<'light' | 'dark'>('light')

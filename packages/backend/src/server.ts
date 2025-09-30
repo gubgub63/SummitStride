@@ -69,7 +69,7 @@ async function start() {
     // API routes
     fastify.get('/api', async () => {
       return {
-        message: 'Coach IA Hugo API',
+        message: 'SummitStride API',
         version: '1.0.0',
         environment: process.env.NODE_ENV || 'development',
       }

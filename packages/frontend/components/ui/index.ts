@@ -1,6 +1,6 @@
 /**
  * UI Components Export - Alpine Tech Design System
- * Coach IA Hugo - Ultra Trail Training Application
+ * SummitStride - Ultra Trail Training Application
  */
 
 // Base Components

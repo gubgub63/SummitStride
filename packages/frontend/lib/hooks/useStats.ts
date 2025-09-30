@@ -1,5 +1,5 @@
 /**
- * Hook de Statistiques Utilisateur - Coach IA Hugo
+ * Hook de Statistiques Utilisateur - SummitStride
  * Hook pour gérer les statistiques d'entraînement et de progression
  *
  * TODO: Replace with real API when backend statistics endpoints are available

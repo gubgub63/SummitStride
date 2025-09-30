@@ -10,7 +10,7 @@ import {
   PlanPhase,
   TrainingPlanProgress,
   WeeklyPlanProgress,
-} from '@coach-ia-hugo/shared'
+} from '@summitstride/shared'
 import { PrismaClient } from '@prisma/client'
 import { trainingCalculations } from '../utils/trainingCalculations.js'
 import { ensurePlanInfrastructure } from '../utils/schemaGuard.js'

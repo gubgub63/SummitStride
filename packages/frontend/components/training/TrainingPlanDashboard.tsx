@@ -21,7 +21,7 @@ import {
   TrainingPlanStatus,
   TrainingPlanTemplate,
   TrainingType,
-} from '@coach-ia-hugo/shared'
+} from '@summitstride/shared'
 
 interface GeneratePlanFormState {
   targetRaceId: string

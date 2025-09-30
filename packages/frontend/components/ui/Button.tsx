@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils';
  * Button Component - Alpine Tech Design System
  *
  * A versatile button component with multiple variants and sizes,
- * designed for the Coach IA Hugo ultra-trail application.
+ * designed for the SummitStride ultra-trail application.
  */
 
 const buttonVariants = cva(

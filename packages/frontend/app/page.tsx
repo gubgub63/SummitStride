@@ -43,10 +43,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="h-10 w-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-xl flex items-center justify-center shadow-md">
-              <span className="text-white font-bold text-lg">C</span>
+              <span className="text-white font-bold text-lg">S</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">Coach IA Hugo</h1>
+              <h1 className="text-xl font-bold text-foreground">SummitStride</h1>
               <p className="text-xs text-muted-foreground">Ultra-trail AI Coach</p>
             </div>
           </div>
@@ -84,7 +84,7 @@ export default function HomePage() {
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-foreground tracking-tight">
                 Votre
                 <span className="block bg-gradient-to-r from-primary-600 via-secondary-600 to-success-600 bg-clip-text text-transparent">
-                  Coach IA
+                  SummitStride
                 </span>
                 Ultra-Trail
               </h1>
@@ -195,7 +195,7 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               Pourquoi choisir
-              <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent"> Coach IA Hugo</span> ?
+              <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent"> SummitStride</span> ?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Une approche révolutionnaire de l'entraînement ultra-trail, alliant expertise humaine et intelligence artificielle
@@ -327,7 +327,7 @@ export default function HomePage() {
             Prêt à transformer votre entraînement ?
           </h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
-            Rejoignez les milliers de traileurs qui font déjà confiance à Coach IA Hugo
+            Rejoignez les milliers de traileurs qui font déjà confiance à SummitStride
             pour atteindre leurs objectifs et repousser leurs limites.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -353,9 +353,9 @@ export default function HomePage() {
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <div className="h-8 w-8 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">C</span>
+                  <span className="text-white font-bold text-sm">S</span>
                 </div>
-                <span className="font-bold text-foreground">Coach IA Hugo</span>
+                <span className="font-bold text-foreground">SummitStride</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 L'intelligence artificielle au service de votre passion pour l'ultra-trail.
@@ -392,7 +392,7 @@ export default function HomePage() {
 
           <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              © 2025 Coach IA Hugo - Design System Alpine Tech. Tous droits réservés.
+              © 2025 SummitStride - Design System Alpine Tech. Tous droits réservés.
             </p>
             <div className="flex items-center space-x-4 mt-4 md:mt-0">
               <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">

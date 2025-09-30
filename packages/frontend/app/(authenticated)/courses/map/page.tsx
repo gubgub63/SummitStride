@@ -1,5 +1,5 @@
 /**
- * Course Map Page - Coach IA Hugo
+ * Course Map Page - SummitStride
  * Carte interactive des courses (STUB)
  *
  * TODO: Implémentation complète nécessitera:

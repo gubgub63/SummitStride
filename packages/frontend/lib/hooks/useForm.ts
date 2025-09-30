@@ -1,5 +1,5 @@
 /**
- * Hook de Gestion de Formulaires - Coach IA Hugo
+ * Hook de Gestion de Formulaires - SummitStride
  * Hook générique pour la validation et gestion d'état des formulaires
  */
 

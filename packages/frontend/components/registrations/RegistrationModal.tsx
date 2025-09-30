@@ -1,5 +1,5 @@
 /**
- * RegistrationModal Component - Coach IA Hugo
+ * RegistrationModal Component - SummitStride
  * Modal d'inscription à une course avec sélection d'objectifs
  */
 

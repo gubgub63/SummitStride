@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils';
  * Card Components - Alpine Tech Design System
  *
  * A set of card components for displaying content in containers,
- * designed for the Coach IA Hugo ultra-trail application.
+ * designed for the SummitStride ultra-trail application.
  */
 
 const cardVariants = cva(

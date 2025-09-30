@@ -1,4 +1,4 @@
-import { Intensity, PlanPhase, TrainingType, WeeklyPlanProgress, TrainingPlanProgress } from '@coach-ia-hugo/shared'
+import { Intensity, PlanPhase, TrainingType, WeeklyPlanProgress, TrainingPlanProgress } from '@summitstride/shared'
 
 type SessionLike = {
   duration?: number | null

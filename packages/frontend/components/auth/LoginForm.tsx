@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Formulaire de Connexion - Coach IA Hugo
+ * Formulaire de Connexion - SummitStride
  * Composant pour l'authentification des utilisateurs existants
  */
 
@@ -44,7 +44,7 @@ export function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold text-foreground">Connexion</h1>
-        <p className="text-muted-foreground">Connectez-vous à votre compte Coach IA Hugo</p>
+        <p className="text-muted-foreground">Connectez-vous à votre compte SummitStride</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

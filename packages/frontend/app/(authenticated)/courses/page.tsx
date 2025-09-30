@@ -1,5 +1,5 @@
 /**
- * Courses Page - Coach IA Hugo
+ * Courses Page - SummitStride
  * Page principale du catalogue de courses avec recherche et filtres
  *
  * Implémentation de l'étape 4.4 de la roadmap:

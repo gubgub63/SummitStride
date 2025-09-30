@@ -12,7 +12,7 @@ import {
   TrainingType,
   Intensity,
   PlanPhase,
-} from '@coach-ia-hugo/shared'
+} from '@summitstride/shared'
 
 interface GeneratePlanRequest {
   targetRaceId: string

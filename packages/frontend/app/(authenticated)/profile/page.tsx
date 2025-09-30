@@ -1,5 +1,5 @@
 /**
- * Profile Page - Coach IA Hugo
+ * Profile Page - SummitStride
  * Page principale de gestion du profil utilisateur avec statistiques
  *
  * TODO: Replace mocked statistics with real API when backend endpoints are available

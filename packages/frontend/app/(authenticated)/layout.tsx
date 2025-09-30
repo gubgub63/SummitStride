@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Layout Authentifié - Coach IA Hugo
+ * Layout Authentifié - SummitStride
  * Layout pour les pages protégées avec navigation complète
  */
 

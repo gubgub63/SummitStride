@@ -1,5 +1,5 @@
 /**
- * useCourses Hook - Coach IA Hugo
+ * useCourses Hook - SummitStride
  * Hook pour la gestion des données de courses avec cache et états
  *
  * Intégration avec les APIs backend développées en Phase 3

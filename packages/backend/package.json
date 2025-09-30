@@ -1,5 +1,5 @@
 {
-  "name": "@coach-ia-hugo/backend",
+  "name": "@summitstride/backend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -22,7 +22,7 @@
     "@fastify/helmet": "^11.1.1",
     "@fastify/jwt": "^10.0.0",
     "@fastify/sensible": "^5.6.0",
-    "@coach-ia-hugo/shared": "*",
+    "@summitstride/shared": "*",
     "@prisma/client": "^5.20.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",

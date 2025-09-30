@@ -6,7 +6,7 @@
 export const themeScript = `
 (function() {
   try {
-    var storageKey = 'coach-ia-hugo-theme';
+    var storageKey = 'summitstride-theme';
     var theme = localStorage.getItem(storageKey) || 'system';
     var resolved = theme;
 

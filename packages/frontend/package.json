@@ -1,5 +1,5 @@
 {
-  "name": "@coach-ia-hugo/frontend",
+  "name": "@summitstride/frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
     "clean": "rm -rf .next out"
   },
   "dependencies": {
-    "@coach-ia-hugo/shared": "*",
+    "@summitstride/shared": "*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "next": "15.5.3",

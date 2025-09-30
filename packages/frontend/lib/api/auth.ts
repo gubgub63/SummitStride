@@ -1,5 +1,5 @@
 /**
- * Service d'Authentification - Coach IA Hugo
+ * Service d'Authentification - SummitStride
  * API calls pour l'authentification et la gestion des utilisateurs
  */
 

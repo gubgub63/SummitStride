@@ -1,4 +1,4 @@
-# Coach IA Hugo - Application d'Entraînement Ultra Trail
+# SummitStride - Application d'Entraînement Ultra Trail
 
 Application web complète pour aider les ultra-traileurs à se préparer de manière optimale à leurs courses, avec génération de plans d'entraînement personnalisés, suivi via APIs externes, gestion nutritionnelle et planification calendaire.
 
@@ -14,7 +14,7 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 
 ### Structure du Projet
 ```
-CoachIAHugo/
+SummitStride/
 ├── packages/
 │   ├── frontend/     # Application Next.js
 │   ├── backend/      # API Fastify
@@ -35,7 +35,7 @@ CoachIAHugo/
 ```bash
 # Cloner le repository
 git clone <repository-url>
-cd CoachIAHugo
+cd SummitStride
 
 # Lancer le script de configuration
 ./scripts/setup.sh
@@ -61,7 +61,7 @@ docker-compose up -d
 
 4. **Construire le package partagé**
 ```bash
-npm run build --workspace=@coach-ia-hugo/shared
+npm run build --workspace=@summitstride/shared
 ```
 
 5. **Démarrer le développement**
@@ -97,8 +97,8 @@ npm run clean            # Nettoie les builds
 
 ### PostgreSQL + PostGIS
 - Port: 5432
-- Database: coach_ia_hugo_dev
-- User: coach_user
+- Database: summitstride_dev
+- User: summit_user
 
 ### Redis
 - Port: 6379
@@ -111,13 +111,13 @@ npm run clean            # Nettoie les builds
 
 ## 📁 Packages
 
-### @coach-ia-hugo/frontend
+### @summitstride/frontend
 Application Next.js avec interface utilisateur complète.
 
-### @coach-ia-hugo/backend
+### @summitstride/backend
 API Fastify avec authentification, gestion des utilisateurs, et intégrations externes.
 
-### @coach-ia-hugo/shared
+### @summitstride/shared
 Types TypeScript, schemas Zod, et utilitaires partagés.
 
 ## 🔧 Configuration

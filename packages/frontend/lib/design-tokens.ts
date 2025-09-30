@@ -1,5 +1,5 @@
 /**
- * Coach IA Hugo - Design Tokens
+ * SummitStride - Design Tokens
  * Alpine Tech Visual Identity System
  */
 

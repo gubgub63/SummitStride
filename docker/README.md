@@ -5,9 +5,9 @@
 ### PostgreSQL with PostGIS
 - **Image**: postgis/postgis:16-3.4
 - **Port**: 5432
-- **Database**: coach_ia_hugo_dev
-- **Username**: coach_user
-- **Password**: coach_password_dev
+- **Database**: summitstride_dev
+- **Username**: summit_user
+- **Password**: summit_password_dev
 - **Extensions**: PostGIS, PostGIS Topology
 
 ### Redis
@@ -29,7 +29,7 @@ docker-compose logs -f postgres
 docker-compose logs -f redis
 
 # Connect to PostgreSQL
-psql -h localhost -p 5432 -U coach_user -d coach_ia_hugo_dev
+psql -h localhost -p 5432 -U summit_user -d summitstride_dev
 
 # Connect to Redis
 redis-cli -h localhost -p 6379

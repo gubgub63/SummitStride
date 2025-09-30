@@ -128,9 +128,9 @@ export function MobileNavigation({ className = '' }: MobileNavigationProps) {
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">H</span>
+            <span className="text-white font-bold text-sm">S</span>
           </div>
-          <span className="font-bold text-lg text-foreground">Coach IA Hugo</span>
+          <span className="font-bold text-lg text-foreground">SummitStride</span>
         </Link>
 
         <button

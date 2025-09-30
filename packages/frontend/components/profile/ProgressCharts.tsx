@@ -1,5 +1,5 @@
 /**
- * ProgressCharts Component - Coach IA Hugo
+ * ProgressCharts Component - SummitStride
  * Affiche les graphiques de progression d'entraînement
  *
  * TODO: Replace with real API when backend statistics endpoints are available

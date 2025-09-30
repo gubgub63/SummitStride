@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { TrainingPlan, TrainingPlanStatus, TrainingSession } from '@coach-ia-hugo/shared'
+import { TrainingPlan, TrainingPlanStatus, TrainingSession } from '@summitstride/shared'
 import trainingService from '../services/trainingService'
 
 interface UseTrainingPlansReturn {

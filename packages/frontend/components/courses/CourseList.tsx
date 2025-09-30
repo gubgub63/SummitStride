@@ -1,5 +1,5 @@
 /**
- * CourseList Component - Coach IA Hugo
+ * CourseList Component - SummitStride
  * Liste principale des courses avec pagination
  */
 

@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Formulaire d'Inscription - Coach IA Hugo
+ * Formulaire d'Inscription - SummitStride
  * Composant pour l'inscription de nouveaux utilisateurs
  */
 
@@ -63,7 +63,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold text-foreground">Créer un compte</h1>
         <p className="text-muted-foreground">
-          Rejoignez Coach IA Hugo pour optimiser votre entraînement ultra-trail
+          Rejoignez SummitStride pour optimiser votre entraînement ultra-trail
         </p>
       </div>
 

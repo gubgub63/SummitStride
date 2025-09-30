@@ -1,5 +1,5 @@
 /**
- * Registration Detail Page - Coach IA Hugo
+ * Registration Detail Page - SummitStride
  * Page de détail d'une inscription avec analyse de préparation
  */
 

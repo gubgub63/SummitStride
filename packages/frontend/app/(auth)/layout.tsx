@@ -14,10 +14,10 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
             <div className="h-8 w-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-md flex items-center justify-center">
-              <span className="text-white font-bold text-sm">C</span>
+              <span className="text-white font-bold text-sm">S</span>
             </div>
             <span className="text-xl font-bold text-foreground hidden sm:block">
-              Coach IA Hugo
+              SummitStride
             </span>
           </Link>
 
@@ -34,7 +34,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
       <footer className="absolute bottom-0 left-0 right-0">
         <div className="container mx-auto px-4 py-4 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 Coach IA Hugo - Votre entraîneur ultra-trail intelligent
+            © 2025 SummitStride - Votre entraîneur ultra-trail intelligent
           </p>
         </div>
       </footer>

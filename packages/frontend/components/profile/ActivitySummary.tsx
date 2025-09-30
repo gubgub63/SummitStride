@@ -1,5 +1,5 @@
 /**
- * ActivitySummary Component - Coach IA Hugo
+ * ActivitySummary Component - SummitStride
  * Affiche un résumé de l'activité récente et à venir
  *
  * TODO: Replace with real API when backend statistics endpoints are available

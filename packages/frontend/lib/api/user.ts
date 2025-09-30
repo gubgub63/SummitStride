@@ -1,5 +1,5 @@
 /**
- * Service Utilisateur - Coach IA Hugo
+ * Service Utilisateur - SummitStride
  * API calls pour la gestion des profils utilisateur
  */
 

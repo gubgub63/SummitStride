@@ -1,5 +1,5 @@
 /**
- * Registration Service - Coach IA Hugo
+ * Registration Service - SummitStride
  * Service pour les appels API liés aux inscriptions aux courses
  */
 

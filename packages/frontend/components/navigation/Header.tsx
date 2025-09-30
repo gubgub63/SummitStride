@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Header Navigation - Coach IA Hugo
+ * Header Navigation - SummitStride
  * Composant de navigation principal pour les pages authentifiées
  */
 
@@ -28,10 +28,10 @@ export function Header() {
         {/* Logo et nom */}
         <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center space-x-2">
           <div className="h-8 w-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-md flex items-center justify-center">
-            <span className="text-white font-bold text-sm">C</span>
+            <span className="text-white font-bold text-sm">S</span>
           </div>
           <span className="text-xl font-bold text-foreground hidden sm:block">
-            Coach IA Hugo
+            SummitStride
           </span>
         </Link>
 

@@ -8,7 +8,7 @@ import { cn } from '../../lib/utils';
  * Modal Components - Alpine Tech Design System
  *
  * A set of modal components for overlays and dialogs,
- * designed for the Coach IA Hugo ultra-trail application.
+ * designed for the SummitStride ultra-trail application.
  */
 
 const modalVariants = cva(

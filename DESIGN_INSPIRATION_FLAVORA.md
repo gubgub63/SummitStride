@@ -1,4 +1,4 @@
-# 🎨 Inspiration Design Flavora pour Landing Page Coach IA Hugo
+# 🎨 Inspiration Design Flavora pour Landing Page SummitStride
 
 ## 📝 Notes d'inspiration basées sur l'analyse de https://flavora.fr/
 
@@ -27,7 +27,7 @@
 - **Urgence créée** : offres limitées dans le temps
 - **Mobile-first** : design responsive optimisé
 
-### 🚀 Adaptations pour Coach IA Hugo Ultra-Trail
+### 🚀 Adaptations pour SummitStride Ultra-Trail
 
 #### **Hero Section**
 ```jsx
@@ -176,4 +176,4 @@ const animateOnScroll = (entries) => {
 4. **Phase 4** : Optimisation mobile et performance
 5. **Phase 5** : A/B testing éléments de conversion
 
-**Note** : Garder l'équilibre entre inspiration Flavora et identité unique Coach IA Hugo ultra-trail ! 🏔️
+**Note** : Garder l'équilibre entre inspiration Flavora et identité unique SummitStride ultra-trail ! 🏔️

@@ -1,5 +1,5 @@
 /**
- * Hook de Profil Utilisateur - Coach IA Hugo
+ * Hook de Profil Utilisateur - SummitStride
  * Hook spécialisé pour la gestion des profils utilisateur
  */
 

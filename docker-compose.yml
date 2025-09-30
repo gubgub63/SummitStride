@@ -3,12 +3,12 @@ version: '3.8'
 services:
   postgres:
     image: postgis/postgis:16-3.4
-    container_name: coach-ia-hugo-postgres
+    container_name: summitstride-postgres
     restart: always
     environment:
-      POSTGRES_DB: coach_ia_hugo_dev
-      POSTGRES_USER: coach_user
-      POSTGRES_PASSWORD: coach_password_dev
+      POSTGRES_DB: summitstride_dev
+      POSTGRES_USER: summit_user
+      POSTGRES_PASSWORD: summit_password_dev
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - '5432:5432'
@@ -16,14 +16,14 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U coach_user -d coach_ia_hugo_dev']
+      test: ['CMD-SHELL', 'pg_isready -U summit_user -d summitstride_dev']
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: coach-ia-hugo-redis
+    container_name: summitstride-redis
     restart: always
     ports:
       - '6379:6379'

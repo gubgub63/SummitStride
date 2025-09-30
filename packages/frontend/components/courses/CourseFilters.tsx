@@ -1,5 +1,5 @@
 /**
- * CourseFilters Component - Coach IA Hugo
+ * CourseFilters Component - SummitStride
  * Panneau de filtres pour la recherche de courses
  */
 
