@@ -50,6 +50,7 @@ export interface TrainingSession {
   dayOfWeek?: number
   plannedLoad?: number
   metrics?: SessionMetrics
+  nutritionPlan?: SessionNutritionPlan
   createdAt: Date
   updatedAt: Date
 }
@@ -80,6 +81,24 @@ export interface SessionMetrics {
   elevationGain?: number
   averagePace?: number
   perceivedExertion?: number // 1-10 scale
+}
+
+export interface SessionNutritionPlan {
+  strategy: 'GELS'
+  carbsPerHour: {
+    min: number
+    max: number
+  }
+  totalCarbs: number
+  gels: SessionGelIntake[]
+  notes: string[]
+}
+
+export interface SessionGelIntake {
+  timeOffsetMin: number
+  carbsGr: number
+  caffeinated?: boolean
+  note?: string
 }
 
 export interface TrainingPlanTemplate {

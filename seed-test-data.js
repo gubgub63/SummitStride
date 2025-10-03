@@ -302,6 +302,11 @@ async function main() {
   })
 
   await prisma.trainingSession.deleteMany({ where: { planId: trainingPlan.id } })
+  await prisma.trainingSession.deleteMany({
+    where: {
+      id: { in: ['session-demo-1', 'session-demo-2', 'session-demo-3'] },
+    },
+  })
 
   const trainingSessions = [
     {
@@ -327,6 +332,27 @@ async function main() {
       maxHeartRate: 162,
       calories: 2100,
       elevationGain: 850,
+      nutritionPlan: {
+        strategy: 'GELS',
+        carbsPerHour: { min: 55, max: 65 },
+        totalCarbs: 165,
+        gels: [
+          { timeOffsetMin: 30, carbsGr: 25 },
+          { timeOffsetMin: 60, carbsGr: 25 },
+          { timeOffsetMin: 90, carbsGr: 25 },
+          { timeOffsetMin: 120, carbsGr: 25 },
+          {
+            timeOffsetMin: 150,
+            carbsGr: 25,
+            caffeinated: true,
+            note: 'Gel caféiné pour le final',
+          },
+        ],
+        notes: [
+          'Sortie longue : viser 55-65 g/h et boire 150 ml avec chaque gel.',
+          'Caféine uniquement en fin de séance.',
+        ],
+      },
     },
     {
       id: 'session-demo-2',
@@ -351,6 +377,25 @@ async function main() {
       maxHeartRate: 178,
       calories: 980,
       elevationGain: 750,
+      nutritionPlan: {
+        strategy: 'GELS',
+        carbsPerHour: { min: 60, max: 70 },
+        totalCarbs: 105,
+        gels: [
+          { timeOffsetMin: 30, carbsGr: 25 },
+          { timeOffsetMin: 60, carbsGr: 25 },
+          {
+            timeOffsetMin: 80,
+            carbsGr: 25,
+            caffeinated: true,
+            note: 'Gel caféiné pour soutenir la fin d\'intervalle',
+          },
+        ],
+        notes: [
+          'Séance intense : viser la fourchette haute (60-70 g/h).',
+          'Hydratation : 150 ml toutes les 15-20 min.',
+        ],
+      },
     },
     {
       id: 'session-demo-3',
@@ -369,6 +414,29 @@ async function main() {
       weekNumber: 11,
       dayOfWeek: 6,
       plannedLoad: 180,
+      nutritionPlan: {
+        strategy: 'GELS',
+        carbsPerHour: { min: 60, max: 75 },
+        totalCarbs: 260,
+        gels: [
+          { timeOffsetMin: 30, carbsGr: 25 },
+          { timeOffsetMin: 60, carbsGr: 25 },
+          { timeOffsetMin: 90, carbsGr: 25 },
+          { timeOffsetMin: 120, carbsGr: 25 },
+          { timeOffsetMin: 150, carbsGr: 25 },
+          {
+            timeOffsetMin: 180,
+            carbsGr: 25,
+            caffeinated: true,
+            note: 'Gel caféiné pour préparation dernière heure',
+          },
+          { timeOffsetMin: 210, carbsGr: 25 },
+        ],
+        notes: [
+          'Back-to-back long run : maintenir 60-75 g/h avec alternance gel/boisson.',
+          'Prévoir compléments salés toutes les 2 heures.',
+        ],
+      },
     },
   ]
 

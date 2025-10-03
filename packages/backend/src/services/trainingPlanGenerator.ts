@@ -55,6 +55,34 @@ interface GenerationPreferences {
     maxWeekendDuration?: number
     vacationPeriods?: { start: Date; end: Date }[]
   }
+  nutrition?: NutritionPreferences
+}
+
+type GIToleranceLevel = 'LOW' | 'MEDIUM' | 'HIGH'
+
+interface NutritionPreferences {
+  giTolerance?: GIToleranceLevel
+  caffeinePreference?: 'AVOID' | 'LIMITED' | 'OK'
+  heatCategory?: 'COLD' | 'TEMPERATE' | 'HOT'
+  gelCarbSize?: number
+}
+
+interface SessionGelIntake {
+  timeOffsetMin: number
+  carbsGr: number
+  caffeinated?: boolean
+  note?: string
+}
+
+interface SessionNutritionPlan {
+  strategy: 'GELS'
+  carbsPerHour: {
+    min: number
+    max: number
+  }
+  totalCarbs: number
+  gels: SessionGelIntake[]
+  notes: string[]
 }
 
 interface GenerationInput {
@@ -348,6 +376,14 @@ export class TrainingPlanGenerator {
         description: this.generateSessionDescription(sessionType, intensity, phase),
         phase: planPhase,
         weekNumber,
+        nutritionPlan: this.buildSessionNutritionPlan({
+          duration,
+          intensity,
+          sessionType,
+          preferences,
+          raceAnalysis,
+          userAnalysis,
+        }),
       }
 
       sessions.push(session)
@@ -403,6 +439,7 @@ export class TrainingPlanGenerator {
             weekNumber: week.weekNumber,
             dayOfWeek: scheduledDay,
             plannedLoad,
+            nutritionPlan: session.nutritionPlan ?? undefined,
           },
         })
 
@@ -675,6 +712,146 @@ export class TrainingPlanGenerator {
     return Math.round(duration * speed * 10) / 10 // Arrondi à 0.1 km
   }
 
+  private buildSessionNutritionPlan(params: {
+    duration?: number
+    intensity: Intensity
+    sessionType: TrainingType
+    preferences: GenerationPreferences
+    raceAnalysis: any
+    userAnalysis: any
+  }): SessionNutritionPlan {
+    const durationMinutes = Math.max(0, params.duration ?? 0)
+    const nutritionPrefs = params.preferences.nutrition ?? {
+      giTolerance: 'MEDIUM' as GIToleranceLevel,
+      caffeinePreference: 'LIMITED' as NutritionPreferences['caffeinePreference'],
+      heatCategory: 'TEMPERATE' as NutritionPreferences['heatCategory'],
+      gelCarbSize: undefined,
+    }
+
+    const giTolerance = nutritionPrefs.giTolerance ?? 'MEDIUM'
+    const caffeinePreference = nutritionPrefs.caffeinePreference ?? 'LIMITED'
+    const heatCategory = nutritionPrefs.heatCategory ?? 'TEMPERATE'
+    const gelCarbSize = this.clamp(
+      Math.round(
+        nutritionPrefs.gelCarbSize ?? (giTolerance === 'LOW' ? 20 : giTolerance === 'HIGH' ? 30 : 25)
+      ),
+      15,
+      35
+    )
+
+    const intensityRank = this.getIntensityRank(params.intensity)
+
+    let minCarbs = 50
+    let maxCarbs = 70
+
+    if (intensityRank <= 1) {
+      maxCarbs = 60
+    } else if (intensityRank === 2) {
+      minCarbs = 55
+      maxCarbs = 65
+    } else if (intensityRank >= 3) {
+      minCarbs = 60
+      maxCarbs = intensityRank === 4 ? 75 : 70
+    }
+
+    if (giTolerance === 'LOW') {
+      minCarbs = Math.max(45, minCarbs - 5)
+      maxCarbs = Math.max(55, maxCarbs - 5)
+    } else if (giTolerance === 'HIGH') {
+      minCarbs = Math.min(70, minCarbs + 5)
+      maxCarbs = Math.min(80, maxCarbs + 5)
+    }
+
+    const notes: string[] = []
+
+    if (heatCategory === 'HOT') {
+      minCarbs = Math.max(45, minCarbs - 2)
+      notes.push(
+        'Chaleur prévue : fractionner les apports toutes les 20 min et boire à chaque gel.'
+      )
+    } else if (heatCategory === 'COLD') {
+      notes.push('Conditions fraîches : rester sur la fourchette basse si la digestion est sensible.')
+    }
+
+    const carbsPerHour = {
+      min: Math.round(minCarbs),
+      max: Math.round(maxCarbs),
+    }
+
+    if (durationMinutes < 60) {
+      notes.push(
+        'Séance < 60 min : gels non requis, privilégier une boisson énergétique légère.'
+      )
+      return {
+        strategy: 'GELS',
+        carbsPerHour,
+        totalCarbs: 0,
+        gels: [],
+        notes,
+      }
+    }
+
+    const averageCarbs = (carbsPerHour.min + carbsPerHour.max) / 2
+    const totalCarbsTarget = Math.round((durationMinutes / 60) * averageCarbs)
+    const baseInterval = this.resolveGelInterval(
+      durationMinutes,
+      intensityRank,
+      heatCategory,
+      giTolerance
+    )
+
+    const possibleIntakes = Math.max(1, Math.floor((durationMinutes - 10) / baseInterval) + 1)
+
+    let gelCount = Math.max(1, Math.round(totalCarbsTarget / gelCarbSize))
+
+    if (gelCount > possibleIntakes) {
+      gelCount = possibleIntakes
+    }
+
+    const deliveredCarbs = gelCount * gelCarbSize
+    if (deliveredCarbs < totalCarbsTarget - gelCarbSize * 0.5 && gelCount < possibleIntakes) {
+      gelCount += 1
+    }
+
+    const gelOffsets = this.distributeGelIntakes(durationMinutes, gelCount, baseInterval)
+
+    const gels: SessionGelIntake[] = gelOffsets.map((offset) => ({
+      timeOffsetMin: offset,
+      carbsGr: gelCarbSize,
+    }))
+
+    const caffeinatedIndex = this.selectCaffeinatedGelIndex(
+      gelCount,
+      durationMinutes,
+      caffeinePreference
+    )
+
+    if (caffeinatedIndex !== null && gels[caffeinatedIndex]) {
+      gels[caffeinatedIndex].caffeinated = true
+      gels[caffeinatedIndex].note = 'Gel caféiné pour le boost final (consommer avec eau).'
+    } else if (caffeinePreference === 'AVOID') {
+      notes.push('Caféine évitée selon vos préférences.')
+    }
+
+    if (giTolerance === 'LOW') {
+      notes.push('Tolérance gastro sensible : privilégier des gels fluides (≈20 g) et alterner avec boisson.')
+    } else if (giTolerance === 'HIGH') {
+      notes.push('Tolérance élevée : possible de viser la fourchette haute des glucides.')
+    }
+
+    notes.push(
+      `Objectif glucides : ${carbsPerHour.min}-${carbsPerHour.max} g/h (≈ ${totalCarbsTarget} g sur la séance).`
+    )
+
+    return {
+      strategy: 'GELS',
+      carbsPerHour,
+      totalCarbs: totalCarbsTarget,
+      gels,
+      notes,
+    }
+  }
+
   private generateSessionName(sessionType: TrainingType, intensity: Intensity, weekNumber: number): string {
     const typeNames: Record<TrainingType, string> = {
       [TrainingType.ENDURANCE]: 'Endurance',
@@ -743,6 +920,111 @@ export class TrainingPlanGenerator {
     }
 
     return descriptions[sessionType]?.[intensity] || `Séance de ${sessionType.toLowerCase()}`
+  }
+
+  private resolveGelInterval(
+    durationMinutes: number,
+    intensityRank: number,
+    heatCategory: string,
+    giTolerance: GIToleranceLevel
+  ): number {
+    let interval = 30
+
+    if (durationMinutes >= 150 || intensityRank >= 3) {
+      interval = 20
+    } else if (durationMinutes >= 90 || intensityRank >= 2) {
+      interval = 25
+    }
+
+    if (heatCategory === 'HOT') {
+      interval = Math.min(interval, 20)
+    }
+
+    if (giTolerance === 'LOW') {
+      interval = Math.max(interval, 25)
+    }
+
+    return this.clamp(interval, 20, 30)
+  }
+
+  private distributeGelIntakes(
+    durationMinutes: number,
+    gelCount: number,
+    baseInterval: number
+  ): number[] {
+    if (gelCount <= 0) return []
+
+    if (gelCount === 1) {
+      const suggestedTime = durationMinutes > 90 ? durationMinutes - 30 : baseInterval
+      const snapped = this.snapToFive(
+        Math.min(durationMinutes - 10, Math.max(20, suggestedTime))
+      )
+      return [snapped]
+    }
+
+    const firstIntake = Math.min(baseInterval, 30)
+    const lastIntake = Math.max(firstIntake, durationMinutes - 15)
+    const step = (lastIntake - firstIntake) / (gelCount - 1)
+
+    const offsets: number[] = []
+
+    for (let index = 0; index < gelCount; index++) {
+      const rawOffset = firstIntake + step * index
+      const snapped = this.snapToFive(
+        Math.min(durationMinutes - 10, Math.max(20, rawOffset))
+      )
+
+      if (offsets.length > 0 && snapped <= offsets[offsets.length - 1]) {
+        const previous = offsets[offsets.length - 1]
+        offsets.push(this.snapToFive(previous + baseInterval))
+      } else {
+        offsets.push(snapped)
+      }
+    }
+
+    return offsets.map((offset) => Math.min(durationMinutes - 10, offset))
+  }
+
+  private selectCaffeinatedGelIndex(
+    gelCount: number,
+    durationMinutes: number,
+    preference?: NutritionPreferences['caffeinePreference']
+  ): number | null {
+    const caffeinePreference = preference ?? 'LIMITED'
+
+    if (gelCount === 0 || caffeinePreference === 'AVOID') {
+      return null
+    }
+
+    if (caffeinePreference === 'OK' && durationMinutes >= 90) {
+      return gelCount - 1
+    }
+
+    if (caffeinePreference === 'LIMITED' && durationMinutes >= 150) {
+      return gelCount - 1
+    }
+
+    return null
+  }
+
+  private getIntensityRank(intensity: Intensity): number {
+    const rankMap: Record<Intensity, number> = {
+      [Intensity.VERY_LOW]: 0,
+      [Intensity.LOW]: 1,
+      [Intensity.MODERATE]: 2,
+      [Intensity.HIGH]: 3,
+      [Intensity.VERY_HIGH]: 4,
+    }
+
+    return rankMap[intensity] ?? 2
+  }
+
+  private clamp(value: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, value))
+  }
+
+  private snapToFive(value: number): number {
+    return Math.max(5, Math.round(value / 5) * 5)
   }
 
   // Méthodes de calcul pour l'analyse

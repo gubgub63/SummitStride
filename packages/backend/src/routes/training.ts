@@ -27,6 +27,15 @@ const vacationPeriodSchema = z.object({
   end: z.preprocess(toDate, z.date()),
 })
 
+const nutritionPreferencesSchema = z
+  .object({
+    giTolerance: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
+    caffeinePreference: z.enum(['AVOID', 'LIMITED', 'OK']).optional(),
+    heatCategory: z.enum(['COLD', 'TEMPERATE', 'HOT']).optional(),
+    gelCarbSize: z.number().min(10).max(45).optional(),
+  })
+  .optional()
+
 const generationPreferencesSchema = z.object({
   sessionsPerWeek: z.number().min(1).max(7).optional(),
   preferredDays: z.array(z.number().min(0).max(6)).optional(),
@@ -43,6 +52,7 @@ const generationPreferencesSchema = z.object({
     maxWeekendDuration: z.number().positive().optional(),
     vacationPeriods: z.array(vacationPeriodSchema).optional(),
   }).optional(),
+  nutrition: nutritionPreferencesSchema,
 }).default({})
 
 const EXPERIENCE_FITNESS_MAP: Record<string, number> = {
@@ -137,8 +147,21 @@ const buildGenerationPreferences = (
     recoveryNeeds: rawPreferences.recoveryNeeds ?? 'medium',
     injuryHistory,
     focusAreas: rawPreferences.focusAreas ?? [],
-    adaptToWeather: rawPreferences.adaptToWeather ?? false,
-    timeConstraints: baseTimeConstraints,
+  adaptToWeather: rawPreferences.adaptToWeather ?? false,
+  timeConstraints: baseTimeConstraints,
+  nutrition: rawPreferences.nutrition
+    ? {
+        giTolerance: rawPreferences.nutrition.giTolerance ?? 'MEDIUM',
+        caffeinePreference: rawPreferences.nutrition.caffeinePreference ?? 'LIMITED',
+        heatCategory: rawPreferences.nutrition.heatCategory ?? 'TEMPERATE',
+        gelCarbSize: rawPreferences.nutrition.gelCarbSize,
+      }
+    : {
+        giTolerance: 'MEDIUM',
+        caffeinePreference: 'LIMITED',
+        heatCategory: 'TEMPERATE',
+        gelCarbSize: undefined,
+      },
   }
 }
 
@@ -764,28 +787,52 @@ export async function trainingRoutes(fastify: FastifyInstance) {
           const { id } = request.params
           const { status } = updatePlanStatusSchema.parse(request.body)
 
-          const updated = await fastify.prisma.trainingPlan.updateMany({
-            where: {
-              id,
-              userId: user.userId || user.id,
-            },
-            data: { status },
+          const userId = user.userId || user.id
+
+          const plan = await fastify.prisma.trainingPlan.findFirst({
+            where: { id, userId },
           })
 
-          if (updated.count === 0) {
+          if (!plan) {
             return reply.code(404).send({
               success: false,
               error: 'Plan d\'entraînement non trouvé',
             })
           }
 
-          const plan = await fastify.prisma.trainingPlan.findUnique({
+          if (status === TrainingPlanStatus.ACTIVE) {
+            const conflictingPlan = await fastify.prisma.trainingPlan.findFirst({
+              where: {
+                userId,
+                status: TrainingPlanStatus.ACTIVE,
+                NOT: { id },
+              },
+              select: {
+                id: true,
+                name: true,
+                startDate: true,
+                endDate: true,
+              },
+            })
+
+            if (conflictingPlan) {
+              return reply.code(409).send({
+                success: false,
+                error:
+                  "Un autre plan est déjà actif pour cet utilisateur. Mettez-le en pause ou terminez-le avant d'activer celui-ci.",
+                conflict: conflictingPlan,
+              })
+            }
+          }
+
+          const updatedPlan = await fastify.prisma.trainingPlan.update({
             where: { id },
+            data: { status },
           })
 
           reply.send({
             success: true,
-            data: plan,
+            data: updatedPlan,
             message: 'Statut du plan mis à jour',
           })
         } catch (error) {

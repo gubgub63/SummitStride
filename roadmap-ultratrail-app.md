@@ -447,39 +447,69 @@ La Phase 4 (Interface Utilisateur) est maintenant **complètement terminée** av
 
 ### Nutrition — Gel intake & timing
 
-- [ ] Définir les seuils d'usage des gels : <60 min ⇒ non requis (note à afficher), ≥60 min ⇒ objectif 50–70 g/h avec prises toutes 20–30 min.
-- [ ] Documenter les ajustements selon intensité (zones existantes), durée, chaleur, tolérance gastro-intestinale et préférence caféine (champs déjà présents dans le profil nutrition).
-- [ ] Étendre `session.nutritionPlan` (structure existante) avec `gels[]` comportant `timeOffsetMin`, `carbsGr`, `caffeinated?`, `note`, sans introduire d'entité supplémentaire.
-- [ ] Générer ce schedule côté API lors de la préparation de la séance/course, puis l'afficher dans le détail de séance (cf. section “Séances — Détail enrichi”).
-- [ ] Baliser les gels caféinés en fin d’effort uniquement pour les profils qui les tolèrent, sinon indiquer “non recommandé”.
+- [x] Définir les seuils d'usage des gels : <60 min ⇒ note “non requis”, ≥60 min ⇒ objectif 50–70 g/h avec prises toutes 20–30 min.
+- [x] Documenter les ajustements selon intensité, durée, chaleur, tolérance gastro-intestinale et préférence caféine (champ `preferences.nutrition`).
+- [x] Étendre `session.nutritionPlan` avec `gels[]` (`timeOffsetMin`, `carbsGr`, `caffeinated?`, `note`) stocké en JSON dans Prisma.
+- [x] Générer ce schedule côté API lors de la préparation des séances (⚠️ affichage UI à brancher dans “Séances — Détail enrichi”).
+- [x] Baliser les gels caféinés en fin d’effort uniquement si `preferences.nutrition.caffeinePreference` le permet, sinon ajouter une note “Caféine évitée”.
+
+**✅ Implémentation livrée (2025-10-01)**
+- Nouveau champ Prisma `training_sessions.nutritionPlan` + migration `20251001125652_add_session_nutrition_plan`.
+- Générateur de plan enrichi (`TrainingPlanGenerator.buildSessionNutritionPlan`) : calcul des fourchettes glucidiques, intervalle 20–30 min, adaptation chaleur/GI/caféine.
+- Préférences de génération étendues (`generationPreferencesSchema.nutrition`) avec tolérance GI, caféine, chaleur, taille des gels.
+- Types partagés (backend + frontend) mis à jour (`SessionNutritionPlan`, `SessionGelIntake`).
+- Script de seed enrichi avec plans nutrition pour les séances démo.
+- Widget hebdomadaire (`WeeklyPlanWidget`) affiche désormais les objectifs glucidiques, les gels programmés et les notes coaching.
+- Reste : étendre le panneau « Séances — Détail enrichi » global pour aligner toutes les vues (cf. section dédiée).
 
 ### Plans — Unicité du plan actif par utilisateur
 
-- [ ] Réitérer la règle « un seul plan `ACTIVE` par `userId` », en se reposant sur les statuts existants (`DRAFT`, `ACTIVE`, `COMPLETED`, etc.).
-- [ ] À l’activation (PUT/PATCH existant), vérifier l’absence d’un autre plan actif ; sinon, demander la mise en pause/archivage via l’UI avant de confirmer.
-- [ ] Conserver la création par défaut en `DRAFT`, l’activation restant une action explicite utilisateur.
-- [ ] Documenter la contrainte côté Prisma ou middleware (unicité logique) sans ajouter de nouvelle route.
+- [x] Réitérer la règle « un seul plan `ACTIVE` par `userId` », en se reposant sur les statuts existants (`DRAFT`, `ACTIVE`, `COMPLETED`, etc.).
+- [x] À l’activation (PUT/PATCH existant), vérifier l’absence d’un autre plan actif ; sinon, demander la mise en pause/archivage via l’UI avant de confirmer.
+- [x] Conserver la création par défaut en `DRAFT`, l’activation restant une action explicite utilisateur.
+- [x] Documenter la contrainte côté Prisma ou middleware (unicité logique) sans ajouter de nouvelle route.
+
+**✅ Implémentation livrée**
+- Vérification back-end (`PATCH /training-plans/:id/status`) : renvoie `409` si un autre plan actif du même utilisateur existe, avec métadonnées pour l’UI.
+- Tableau de bord mis à jour : gestion d’erreurs/success visuelles et blocage des boutons pendant les actions.
+- Règle rappelée dans la documentation pour éviter les régressions futures.
 
 ### Visualisation — Calendrier global du plan
 
-- [ ] Proposer une vue calendrier globale (Semaine / Mois / Agenda) réutilisant l’endpoint de récupération des séances avec filtres `dateStart`/`dateEnd` déjà supportés.
-- [ ] Offrir un switch “Plan actif” vs “Historique” en filtrant les statuts existants (`ACTIVE`, `COMPLETED`, etc.).
-- [ ] Afficher pour chaque séance : titre, icône/type (EF, seuil, VMA, sortie longue), durée, distance ; le clic ouvre le panneau détail existant.
-- [ ] Ne pas ajouter de dépendance UI externe : réutiliser les composants maison (carte, grille, widget hebdo étendu).
+- [x] Proposer une vue calendrier globale (Semaine / Mois / Agenda) réutilisant l’endpoint de récupération des séances avec filtres `dateStart`/`dateEnd` déjà supportés.
+- [x] Offrir un switch “Plan actif” vs “Historique” en filtrant les statuts existants (`ACTIVE`, `COMPLETED`, etc.).
+- [x] Afficher pour chaque séance : titre, icône/type (EF, seuil, VMA, sortie longue), durée, distance ; le clic ouvre le panneau détail existant.
+- [x] Ne pas ajouter de dépendance UI externe : réutiliser les composants maison (carte, grille, widget hebdo étendu).
+
+**✅ Implémentation livrée**
+- Nouveau composant `TrainingPlanCalendar` : grouping hebdomadaire, switch Actif/Historiques, réutilisation des styles Button/Card.
+- Intégré au dashboard plan avec état de chargement et sélection synchronisée.
+- Interaction ouvre `TrainingSessionDetail` pour rester cohérent avec le widget hebdomadaire.
 
 ### Séances — Détail enrichi
 
-- [ ] Structurer le panneau détail en sections : Résumé (nom, type, objectif), Volume (durée/distance/D+ si disponible), Intensité (zone ou %VMA/%FC), Intervalles (échauffement, travail, récup, retour au calme) quand présents.
-- [ ] Afficher la nutrition : `session.nutritionPlan.gels[]` + rappels hydratation déjà documentés ; aucun champ nouveau.
-- [ ] Inclure matériel/notes/météo si les champs existent déjà dans la séance ou le plan.
+- [x] Structurer le panneau détail en sections : Résumé (nom, type, objectif), Volume (durée/distance/D+ si disponible), Intensité (zone ou %VMA/%FC), Intervalles (échauffement, travail, récup, retour au calme) quand présents.
+- [x] Afficher la nutrition : `session.nutritionPlan.gels[]` + rappels hydratation déjà documentés ; aucun champ nouveau. *(Composant générique utilisé par le widget hebdomadaire & le calendrier.)*
+- [x] Inclure matériel/notes/météo si les champs existent déjà dans la séance ou le plan.
 - [ ] Prévoir un encart RPE/ressenti (lecture/édition) en réutilisant le champ existant (ou alias) sans créer de nouvelle entité.
+
+**✅ Implémentation livrée**
+- Création du composant `TrainingSessionDetail` : sections Résumé, Volume & Intensité, Intervalles (avec fallback), Nutrition & hydratation.
+- Intégration dans `WeeklyPlanWidget` et `TrainingPlanCalendar` pour offrir une expérience unifiée.
+- Affiche les notes, le plan de gels et signale l’absence de métriques/RPE quand non saisis.
+- Reste à implémenter : formulaire RPE éditable (cf. dernier sous-point).
 
 ### Gouvernance — Idempotence & Non-régression
 
-- [ ] Toute entrée déjà définie doit être marquée “(déjà couvert)” au lieu d’être dupliquée.
-- [ ] Aucune nouvelle entité/route/librairie ne doit être ajoutée si une alternative existe déjà dans l’architecture (Fastify, Prisma, React, etc.).
-- [ ] Les titres/ancres restent stables pour garantir l’idempotence des mises à jour automatisées.
-- [ ] Vérifier après chaque modification que la roadmap reste sans doublon et fidèle aux structures existantes.
+- [x] Toute entrée déjà définie doit être marquée “(déjà couvert)” au lieu d’être dupliquée.
+- [x] Aucune nouvelle entité/route/librairie ne doit être ajoutée si une alternative existe déjà dans l’architecture (Fastify, Prisma, React, etc.).
+- [x] Les titres/ancres restent stables pour garantir l’idempotence des mises à jour automatisées.
+- [x] Vérifier après chaque modification que la roadmap reste sans doublon et fidèle aux structures existantes.
+
+**✅ Implémentation livrée**
+- Mise à jour de la roadmap avec sections consolidées et mentions explicites des éléments déjà couverts.
+- Réutilisation stricte des composants existants (Button/Card) et des services/traductions sans dépendances additionnelles.
+- Rappel dans la roadmap pour maintenir cette gouvernance lors des prochaines phases.
 
 **📋 Backend requis pour Phase 4.6 UI :**
 - Tables TrainingPlan et TrainingSession déjà créées ✅

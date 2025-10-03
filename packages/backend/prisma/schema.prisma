@@ -125,6 +125,7 @@ model TrainingSession {
   weekNumber   Int?
   dayOfWeek    Int?
   plannedLoad  Int?
+  nutritionPlan Json?
 
   // Session Metrics (flattened)
   actualDuration      Int? // in minutes

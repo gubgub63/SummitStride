@@ -32,8 +32,7 @@
 
 import React, { useState } from 'react'
 import type { WeeklyPlanProps, TrainingSession, DailySession } from '../../types/training'
-import { SESSION_TYPE_LABELS, SESSION_TYPE_COLORS } from '../../types/training'
-import { formatDuration, isToday } from '../../lib/data/mockTrainingData'
+import { isToday } from '../../lib/data/mockTrainingData'
 
 export function WeeklyPlanWidget({
   weekStartDate,
@@ -84,33 +83,11 @@ export function WeeklyPlanWidget({
           const selectedSession = trainingSessions.find(session =>
             isSameDay(session.date, days[selectedDay])
           )
-          console.log(selectedSession)
           if (selectedSession) {
             return (
-              <div className="mt-4 p-4 bg-accent/30 rounded-lg">
+              <div className="mt-4 rounded-lg bg-accent/30 p-4">
                 <div className="text-sm font-medium mb-2">Détail de la séance</div>
-                <div className="space-y-2">
-                  <h3 className="font-medium text-foreground">{selectedSession.name}</h3>
-                  <p className="text-sm text-muted-foreground">{selectedSession.description}</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Durée:</span>
-                    <span className="font-medium">{formatDuration(selectedSession.duration)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Type:</span>
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${SESSION_TYPE_COLORS[selectedSession.type]}`}
-                    >
-                      {SESSION_TYPE_LABELS[selectedSession.type]}
-                    </span>
-                  </div>
-                  {selectedSession.distance && (
-                    <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Distance:</span>
-                        <span className="font-medium">{selectedSession.distance} km</span>
-                    </div>
-                    )}
-                </div>
+                <TrainingSessionDetail session={selectedSession} />
               </div>
             )
           } else {

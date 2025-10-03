@@ -10,7 +10,12 @@ import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { WeeklyPlanWidget } from './WeeklyPlanWidget'
-import { useTrainingStats, useTrainingPlans, useTrainingSessions } from '../../lib/hooks/useTraining'
+import { TrainingPlanCalendar } from './TrainingPlanCalendar'
+import {
+  useTrainingStats,
+  useTrainingPlans,
+  useTrainingSessions,
+} from '../../lib/hooks/useTraining'
 import { getCurrentWeekStart } from '../../lib/data/mockTrainingData'
 import { SESSION_TYPE_LABELS, SESSION_TYPE_COLORS } from '../../types/training'
 import trainingService from '../../lib/services/trainingService'
@@ -61,6 +66,9 @@ export function TrainingPlanDashboard() {
   const [templateSubmitting, setTemplateSubmitting] = useState(false)
   const [templateSubmitError, setTemplateSubmitError] = useState<string | null>(null)
   const [deleteSubmittingId, setDeleteSubmittingId] = useState<string | null>(null)
+  const [planStatusError, setPlanStatusError] = useState<string | null>(null)
+  const [planStatusSuccess, setPlanStatusSuccess] = useState<string | null>(null)
+  const [calendarExpanded, setCalendarExpanded] = useState(false)
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [registrationsLoading, setRegistrationsLoading] = useState(false)
   const [registrationsError, setRegistrationsError] = useState<string | null>(null)
@@ -105,13 +113,21 @@ export function TrainingPlanDashboard() {
   useEffect(() => {
     if (activePlan && (!selectedPlanId || selectedPlanId !== activePlan.id)) {
       setSelectedPlanId(activePlan.id)
+      setCalendarExpanded(false)
       return
     }
 
     if (!selectedPlanId && plans.length > 0) {
       setSelectedPlanId(plans[0].id)
+      setCalendarExpanded(false)
     }
   }, [activePlan, plans, selectedPlanId])
+
+  useEffect(() => {
+    setPlanStatusError(null)
+    setPlanStatusSuccess(null)
+    setCalendarExpanded(false)
+  }, [selectedPlanId])
 
   const selectedPlan = useMemo(
     () => plans.find(plan => plan.id === selectedPlanId) || activePlan || plans[0],
@@ -143,7 +159,7 @@ export function TrainingPlanDashboard() {
       setTemplatesError(
         error instanceof Error
           ? error.message
-          : "Impossible de charger les templates pour le moment"
+          : 'Impossible de charger les templates pour le moment'
       )
     } finally {
       setTemplatesLoading(false)
@@ -287,17 +303,53 @@ export function TrainingPlanDashboard() {
         error:
           error instanceof Error
             ? error.message
-            : "Erreur inattendue lors de la génération du plan",
+            : 'Erreur inattendue lors de la génération du plan',
       }))
     }
   }
 
   const handleTogglePlanStatus = async (planId: string, status: TrainingPlanStatus) => {
+    setPlanStatusError(null)
+    setPlanStatusSuccess(null)
+
     try {
       await updatePlanStatus(planId, status)
       await refreshPlans()
+      setPlanStatusSuccess('Statut du plan mis à jour avec succès.')
     } catch (error) {
       console.error('Impossible de mettre à jour le statut du plan', error)
+      setPlanStatusError(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de mettre à jour le statut du plan pour le moment.'
+      )
+    }
+  }
+
+  const handleDeletePlan = async (planId: string) => {
+    if (!planId) {
+      return
+    }
+
+    setPlanStatusError(null)
+    setPlanStatusSuccess(null)
+
+    setDeleteSubmittingId(planId)
+
+    try {
+      await deletePlan(planId)
+
+      await refreshPlans()
+
+      setSelectedPlanId(prev => (prev === planId ? null : prev))
+      setPlanStatusSuccess('Plan supprimé avec succès.')
+    } catch (error) {
+      console.error('Impossible de supprimer le plan', error)
+      setPlanStatusError(
+        error instanceof Error ? error.message : 'Impossible de supprimer le plan pour le moment.'
+      )
+    } finally {
+      setDeleteSubmittingId(null)
     }
   }
 
@@ -360,9 +412,7 @@ export function TrainingPlanDashboard() {
       await refreshTemplates()
     } catch (error) {
       setTemplateSubmitError(
-        error instanceof Error
-          ? error.message
-          : 'Impossible de créer le template pour le moment.'
+        error instanceof Error ? error.message : 'Impossible de créer le template pour le moment.'
       )
     } finally {
       setTemplateSubmitting(false)
@@ -504,7 +554,8 @@ export function TrainingPlanDashboard() {
                 ? '...'
                 : displayStats.nextSession
                   ? displayStats.nextSession.distance
-                  : '--'} km
+                  : '--'}{' '}
+              km
             </div>
             <p className="text-xs text-muted-foreground">
               {displayStats.nextSession
@@ -531,7 +582,9 @@ export function TrainingPlanDashboard() {
               ) : selectedPlan ? (
                 <div className="space-y-2">
                   <h3 className="font-medium text-foreground">{selectedPlan.name}</h3>
-                  <p className="text-sm text-muted-foreground">{selectedPlan.description || 'Plan sans description'}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedPlan.description || 'Plan sans description'}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -606,10 +659,20 @@ export function TrainingPlanDashboard() {
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDeletePlan(selectedPlan.id)}
+                      disabled={deleteSubmittingId === selectedPlan.id}
                     >
-                      Supprimer
+                      {deleteSubmittingId === selectedPlan.id ? 'Suppression…' : 'Supprimer'}
                     </Button>
                   </div>
+
+                  {(planStatusError || planStatusSuccess) && (
+                    <div className="text-sm">
+                      {planStatusError && <p className="text-destructive">{planStatusError}</p>}
+                      {planStatusSuccess && !planStatusError && (
+                        <p className="text-emerald-600">{planStatusSuccess}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -666,7 +729,8 @@ export function TrainingPlanDashboard() {
                             </div>
                             <p className="text-xs text-muted-foreground">
                               {new Date(plan.startDate).toLocaleDateString('fr-FR')} →{' '}
-                              {new Date(plan.endDate).toLocaleDateString('fr-FR')} • Statut : {plan.status}
+                              {new Date(plan.endDate).toLocaleDateString('fr-FR')} • Statut :{' '}
+                              {plan.status}
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -680,7 +744,9 @@ export function TrainingPlanDashboard() {
                             {plan.status !== TrainingPlanStatus.ACTIVE && (
                               <Button
                                 size="sm"
-                                onClick={() => handleTogglePlanStatus(plan.id, TrainingPlanStatus.ACTIVE)}
+                                onClick={() =>
+                                  handleTogglePlanStatus(plan.id, TrainingPlanStatus.ACTIVE)
+                                }
                               >
                                 Activer
                               </Button>
@@ -689,8 +755,9 @@ export function TrainingPlanDashboard() {
                               size="sm"
                               variant="destructive"
                               onClick={() => handleDeletePlan(plan.id)}
+                              disabled={deleteSubmittingId === plan.id}
                             >
-                              Supprimer
+                              {deleteSubmittingId === plan.id ? 'Suppression…' : 'Supprimer'}
                             </Button>
                           </div>
                         </div>
@@ -713,7 +780,10 @@ export function TrainingPlanDashboard() {
               {sessionsLoading ? (
                 <p className="text-sm text-muted-foreground">Chargement des séances...</p>
               ) : selectedPlanSessions.length > 0 ? (
-                <WeeklyPlanWidget weekStartDate={weekStart} trainingSessions={selectedPlanSessions} />
+                <WeeklyPlanWidget
+                  weekStartDate={weekStart}
+                  trainingSessions={selectedPlanSessions}
+                />
               ) : selectedPlan ? (
                 <p className="text-sm text-muted-foreground">
                   Ce plan ne contient pas encore de séances enregistrées.
@@ -727,6 +797,42 @@ export function TrainingPlanDashboard() {
           </Card>
         </div>
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle className="text-lg">Calendrier du plan</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Visualisez vos séances par semaine et accédez au détail complet.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCalendarExpanded(previous => !previous)}
+            disabled={plansLoading || sessionsLoading}
+          >
+            {calendarExpanded ? 'Masquer' : 'Afficher'}
+          </Button>
+        </CardHeader>
+        {calendarExpanded && (
+          <CardContent>
+            {plansLoading ? (
+              <p className="text-sm text-muted-foreground">Chargement des plans…</p>
+            ) : selectedPlan ? (
+              sessionsLoading && selectedPlanSessions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Chargement des séances…</p>
+              ) : (
+                <TrainingPlanCalendar sessions={selectedPlanSessions} />
+              )
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Sélectionnez un plan pour consulter le calendrier global.
+              </p>
+            )}
+          </CardContent>
+        )}
+      </Card>
 
       {/* Activité récente */}
       <Card>
@@ -809,14 +915,16 @@ export function TrainingPlanDashboard() {
                         : 'date à confirmer'
                       return (
                         <option key={registration.id} value={registration.courseId}>
-                          {registration.course.name} • {registration.course.distance} km • {targetDateLabel}
+                          {registration.course.name} • {registration.course.distance} km •{' '}
+                          {targetDateLabel}
                         </option>
                       )
                     })}
                   </select>
                 ) : (
                   <p className="text-sm text-destructive">
-                    {registrationsError || 'Aucune inscription active : inscrivez-vous à une course pour générer un plan.'}
+                    {registrationsError ||
+                      'Aucune inscription active : inscrivez-vous à une course pour générer un plan.'}
                   </p>
                 )}
               </div>
@@ -969,7 +1077,10 @@ export function TrainingPlanDashboard() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground" htmlFor="template-category">
+                    <label
+                      className="text-xs font-medium text-foreground"
+                      htmlFor="template-category"
+                    >
                       Catégorie cible
                     </label>
                     <input
@@ -986,7 +1097,10 @@ export function TrainingPlanDashboard() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground" htmlFor="template-durationWeeks">
+                    <label
+                      className="text-xs font-medium text-foreground"
+                      htmlFor="template-durationWeeks"
+                    >
                       Durée (semaines)
                     </label>
                     <input
@@ -1000,7 +1114,10 @@ export function TrainingPlanDashboard() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground" htmlFor="template-targetExperience">
+                    <label
+                      className="text-xs font-medium text-foreground"
+                      htmlFor="template-targetExperience"
+                    >
                       Expérience (facultatif)
                     </label>
                     <input
@@ -1016,7 +1133,10 @@ export function TrainingPlanDashboard() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground" htmlFor="template-description">
+                  <label
+                    className="text-xs font-medium text-foreground"
+                    htmlFor="template-description"
+                  >
                     Description (facultatif)
                   </label>
                   <textarea
@@ -1070,7 +1190,10 @@ export function TrainingPlanDashboard() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground" htmlFor="session-intensity">
+                    <label
+                      className="text-xs font-medium text-foreground"
+                      htmlFor="session-intensity"
+                    >
                       Intensité
                     </label>
                     <select
@@ -1088,7 +1211,10 @@ export function TrainingPlanDashboard() {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground" htmlFor="session-weekOffset">
+                    <label
+                      className="text-xs font-medium text-foreground"
+                      htmlFor="session-weekOffset"
+                    >
                       Semaine (offset)
                     </label>
                     <input
@@ -1105,7 +1231,10 @@ export function TrainingPlanDashboard() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground" htmlFor="session-dayOfWeek">
+                    <label
+                      className="text-xs font-medium text-foreground"
+                      htmlFor="session-dayOfWeek"
+                    >
                       Jour (0=Dimanche)
                     </label>
                     <input
@@ -1120,7 +1249,10 @@ export function TrainingPlanDashboard() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground" htmlFor="session-duration">
+                    <label
+                      className="text-xs font-medium text-foreground"
+                      htmlFor="session-duration"
+                    >
                       Durée (minutes)
                     </label>
                     <input
@@ -1137,7 +1269,10 @@ export function TrainingPlanDashboard() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground" htmlFor="session-distance">
+                    <label
+                      className="text-xs font-medium text-foreground"
+                      htmlFor="session-distance"
+                    >
                       Distance (km)
                     </label>
                     <input
@@ -1151,7 +1286,10 @@ export function TrainingPlanDashboard() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground" htmlFor="session-description">
+                    <label
+                      className="text-xs font-medium text-foreground"
+                      htmlFor="session-description"
+                    >
                       Note séance (facultatif)
                     </label>
                     <textarea

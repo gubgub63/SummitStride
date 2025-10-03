@@ -30,8 +30,28 @@ export interface TrainingSession {
   actualDuration?: number // minutes if completed
   completedAt?: string // ISO date string
   notes?: string
+  nutritionPlan?: SessionNutritionPlan
+  plannedLoad?: number
   createdAt: string
   updatedAt: string
+}
+
+export interface SessionNutritionPlan {
+  strategy: 'GELS'
+  carbsPerHour: {
+    min: number
+    max: number
+  }
+  totalCarbs: number
+  gels: SessionGelIntake[]
+  notes: string[]
+}
+
+export interface SessionGelIntake {
+  timeOffsetMin: number
+  carbsGr: number
+  caffeinated?: boolean
+  note?: string
 }
 
 export type SessionType =
