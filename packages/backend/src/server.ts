@@ -9,6 +9,7 @@ import userRoutes from './routes/user.js'
 import courseRoutes from './routes/course.js'
 import registrationRoutes from './routes/registration.js'
 import { trainingRoutes } from './routes/training.js'
+import aiRoutes from './routes/ai.js'
 
 const envSchema = {
   type: 'object',
@@ -89,6 +90,9 @@ async function start() {
 
     // Training routes (protected)
     await fastify.register(trainingRoutes, { prefix: '/api' })
+
+    // AI insights routes (protected)
+    await fastify.register(aiRoutes, { prefix: '/api' })
 
     // Database status endpoint
     fastify.get('/api/db-status', async (_request, reply) => {

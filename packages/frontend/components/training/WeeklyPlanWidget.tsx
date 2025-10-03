@@ -33,6 +33,7 @@
 import React, { useState } from 'react'
 import type { WeeklyPlanProps, TrainingSession, DailySession } from '../../types/training'
 import { isToday } from '../../lib/data/mockTrainingData'
+import { TrainingSessionDetail } from './TrainingSessionDetail'
 
 export function WeeklyPlanWidget({
   weekStartDate,

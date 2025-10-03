@@ -55,28 +55,28 @@ export interface SessionGelIntake {
 }
 
 export type SessionType =
-  | 'EASY_RUN'           // Course facile
-  | 'ENDURANCE'           // Sortie longue
-  | 'INTERVAL'  // Fractionné
-  | 'TEMPO_RUN'          // Course au seuil
-  | 'HILL_TRAINING'      // Côtes
-  | 'RECOVERY_RUN'       // Récupération
-  | 'STRENGTH_TRAINING'  // Renforcement
-  | 'CROSS_TRAINING'     // Entraînement croisé
-  | 'REST'               // Repos
+  | 'EASY_RUN' // Course facile
+  | 'ENDURANCE' // Sortie longue
+  | 'INTERVAL' // Fractionné
+  | 'TEMPO_RUN' // Course au seuil
+  | 'HILL_TRAINING' // Côtes
+  | 'RECOVERY_RUN' // Récupération
+  | 'STRENGTH_TRAINING' // Renforcement
+  | 'CROSS_TRAINING' // Entraînement croisé
+  | 'REST' // Repos
 
 export type SessionIntensity =
-  | 'VERY_EASY'    // Très facile
-  | 'EASY'         // Facile
-  | 'MODERATE'     // Modéré
-  | 'HARD'         // Difficile
-  | 'VERY_HARD'    // Très difficile
+  | 'VERY_EASY' // Très facile
+  | 'EASY' // Facile
+  | 'MODERATE' // Modéré
+  | 'HARD' // Difficile
+  | 'VERY_HARD' // Très difficile
 
 export type SessionStatus =
-  | 'SCHEDULED'    // Planifiée
-  | 'COMPLETED'    // Terminée
-  | 'SKIPPED'      // Sautée
-  | 'MODIFIED'     // Modifiée
+  | 'SCHEDULED' // Planifiée
+  | 'COMPLETED' // Terminée
+  | 'SKIPPED' // Sautée
+  | 'MODIFIED' // Modifiée
 
 // Types utilitaires pour les composants UI
 export interface WeeklyPlanProps {
@@ -94,40 +94,42 @@ export interface DailySession {
 
 // Utilitaires pour les couleurs et labels
 export const SESSION_TYPE_LABELS: Record<SessionType, string> = {
-  'EASY_RUN': 'Course facile',
-  'ENDURANCE': 'Sortie longue',
-  'INTERVAL': 'Fractionné',
-  'TEMPO_RUN': 'Course au seuil',
-  'HILL_TRAINING': 'Côtes',
-  'RECOVERY_RUN': 'Récupération',
-  'STRENGTH_TRAINING': 'Renforcement',
-  'CROSS_TRAINING': 'Entraînement croisé',
-  'REST': 'Repos'
+  EASY_RUN: 'Course facile',
+  ENDURANCE: 'Sortie longue',
+  INTERVAL: 'Fractionné',
+  TEMPO_RUN: 'Course au seuil',
+  HILL_TRAINING: 'Côtes',
+  RECOVERY_RUN: 'Récupération',
+  STRENGTH_TRAINING: 'Renforcement',
+  CROSS_TRAINING: 'Entraînement croisé',
+  REST: 'Repos',
 }
 
 export const SESSION_TYPE_COLORS: Record<SessionType, string> = {
-  'EASY_RUN': 'bg-blue-100 text-blue-800',
-  'ENDURANCE': 'bg-purple-100 text-purple-800',
-  'INTERVAL': 'bg-red-100 text-red-800',
-  'TEMPO_RUN': 'bg-orange-100 text-orange-800',
-  'HILL_TRAINING': 'bg-yellow-100 text-yellow-800',
-  'RECOVERY_RUN': 'bg-green-100 text-green-800',
-  'STRENGTH_TRAINING': 'bg-gray-100 text-gray-800',
-  'CROSS_TRAINING': 'bg-indigo-100 text-indigo-800',
-  'REST': 'bg-gray-50 text-gray-600'
+  EASY_RUN: 'bg-blue-100 text-blue-800',
+  ENDURANCE: 'bg-purple-100 text-purple-800',
+  INTERVAL: 'bg-red-100 text-red-800',
+  TEMPO_RUN: 'bg-orange-100 text-orange-800',
+  HILL_TRAINING: 'bg-yellow-100 text-yellow-800',
+  RECOVERY_RUN: 'bg-green-100 text-green-800',
+  STRENGTH_TRAINING: 'bg-gray-100 text-gray-800',
+  CROSS_TRAINING: 'bg-indigo-100 text-indigo-800',
+  REST: 'bg-gray-50 text-gray-600',
 }
 
 export const INTENSITY_LABELS: Record<SessionIntensity, string> = {
-  'VERY_EASY': 'Très facile',
-  'EASY': 'Facile',
-  'MODERATE': 'Modéré',
-  'HARD': 'Difficile',
-  'VERY_HARD': 'Très difficile'
+  VERY_EASY: 'Très facile',
+  EASY: 'Facile',
+  MODERATE: 'Modéré',
+  HARD: 'Difficile',
+  VERY_HARD: 'Très difficile',
 }
 
 export const STATUS_LABELS: Record<SessionStatus, string> = {
-  'SCHEDULED': 'Planifiée',
-  'COMPLETED': 'Terminée',
-  'SKIPPED': 'Sautée',
-  'MODIFIED': 'Modifiée'
+  SCHEDULED: 'Planifiée',
+  COMPLETED: 'Terminée',
+  SKIPPED: 'Sautée',
+  MODIFIED: 'Modifiée',
 }
+
+export type { AiPlanInsights, ConfidenceLevel } from '@summitstride/shared'

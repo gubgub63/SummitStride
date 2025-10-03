@@ -144,3 +144,28 @@ export interface TrainingPlanProgress {
   loadScore: number
   weekly: WeeklyPlanProgress[]
 }
+
+export type ConfidenceLevel = 'LOW' | 'MEDIUM' | 'HIGH'
+
+export interface AiPlanInsights {
+  planId: string
+  predictedFinishTimeMinutes: number
+  predictedFinishTimeLabel: string
+  predictedPaceMinutesPerKm: number
+  confidence: ConfidenceLevel
+  fatigueScore: number
+  readinessScore: number
+  injuryRisk: ConfidenceLevel
+  trainingLoadScore: number
+  completionRate: number
+  recommendedFocus: string[]
+  recommendedAdjustments: string[]
+  topRisks: string[]
+  targetRace?: {
+    id: string
+    name: string
+    distance: number
+    difficulty?: string
+  }
+  generatedAt: string
+}

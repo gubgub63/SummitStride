@@ -26,6 +26,8 @@ import {
   TrainingPlanStatus,
   TrainingPlanTemplate,
   TrainingType,
+  AiPlanInsights,
+  ConfidenceLevel,
 } from '@summitstride/shared'
 
 interface GeneratePlanFormState {
@@ -69,6 +71,9 @@ export function TrainingPlanDashboard() {
   const [planStatusError, setPlanStatusError] = useState<string | null>(null)
   const [planStatusSuccess, setPlanStatusSuccess] = useState<string | null>(null)
   const [calendarExpanded, setCalendarExpanded] = useState(false)
+  const [aiInsights, setAiInsights] = useState<AiPlanInsights | null>(null)
+  const [aiInsightsLoading, setAiInsightsLoading] = useState(false)
+  const [aiInsightsError, setAiInsightsError] = useState<string | null>(null)
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [registrationsLoading, setRegistrationsLoading] = useState(false)
   const [registrationsError, setRegistrationsError] = useState<string | null>(null)
@@ -127,7 +132,34 @@ export function TrainingPlanDashboard() {
     setPlanStatusError(null)
     setPlanStatusSuccess(null)
     setCalendarExpanded(false)
+    setAiInsights(null)
+    setAiInsightsError(null)
   }, [selectedPlanId])
+
+  const loadAiInsights = useCallback(async (planId: string) => {
+    setAiInsightsLoading(true)
+    setAiInsightsError(null)
+    try {
+      const insights = await trainingService.getTrainingPlanAiInsights(planId)
+      setAiInsights(insights)
+    } catch (error) {
+      setAiInsights(null)
+      setAiInsightsError(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de récupérer les insights IA pour ce plan.'
+      )
+    } finally {
+      setAiInsightsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!selectedPlanId) {
+      return
+    }
+    loadAiInsights(selectedPlanId)
+  }, [selectedPlanId, loadAiInsights])
 
   const selectedPlan = useMemo(
     () => plans.find(plan => plan.id === selectedPlanId) || activePlan || plans[0],
@@ -316,6 +348,7 @@ export function TrainingPlanDashboard() {
       await updatePlanStatus(planId, status)
       await refreshPlans()
       setPlanStatusSuccess('Statut du plan mis à jour avec succès.')
+      await loadAiInsights(planId)
     } catch (error) {
       console.error('Impossible de mettre à jour le statut du plan', error)
       setPlanStatusError(
@@ -343,6 +376,7 @@ export function TrainingPlanDashboard() {
 
       setSelectedPlanId(prev => (prev === planId ? null : prev))
       setPlanStatusSuccess('Plan supprimé avec succès.')
+      setAiInsights(null)
     } catch (error) {
       console.error('Impossible de supprimer le plan', error)
       setPlanStatusError(
@@ -797,6 +831,79 @@ export function TrainingPlanDashboard() {
           </Card>
         </div>
       </div>
+
+      {selectedPlan && (
+        <Card>
+          <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle className="text-lg">Insights IA</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Estimations de performance et recommandations basées sur votre préparation actuelle.
+              </p>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {aiInsights?.generatedAt && (
+                <span>
+                  Généré le{' '}
+                  {new Date(aiInsights.generatedAt).toLocaleString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {aiInsightsLoading ? (
+              <p className="text-sm text-muted-foreground">Analyse en cours…</p>
+            ) : aiInsightsError ? (
+              <p className="text-sm text-destructive">{aiInsightsError}</p>
+            ) : aiInsights ? (
+              <div className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-4">
+                  <InsightMetric
+                    label="Temps estimé"
+                    value={aiInsights.predictedFinishTimeLabel}
+                    helper={aiInsights.targetRace ? aiInsights.targetRace.name : 'Course cible'}
+                  />
+                  <InsightMetric
+                    label="Allure prévisionnelle"
+                    value={`${aiInsights.predictedPaceMinutesPerKm.toFixed(2)} min/km`}
+                    helper="Basé sur le volume et l'intensité actuels"
+                  />
+                  <InsightMetric
+                    label="Fatigue cumulée"
+                    value={`${aiInsights.fatigueScore}/100`}
+                    helper=">70 = attention récupération"
+                  />
+                  <InsightMetric
+                    label="Préparation"
+                    value={`${aiInsights.readinessScore}/100`}
+                    helper={`Confiance ${translateConfidence(aiInsights.confidence)}`}
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InsightList title="Focus prioritaires" items={aiInsights.recommendedFocus} />
+                  <InsightList
+                    title="Ajustements recommandés"
+                    items={aiInsights.recommendedAdjustments}
+                  />
+                </div>
+
+                <InsightList title="Risques à surveiller" items={aiInsights.topRisks} compact />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Ajoutez des séances et actualisez le plan pour recevoir des insights IA.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -1326,4 +1433,56 @@ export function TrainingPlanDashboard() {
       </div>
     </div>
   )
+}
+
+interface InsightMetricProps {
+  label: string
+  value: string
+  helper?: string
+}
+
+function InsightMetric({ label, value, helper }: InsightMetricProps) {
+  return (
+    <div className="rounded-lg border border-border bg-background p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold text-foreground">{value}</p>
+      {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
+    </div>
+  )
+}
+
+interface InsightListProps {
+  title: string
+  items: string[]
+  compact?: boolean
+}
+
+function InsightList({ title, items, compact = false }: InsightListProps) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{title}</p>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Aucune recommandation disponible.</p>
+      ) : (
+        <ul className={`${compact ? 'text-xs' : 'text-sm'} text-muted-foreground space-y-1`}>
+          {items.map(item => (
+            <li key={item} className="list-disc list-inside">
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function translateConfidence(level: ConfidenceLevel): string {
+  switch (level) {
+    case 'HIGH':
+      return 'haute'
+    case 'MEDIUM':
+      return 'moyenne'
+    default:
+      return 'faible'
+  }
 }
