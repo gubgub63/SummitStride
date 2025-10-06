@@ -860,7 +860,14 @@ export function TrainingPlanDashboard() {
             {aiInsightsLoading ? (
               <p className="text-sm text-muted-foreground">Analyse en cours…</p>
             ) : aiInsightsError ? (
-              <p className="text-sm text-destructive">{aiInsightsError}</p>
+              <div className="space-y-3">
+                <p className="text-sm text-destructive">{aiInsightsError}</p>
+                {aiInsightsError.toLowerCase().includes('crédits insuffisants') && (
+                  <Button asChild size="sm" variant="secondary">
+                    <Link href="/premium">Recharger mes crédits</Link>
+                  </Button>
+                )}
+              </div>
             ) : aiInsights ? (
               <div className="space-y-4">
                 <div className="grid gap-3 md:grid-cols-4">

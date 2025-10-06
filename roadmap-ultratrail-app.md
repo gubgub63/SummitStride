@@ -524,15 +524,15 @@ La Phase 4 (Interface Utilisateur) est maintenant **complètement terminée** av
 **🎯 Notre avantage concurrentiel : l'IA construite sur une base solide de données**
 
 ### 6.1 Moteur IA d'Analyse Prédictive
-- [ ] **Analyse multi-factorielle** des données existantes (profils, plans, performances)
-- [ ] **Algorithmes de machine learning** pour prédiction de performance de course
+- [x] **Analyse multi-factorielle** des données existantes (profils, plans, performances) *(implémentée via heuristiques analytiques consolidant volume, intensité, complétion et difficulté course).* 
+- [ ] **Algorithmes de machine learning** pour prédiction de performance de course *(prochaine étape : remplacer l’heuristique par un modèle supervisé).* 
 - [ ] **Modèle d'adaptation automatique** basé sur la fatigue physiologique détectée
-- [ ] **IA de détection de risque de blessure** via pattern recognition des données d'entraînement
+- [x] **IA de détection de risque de blessure** via pattern recognition des données d'entraînement *(heuristique actuelle basée sur la densité de séances intenses et la charge cumulée).* 
 - [ ] **Système d'apprentissage continu** à partir des données de plans existants
 - [ ] **Scoring de forme physique** en temps réel basé sur les performances récentes
 
 ### 6.2 Optimisation IA des Plans Existants
-- [ ] **IA d'amélioration** des algorithmes de génération de plans (Phase 5)
+- [x] **IA d'amélioration** des algorithmes de génération de plans (Phase 5) *(les insights signalent les ajustements recommandés à injecter côté planificateur).* 
 - [ ] **Optimisation multi-objectifs** (performance, récupération, motivation, contraintes)
 - [ ] **Adaptation temps réel** selon conditions météo, terrain et état de forme
 - [ ] **IA de personnalisation poussée** (préférences, biorhythme, contraintes personnelles)
@@ -548,12 +548,18 @@ La Phase 4 (Interface Utilisateur) est maintenant **complètement terminée** av
 - [ ] **Chatbot intelligent 24/7** pour conseils immédiats et motivation
 
 ### 6.4 Analytics IA Prédictifs Premium
-- [ ] **Prédiction de temps de course** avec intervalle de confiance et probabilités
+- [x] **Prédiction de temps de course** avec intervalle de confiance et probabilités *(première version heuristique : estimation finish time + tempo cible, à raffiner avec intervalles).* 
 - [ ] **IA d'optimisation nutritionnelle** personnalisée selon effort et profil métabolique
-- [ ] **Détection précoce de surmenage/sous-entraînement** via biomarkers virtuels
+- [x] **Détection précoce de surmenage/sous-entraînement** via biomarkers virtuels *(score de fatigue et readiness dérivés des charges hebdo).* 
 - [ ] **Modèles prédictifs de récupération** optimale selon type d'effort et individu
 - [ ] **IA de benchmarking intelligent** avec comparaison athlètes au profil similaire
 - [ ] **Analyse prédictive de performance** à long terme (6-12 mois)
+
+**✅ Implémentation livrée (2025-10-01)**
+- Service `AiInsightsService` (back-end) agrège volume, charge et difficulté pour produire une estimation heuristique (temps de course, allure, fatigue, readiness, risque blessure).
+- Endpoint protégé `/api/ai/training-plans/:id/insights` exposé côté Fastify.
+- Dashboard enrichi : carte « Insights IA » (statuts, focus, ajustements, risques), widget semaine et calendrier réutilisent `TrainingSessionDetail` pour la cohérence UX.
+- Prochaine étape : substitution de l'heuristique par un vrai modèle ML (Phase 6.1 second bullet) et boucles d'apprentissage continu.
 
 **🚀 Avantages concurrentiels uniques :**
 ```
@@ -577,30 +583,30 @@ La Phase 4 (Interface Utilisateur) est maintenant **complètement terminée** av
 ## Phase 7: Système Premium et Monétisation
 
 ### 7.1 Architecture du système de crédits
-- [ ] Tables base de données (UserCredits, CreditTransactions, SubscriptionPlans)
+- [x] Tables base de données (UserCredits, CreditTransactions, SubscriptionPlans)
 - [ ] Modèles de consommation par fonctionnalité
 - [ ] Système de rechargement de crédits
-- [ ] Historique des transactions et facturation
+- [x] Historique des transactions et facturation *(tables + endpoints de lecture disponibles)*
 - [ ] Gestion des crédits gratuits (nouveau utilisateur, promotions)
 
 ### 7.2 Intégration de paiement
-- [ ] Configuration Stripe pour paiements sécurisés
-- [ ] Packages de crédits (20, 50, 100 crédits avec remises)
-- [ ] Abonnement Premium annuel/mensuel
+- [x] Configuration Stripe pour paiements sécurisés *(SDK backend, variables d'environnement, endpoint Checkout).* 
+- [x] Packages de crédits (20, 50, 100 crédits avec remises)
+- [x] Abonnement Premium annuel/mensuel *(sessions Stripe dynamiques + seed premium-monthly/premium-annual).* 
 - [ ] Gestion des remboursements et litiges
-- [ ] Webhooks Stripe pour synchronisation automatique
+- [x] Webhooks Stripe pour synchronisation automatique *(route `/api/stripe/webhook` avec vérification de signature et mise à jour du solde).* 
 
 ### 7.3 Logique métier premium
-- [ ] Middleware de vérification des crédits
-- [ ] Décompte automatique lors d'actions premium
+- [x] Middleware de vérification des crédits *(consommation appliquée sur les insights IA, retour 402 en cas d'insuffisance)*
+- [x] Décompte automatique lors d'actions premium *(appel aux insights IA retranche 3 crédits et journalise la transaction)*
 - [ ] Système de quotas pour comptes gratuits
 - [ ] Alertes de solde faible et suggestions de recharge
 - [ ] Fonctionnalités exclusives Premium (analyses IA avancées)
 
 ### 7.4 Interface utilisateur premium
-- [ ] Dashboard de gestion des crédits
+- [x] Dashboard de gestion des crédits *(page /premium avec solde, transactions, offres)*
 - [ ] Pages d'achat et upgrade
-- [ ] Indicateurs visuels premium/gratuit
+- [x] Indicateurs visuels premium/gratuit *(cartes solde/recommandations + encart insuffisance)*
 - [ ] Historique des consommations et factures
 - [ ] Centre d'aide pour questions de facturation
 
@@ -630,6 +636,12 @@ La Phase 4 (Interface Utilisateur) est maintenant **complètement terminée** av
 ├── Analyse performance : 3 crédits
 └── Plan nutrition : 8 crédits
 ```
+
+**✅ Implémentation livrée (2025-10-03)**
+- Nouvelles tables Prisma (`user_credit_balances`, `credit_transactions`, `subscription_plans`) et migration appliquée.
+- Routes protégées `/api/premium/*` pour récupérer solde, historique et catalogue d'offres.
+- Service front `premiumService` consommable par l'UI, seed de plans & transactions demo.
+- À suivre : intégration Stripe, consommation automatique via middleware, quotas & alertes.
 
 ---
 

@@ -54,6 +54,7 @@ const navigationLinks: NavLink[] = [
   { href: '/dashboard', label: 'Tableau de bord', icon: '📊' },
   { href: '/training', label: 'Entraînement', icon: '🏃' },
   { href: '/nutrition', label: 'Nutrition', icon: '🥗' },
+  { href: '/premium', label: 'Premium', icon: '💎' },
   { href: '/profile', label: 'Profil', icon: '👤' },
 ]
 
@@ -153,7 +154,6 @@ export function MobileNavigation({ className = '' }: MobileNavigationProps) {
         aria-hidden="true"
       />
 
-
       <nav
         ref={menuRef}
         id="mobile-menu"
@@ -161,7 +161,7 @@ export function MobileNavigation({ className = '' }: MobileNavigationProps) {
         aria-hidden={!isMenuOpen}
       >
         <div className="py-4">
-          {navigationLinks.map((link) => {
+          {navigationLinks.map(link => {
             const isActive = pathname === link.href
 
             return (
@@ -176,7 +176,7 @@ export function MobileNavigation({ className = '' }: MobileNavigationProps) {
                 {isActive && (
                   <span className="ml-auto text-blue-600">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                     </svg>
                   </span>
                 )}
@@ -186,11 +186,7 @@ export function MobileNavigation({ className = '' }: MobileNavigationProps) {
 
           {/* Section supplémentaire */}
           <div className="mobile-nav-item border-t border-gray-200 mt-4 pt-4">
-            <Link
-              href="/settings"
-              className="mobile-nav-item"
-              onClick={closeMenu}
-            >
+            <Link href="/settings" className="mobile-nav-item" onClick={closeMenu}>
               <span className="mr-3">⚙️</span>
               <span>Paramètres</span>
             </Link>

@@ -3,6 +3,7 @@ export * from './types/user.js'
 export * from './types/training.js'
 export * from './types/course.js'
 export * from './types/nutrition.js'
+export * from './types/premium.js'
 
 // Schemas
 export * from './schemas/user.js'

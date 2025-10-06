@@ -535,6 +535,153 @@ async function main() {
   }
 
   console.log('✅ Training, race and nutrition data seeded')
+
+  console.log('🌟 Seeding premium data...')
+
+  const priceIdsBySlug = {
+    'credits-20': process.env.STRIPE_PRICE_ID_CREDITS_20 || null,
+    'credits-50': process.env.STRIPE_PRICE_ID_CREDITS_50 || null,
+    'credits-100': process.env.STRIPE_PRICE_ID_CREDITS_100 || null,
+    'premium-annual': process.env.STRIPE_PRICE_ID_PREMIUM_ANNUAL || null,
+    'premium-monthly': process.env.STRIPE_PRICE_ID_PREMIUM_MONTHLY || null,
+  }
+
+  const subscriptionPlans = [
+    {
+      id: 'plan-credit-pack-20',
+      slug: 'credits-20',
+      name: 'Pack 20 crédits',
+      description: 'Idéal pour tester les fonctionnalités avancées IA',
+      priceInCents: 990,
+      interval: 'MONTHLY',
+      creditsIncluded: 20,
+      bonusCredits: 0,
+      stripePriceId: priceIdsBySlug['credits-20'],
+    },
+    {
+      id: 'plan-credit-pack-50',
+      slug: 'credits-50',
+      name: 'Pack 50 crédits',
+      description: 'Plus de flexibilité pour ajuster vos plans IA',
+      priceInCents: 1990,
+      interval: 'MONTHLY',
+      creditsIncluded: 50,
+      bonusCredits: 5,
+      stripePriceId: priceIdsBySlug['credits-50'],
+    },
+    {
+      id: 'plan-credit-pack-100',
+      slug: 'credits-100',
+      name: 'Pack 100 crédits',
+      description: 'Recharge complète pour tirer le meilleur parti des fonctionnalités premium.',
+      priceInCents: 3490,
+      interval: 'MONTHLY',
+      creditsIncluded: 100,
+      bonusCredits: 20,
+      stripePriceId: priceIdsBySlug['credits-100'],
+    },
+    {
+      id: 'plan-premium-annual',
+      slug: 'premium-annual',
+      name: 'Premium annuel',
+      description: 'Accès illimité aux fonctionnalités IA avec bonus de crédits',
+      priceInCents: 7900,
+      interval: 'YEARLY',
+      creditsIncluded: 200,
+      bonusCredits: 40,
+      stripePriceId: priceIdsBySlug['premium-annual'],
+    },
+    {
+      id: 'plan-premium-monthly',
+      slug: 'premium-monthly',
+      name: 'Premium mensuel',
+      description: 'Découvrez le premium avec engagement mensuel flexible.',
+      priceInCents: 990,
+      interval: 'MONTHLY',
+      creditsIncluded: 30,
+      bonusCredits: 5,
+      stripePriceId: priceIdsBySlug['premium-monthly'],
+    },
+  ]
+
+  for (const plan of subscriptionPlans) {
+    await prisma.subscriptionPlan.upsert({
+      where: { slug: plan.slug },
+      update: {
+        name: plan.name,
+        description: plan.description,
+        priceInCents: plan.priceInCents,
+        interval: plan.interval,
+        creditsIncluded: plan.creditsIncluded,
+        bonusCredits: plan.bonusCredits,
+        stripePriceId: plan.stripePriceId,
+        active: true,
+      },
+      create: {
+        id: plan.id,
+        slug: plan.slug,
+        name: plan.name,
+        description: plan.description,
+        priceInCents: plan.priceInCents,
+        interval: plan.interval,
+        creditsIncluded: plan.creditsIncluded,
+        bonusCredits: plan.bonusCredits,
+        stripePriceId: plan.stripePriceId,
+      },
+    })
+  }
+
+  const balance = await prisma.userCreditBalance.upsert({
+    where: { userId: demoUser.id },
+    update: {
+      balance: 120,
+      bonusBalance: 15,
+    },
+    create: {
+      userId: demoUser.id,
+      balance: 120,
+      bonusBalance: 15,
+    },
+  })
+
+  await prisma.creditTransaction.createMany({
+    data: [
+      {
+        id: 'txn-demo-seed-1',
+        userId: demoUser.id,
+        amount: 120,
+        type: 'CREDIT_PURCHASE',
+        balanceSnapshot: balance.balance + balance.bonusBalance,
+        description: 'Pack premium annuel offert pour le seed',
+        subscriptionPlanId: 'plan-premium-annual',
+        balanceId: balance.id,
+      },
+      {
+        id: 'txn-demo-seed-2',
+        userId: demoUser.id,
+        amount: -8,
+        type: 'CREDIT_CONSUMPTION',
+        balanceSnapshot: balance.balance + balance.bonusBalance - 8,
+        description: 'Analyse IA avancée - plan UTMB',
+        metadata: {
+          module: 'ai-insights',
+          planId: 'plan-demo-ultra',
+        },
+        balanceId: balance.id,
+      },
+    ],
+    skipDuplicates: true,
+  })
+
+  await prisma.userCreditBalance.update({
+    where: { id: balance.id },
+    data: {
+      balance: 112,
+      bonusBalance: 15,
+    },
+  })
+
+  console.log('✅ Premium credits & plans seeded')
   console.log('ℹ️  Demo login -> email: demo@summitstride.dev | password:', password)
 }
 

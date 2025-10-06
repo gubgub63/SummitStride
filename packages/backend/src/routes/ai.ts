@@ -2,6 +2,9 @@ import { FastifyPluginAsync } from 'fastify'
 import { authMiddleware } from '../middleware/auth.js'
 import { AiInsightsService } from '../services/aiInsights.js'
 import { TrainingPlanAnalytics } from '../services/trainingPlanAnalytics.js'
+import { consumeCredits, InsufficientCreditsError } from '../services/premiumCredits.js'
+
+const AI_INSIGHT_CREDIT_COST = 3
 
 export const aiRoutes: FastifyPluginAsync = async fastify => {
   fastify.register(async inner => {
@@ -39,6 +42,16 @@ export const aiRoutes: FastifyPluginAsync = async fastify => {
 
           const metrics = TrainingPlanAnalytics.summarizeSessions(plan.trainingSessions)
 
+          await consumeCredits(inner.prisma, {
+            userId,
+            amount: AI_INSIGHT_CREDIT_COST,
+            description: `Insights IA pour le plan ${plan.name}`,
+            metadata: {
+              module: 'ai-insights',
+              planId: plan.id,
+            },
+          })
+
           const insights = AiInsightsService.generatePlanInsights({
             plan,
             sessions: plan.trainingSessions,
@@ -52,6 +65,14 @@ export const aiRoutes: FastifyPluginAsync = async fastify => {
             data: insights,
           })
         } catch (error) {
+          if (error instanceof InsufficientCreditsError) {
+            return reply.code(402).send({
+              success: false,
+              error:
+                'Crédits insuffisants pour générer des insights IA. Rechargez votre solde ou passez en Premium.',
+            })
+          }
+
           inner.log.error(error)
           reply.code(500).send({
             success: false,

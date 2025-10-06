@@ -26,13 +26,11 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo et nom */}
-        <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center space-x-2">
+        <Link href={isAuthenticated ? '/dashboard' : '/'} className="flex items-center space-x-2">
           <div className="h-8 w-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-md flex items-center justify-center">
             <span className="text-white font-bold text-sm">S</span>
           </div>
-          <span className="text-xl font-bold text-foreground hidden sm:block">
-            SummitStride
-          </span>
+          <span className="text-xl font-bold text-foreground hidden sm:block">SummitStride</span>
         </Link>
 
         {/* Navigation centrale (seulement si authentifié) */}
@@ -73,6 +71,12 @@ export function Header() {
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Progrès
+            </Link>
+            <Link
+              href="/premium"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Premium
             </Link>
           </nav>
         )}

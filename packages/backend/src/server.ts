@@ -10,6 +10,7 @@ import courseRoutes from './routes/course.js'
 import registrationRoutes from './routes/registration.js'
 import { trainingRoutes } from './routes/training.js'
 import aiRoutes from './routes/ai.js'
+import premiumRoutes from './routes/premium.js'
 
 const envSchema = {
   type: 'object',
@@ -26,6 +27,27 @@ const envSchema = {
     DATABASE_URL: {
       type: 'string',
     },
+    STRIPE_SECRET_KEY: {
+      type: 'string',
+      default: '',
+    },
+    STRIPE_WEBHOOK_SECRET: {
+      type: 'string',
+      default: '',
+    },
+    STRIPE_SUCCESS_URL: {
+      type: 'string',
+      default: '',
+    },
+    STRIPE_CANCEL_URL: {
+      type: 'string',
+      default: '',
+    },
+    STRIPE_PRICE_ID_CREDITS_20: { type: 'string', default: '' },
+    STRIPE_PRICE_ID_CREDITS_50: { type: 'string', default: '' },
+    STRIPE_PRICE_ID_CREDITS_100: { type: 'string', default: '' },
+    STRIPE_PRICE_ID_PREMIUM_MONTHLY: { type: 'string', default: '' },
+    STRIPE_PRICE_ID_PREMIUM_ANNUAL: { type: 'string', default: '' },
   },
 }
 
@@ -44,6 +66,21 @@ async function start() {
     await fastify.register(env, {
       schema: envSchema,
       dotenv: true,
+    })
+
+    fastify.addContentTypeParser('application/json', { parseAs: 'buffer' }, (request, body, done) => {
+      try {
+        const buffer = body as Buffer
+        ;(request as any).rawBody = buffer
+        if (buffer.length === 0) {
+          done(null, {})
+          return
+        }
+        const parsed = JSON.parse(buffer.toString('utf8'))
+        done(null, parsed)
+      } catch (error) {
+        done(error as Error, undefined)
+      }
     })
 
     // Security plugins
@@ -93,6 +130,9 @@ async function start() {
 
     // AI insights routes (protected)
     await fastify.register(aiRoutes, { prefix: '/api' })
+
+    // Premium & crédits routes (protected)
+    await fastify.register(premiumRoutes, { prefix: '/api' })
 
     // Database status endpoint
     fastify.get('/api/db-status', async (_request, reply) => {

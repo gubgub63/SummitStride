@@ -20,31 +20,33 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  profile           UserProfile?
-  preferences       UserPreferences?
-  trainingPlans     TrainingPlan[]
-  trainingSessions  TrainingSession[]
-  nutritionPlans    NutritionPlan[]
-  nutritionEntries  NutritionEntry[]
-  raceRegistrations RaceRegistration[]
+  profile            UserProfile?
+  preferences        UserPreferences?
+  trainingPlans      TrainingPlan[]
+  trainingSessions   TrainingSession[]
+  nutritionPlans     NutritionPlan[]
+  nutritionEntries   NutritionEntry[]
+  raceRegistrations  RaceRegistration[]
+  creditBalance      UserCreditBalance?
+  creditTransactions CreditTransaction[]
 
   @@map("users")
 }
 
 model UserProfile {
-  id                       String          @id @default(cuid())
-  userId                   String          @unique
-  dateOfBirth              DateTime?
-  weight                   Float?
-  height                   Float?
-  experienceLevel          ExperienceLevel
-  fitnessGoals             String[]
-  medicalConditions        String[]
-  preferredTrainingDays    Int[]
-  maxTrainingHoursPerWeek  Int
-  vma                      Float? // Vitesse Maximale Aérobie
-  createdAt                DateTime        @default(now())
-  updatedAt                DateTime        @updatedAt
+  id                      String          @id @default(cuid())
+  userId                  String          @unique
+  dateOfBirth             DateTime?
+  weight                  Float?
+  height                  Float?
+  experienceLevel         ExperienceLevel
+  fitnessGoals            String[]
+  medicalConditions       String[]
+  preferredTrainingDays   Int[]
+  maxTrainingHoursPerWeek Int
+  vma                     Float? // Vitesse Maximale Aérobie
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -53,11 +55,11 @@ model UserProfile {
 }
 
 model UserPreferences {
-  id           String              @id @default(cuid())
-  userId       String              @unique
-  language     String              @default("fr")
-  timezone     String              @default("Europe/Paris")
-  units        Units               @default(METRIC)
+  id       String @id @default(cuid())
+  userId   String @unique
+  language String @default("fr")
+  timezone String @default("Europe/Paris")
+  units    Units  @default(METRIC)
 
   // Notification settings
   notificationEmail              Boolean @default(true)
@@ -71,8 +73,8 @@ model UserPreferences {
   privacyTrainingDataPublic Boolean @default(false)
   privacyAllowDataSharing   Boolean @default(false)
 
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -82,81 +84,81 @@ model UserPreferences {
 
 // Training Related Tables
 model TrainingPlan {
-  id           String             @id @default(cuid())
-  userId       String
-  name         String
-  description  String?
-  startDate    DateTime
-  endDate      DateTime
-  targetRaceId String?
-  status       TrainingPlanStatus @default(DRAFT)
+  id               String             @id @default(cuid())
+  userId           String
+  name             String
+  description      String?
+  startDate        DateTime
+  endDate          DateTime
+  targetRaceId     String?
+  status           TrainingPlanStatus @default(DRAFT)
   sourceTemplateId String?
-  totalDuration Int?
-  totalDistance Float?
-  loadScore     Int?
-  progression   Json?
-  lastAnalyzedAt DateTime?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  totalDuration    Int?
+  totalDistance    Float?
+  loadScore        Int?
+  progression      Json?
+  lastAnalyzedAt   DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   // Relations
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  targetRace      Course?           @relation(fields: [targetRaceId], references: [id])
-  sourceTemplate  TrainingPlanTemplate? @relation(fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetRace       Course?               @relation(fields: [targetRaceId], references: [id])
+  sourceTemplate   TrainingPlanTemplate? @relation(fields: [sourceTemplateId], references: [id], onDelete: SetNull)
   trainingSessions TrainingSession[]
 
   @@map("training_plans")
 }
 
 model TrainingSession {
-  id          String            @id @default(cuid())
-  planId      String?
-  userId      String
-  date        DateTime
-  type        TrainingType
-  name        String
-  description String?
-  duration    Int? // in minutes
-  distance    Float? // in kilometers
-  intensity   Intensity
-  completed   Boolean           @default(false)
+  id                String       @id @default(cuid())
+  planId            String?
+  userId            String
+  date              DateTime
+  type              TrainingType
+  name              String
+  description       String?
+  duration          Int? // in minutes
+  distance          Float? // in kilometers
+  intensity         Intensity
+  completed         Boolean      @default(false)
   templateSessionId String?
-  phase        PlanPhase?
-  weekNumber   Int?
-  dayOfWeek    Int?
-  plannedLoad  Int?
-  nutritionPlan Json?
+  phase             PlanPhase?
+  weekNumber        Int?
+  dayOfWeek         Int?
+  plannedLoad       Int?
+  nutritionPlan     Json?
 
   // Session Metrics (flattened)
-  actualDuration      Int? // in minutes
-  actualDistance      Float? // in kilometers
-  averageHeartRate    Int?
-  maxHeartRate        Int?
-  calories            Float?
-  elevationGain       Float? // in meters
-  averagePace         Float? // minutes per km
-  perceivedExertion   Int? // 1-10 scale
+  actualDuration    Int? // in minutes
+  actualDistance    Float? // in kilometers
+  averageHeartRate  Int?
+  maxHeartRate      Int?
+  calories          Float?
+  elevationGain     Float? // in meters
+  averagePace       Float? // minutes per km
+  perceivedExertion Int? // 1-10 scale
 
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan TrainingPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            TrainingPlan?            @relation(fields: [planId], references: [id], onDelete: SetNull)
   templateSession TrainingSessionTemplate? @relation("TemplateSessions", fields: [templateSessionId], references: [id], onDelete: SetNull)
 
   @@map("training_sessions")
 }
 
 model TrainingPlanTemplate {
-  id               String      @id @default(cuid())
+  id               String           @id @default(cuid())
   name             String
   description      String?
   targetCategory   String
   targetExperience ExperienceLevel?
   durationWeeks    Int
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   // Relations
   sessions      TrainingSessionTemplate[]
@@ -166,7 +168,7 @@ model TrainingPlanTemplate {
 }
 
 model TrainingSessionTemplate {
-  id             String     @id @default(cuid())
+  id             String       @id @default(cuid())
   planTemplateId String
   phase          PlanPhase
   weekOffset     Int
@@ -177,29 +179,29 @@ model TrainingSessionTemplate {
   distance       Float?
   description    String?
   focusAreas     String[]
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   // Relations
-  planTemplate    TrainingPlanTemplate   @relation(fields: [planTemplateId], references: [id], onDelete: Cascade)
-  trainingSessions TrainingSession[]     @relation("TemplateSessions")
+  planTemplate     TrainingPlanTemplate @relation(fields: [planTemplateId], references: [id], onDelete: Cascade)
+  trainingSessions TrainingSession[]    @relation("TemplateSessions")
 
   @@map("training_session_templates")
 }
 
 // Course Related Tables
 model Course {
-  id              String           @id @default(cuid())
-  name            String
-  location        String
-  distance        Float // in kilometers
-  elevationGain   Float // in meters
-  elevationLoss   Float // in meters
-  difficulty      CourseDifficulty
-  description     String?
-  routeData       Json? // Store GPX and route information
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id            String           @id @default(cuid())
+  name          String
+  location      String
+  distance      Float // in kilometers
+  elevationGain Float // in meters
+  elevationLoss Float // in meters
+  difficulty    CourseDifficulty
+  description   String?
+  routeData     Json? // Store GPX and route information
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   // Relations
   trainingPlans     TrainingPlan[]
@@ -209,15 +211,15 @@ model Course {
 }
 
 model RaceRegistration {
-  id         String                @id @default(cuid())
+  id         String                 @id @default(cuid())
   userId     String
   courseId   String
   status     RaceRegistrationStatus @default(REGISTERED)
   goal       String?
   notes      String?
   targetDate DateTime?
-  createdAt  DateTime              @default(now())
-  updatedAt  DateTime              @updatedAt
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
 
   // Relations
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -229,18 +231,18 @@ model RaceRegistration {
 
 // Nutrition Related Tables
 model FoodItem {
-  id             String       @id @default(cuid())
-  name           String
-  brand          String?
+  id              String       @id @default(cuid())
+  name            String
+  brand           String?
   caloriesPer100g Float
-  proteinPer100g Float
-  carbsPer100g   Float
-  fatPer100g     Float
-  fiberPer100g   Float?
-  sugarPer100g   Float?
-  category       FoodCategory
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  proteinPer100g  Float
+  carbsPer100g    Float
+  fatPer100g      Float
+  fiberPer100g    Float?
+  sugarPer100g    Float?
+  category        FoodCategory
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   // Relations
   nutritionEntries NutritionEntry[]
@@ -249,7 +251,7 @@ model FoodItem {
 }
 
 model NutritionPlan {
-  id                 String  @id @default(cuid())
+  id                 String   @id @default(cuid())
   userId             String
   name               String
   description        String?
@@ -257,7 +259,7 @@ model NutritionPlan {
   proteinTarget      Float // percentage
   carbsTarget        Float // percentage
   fatTarget          Float // percentage
-  isActive           Boolean @default(false)
+  isActive           Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -372,4 +374,72 @@ enum RaceRegistrationStatus {
   CANCELLED
   DNS
   DNF
+}
+
+model UserCreditBalance {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  balance      Int       @default(0)
+  bonusBalance Int       @default(0)
+  lastSnapshot DateTime? @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions CreditTransaction[] @relation("BalanceTransactions")
+
+  @@map("user_credit_balances")
+}
+
+model CreditTransaction {
+  id              String                @id @default(cuid())
+  userId          String
+  amount          Int
+  type            CreditTransactionType
+  balanceSnapshot Int
+  metadata        Json?
+  description     String?
+  createdAt       DateTime              @default(now())
+
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance            UserCreditBalance? @relation("BalanceTransactions", fields: [balanceId], references: [id], onDelete: SetNull)
+  balanceId          String?
+  subscriptionPlan   SubscriptionPlan?  @relation(fields: [subscriptionPlanId], references: [id], onDelete: SetNull)
+  subscriptionPlanId String?
+
+  @@index([userId, createdAt])
+  @@map("credit_transactions")
+}
+
+model SubscriptionPlan {
+  id              String               @id @default(cuid())
+  slug            String               @unique
+  name            String
+  description     String?
+  priceInCents    Int
+  currency        String               @default("EUR")
+  interval        SubscriptionInterval
+  creditsIncluded Int                  @default(0)
+  bonusCredits    Int                  @default(0)
+  active          Boolean              @default(true)
+  stripePriceId   String?              @unique
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  transactions CreditTransaction[]
+
+  @@map("subscription_plans")
+}
+
+enum CreditTransactionType {
+  CREDIT_PURCHASE
+  CREDIT_CONSUMPTION
+  CREDIT_ADJUSTMENT
+  SUBSCRIPTION_CHARGE
+  SUBSCRIPTION_BONUS
+}
+
+enum SubscriptionInterval {
+  MONTHLY
+  YEARLY
 }
