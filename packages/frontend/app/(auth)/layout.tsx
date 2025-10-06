@@ -8,17 +8,26 @@ interface AuthLayoutProps {
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(90,93,253,0.2),transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-[40%] bg-[radial-gradient(circle_at_center,rgba(255,92,43,0.18),transparent_60%)]" />
+
       {/* Header minimal pour l'authentification */}
-      <header className="absolute top-0 left-0 right-0 z-10">
+      <header className="relative z-10 border-b border-border/60 bg-background/70 backdrop-blur-lg">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-md flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
+          <Link href="/" className="group flex items-center space-x-3">
+            <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-500 shadow-[0_18px_40px_-24px_rgba(90,93,253,0.75)]">
+              <span className="text-white font-semibold">S</span>
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.45),transparent_65%)]" />
             </div>
-            <span className="text-xl font-bold text-foreground hidden sm:block">
-              SummitStride
-            </span>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-base font-semibold tracking-tight text-foreground">
+                SummitStride
+              </span>
+              <span className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
+                Accès sécurisé
+              </span>
+            </div>
           </Link>
 
           <ThemeToggle size="sm" />
@@ -26,15 +35,28 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
       </header>
 
       {/* Contenu principal */}
-      <main className="min-h-screen flex items-center justify-center px-4 py-12">
-        {children}
+      <main className="relative z-10 flex min-h-[calc(100vh-140px)] items-center justify-center px-4 py-16">
+        <div className="w-full max-w-md rounded-3xl border border-border/70 bg-surface/95 p-8 shadow-[0_25px_65px_-45px_rgba(19,26,56,0.55)] backdrop-blur-2xl">
+          <div className="mb-8 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-primary-600">
+              SummitStride Access
+            </p>
+            <h1 className="mt-3 text-3xl font-bold text-foreground">
+              Rejoignez l'expédition
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Un coaching ultra-trail personnalisé, une plateforme sécurisée.
+            </p>
+          </div>
+          {children}
+        </div>
       </main>
 
       {/* Footer minimal */}
-      <footer className="absolute bottom-0 left-0 right-0">
-        <div className="container mx-auto px-4 py-4 text-center">
+      <footer className="relative z-10 border-t border-border/60 bg-background/70 backdrop-blur-lg">
+        <div className="container mx-auto px-4 py-6 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 SummitStride - Votre entraîneur ultra-trail intelligent
+            © {new Date().getFullYear()} SummitStride • Ultra-trail IA unique
           </p>
         </div>
       </footer>

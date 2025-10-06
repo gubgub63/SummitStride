@@ -30,7 +30,6 @@ export function PremiumDashboard() {
     loading: true,
     error: null,
   })
-  console.log(balanceState)
   const [transactionsState, setTransactionsState] = useState<
     FetchState<CreditTransactionSummary[]>
   >({

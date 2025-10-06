@@ -7,15 +7,27 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ThemeToggle } from '../../lib/theme'
 import { UserMenu } from './UserMenu'
 import { MobileNavigation } from './MobileNavigation'
 import { useAuth } from '../../lib/hooks/useAuth'
 import { useResponsive } from '../../lib/hooks/useResponsive'
+import { Button } from '../ui/Button'
+
+const navigationLinks = [
+  { href: '/dashboard', label: 'Tableau de bord' },
+  { href: '/training', label: 'Entraînement' },
+  { href: '/courses', label: 'Courses' },
+  { href: '/nutrition', label: 'Nutrition' },
+  { href: '/registrations', label: 'Inscriptions' },
+  { href: '/premium', label: 'Premium' },
+]
 
 export function Header() {
   const { isAuthenticated, user } = useAuth()
   const { isMobile } = useResponsive()
+  const pathname = usePathname()
 
   // Sur mobile, utiliser MobileNavigation
   if (isMobile && isAuthenticated) {
@@ -23,86 +35,88 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo et nom */}
-        <Link href={isAuthenticated ? '/dashboard' : '/'} className="flex items-center space-x-2">
-          <div className="h-8 w-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-md flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
-          </div>
-          <span className="text-xl font-bold text-foreground hidden sm:block">SummitStride</span>
-        </Link>
-
-        {/* Navigation centrale (seulement si authentifié) */}
-        {isAuthenticated && (
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link
-              href="/dashboard"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Tableau de bord
-            </Link>
-            <Link
-              href="/training"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Entraînement
-            </Link>
-            <Link
-              href="/courses"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Courses
-            </Link>
-            <Link
-              href="/registrations"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Inscriptions
-            </Link>
-            <Link
-              href="/nutrition"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Nutrition
-            </Link>
-            <Link
-              href="/progress"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Progrès
-            </Link>
-            <Link
-              href="/premium"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Premium
-            </Link>
-          </nav>
-        )}
-
-        {/* Actions à droite */}
-        <div className="flex items-center space-x-3">
-          <ThemeToggle size="sm" />
-
-          {isAuthenticated ? (
-            <UserMenu user={user} />
-          ) : (
-            <div className="flex items-center space-x-2">
-              <Link
-                href="/login"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Connexion
-              </Link>
-              <Link
-                href="/register"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 h-9 px-3 transition-colors"
-              >
-                S'inscrire
-              </Link>
+    <header className="sticky top-0 z-50 w-full">
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary-500/30 to-transparent" />
+      <div className="border-b border-border/60 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/40">
+        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+          {/* Logo et nom */}
+          <Link
+            href={isAuthenticated ? '/dashboard' : '/'}
+            className="group flex items-center space-x-3"
+          >
+            <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-500 shadow-[0_18px_40px_-24px_rgba(90,93,253,0.75)] transition-transform duration-200 group-hover:scale-105">
+              <span className="text-white font-semibold text-lg">S</span>
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.45),transparent_65%)]" />
             </div>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-lg font-semibold tracking-tight text-foreground">
+                SummitStride
+              </span>
+              <span className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                Ultra-trail intelligence
+              </span>
+            </div>
+          </Link>
+
+          {/* Navigation */}
+          {isAuthenticated && (
+            <nav className="hidden lg:flex items-center gap-2 rounded-full border border-border/70 bg-surface/70 px-2 py-1 backdrop-blur-md">
+              {navigationLinks.map(link => {
+                const isActive = pathname?.startsWith(link.href)
+
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'text-foreground shadow-[0_12px_28px_-22px_rgba(67,56,245,0.55)]'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {isActive && (
+                      <span className="absolute inset-0 -z-10 rounded-full bg-gradient-to-r from-primary-600/85 via-primary-500/75 to-primary-500/60 opacity-90" />
+                    )}
+                    {link.label}
+                  </Link>
+                )
+              })}
+            </nav>
           )}
+
+          {/* Actions */}
+          <div className="flex items-center space-x-3">
+            <ThemeToggle size="sm" />
+
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="hidden md:inline-flex text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+                >
+                  <Link href="/progress">Progression</Link>
+                </Button>
+                <Button asChild variant="glow" size="sm">
+                  <Link href="/premium">Boost IA</Link>
+                </Button>
+                <UserMenu user={user} />
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Connexion
+                </Link>
+                <Button asChild size="sm">
+                  <Link href="/register">Commencer</Link>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

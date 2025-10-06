@@ -43,9 +43,11 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(67,56,245,0.12),transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(255,92,43,0.12),transparent_55%)]" />
       <Header />
-      <main className="container mx-auto px-4 py-6">
+      <main className="relative z-10 container mx-auto px-4 py-10">
         {children}
       </main>
     </div>

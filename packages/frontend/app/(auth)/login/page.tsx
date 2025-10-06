@@ -31,11 +31,5 @@ export default function LoginPage() {
     router.push('/dashboard')
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
-      <div className="w-full max-w-md">
-        <LoginForm onSuccess={handleLoginSuccess} />
-      </div>
-    </div>
-  )
+  return <LoginForm onSuccess={handleLoginSuccess} />
 }

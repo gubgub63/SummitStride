@@ -1,18 +1,20 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Manrope, Space_Grotesk } from 'next/font/google'
 import { ThemeProvider } from '../lib/theme'
 import { AuthProvider } from '../lib/contexts/AuthContext'
 import './globals.css'
 import '../styles/mobile.css'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const brandSans = Manrope({
+  variable: '--font-sans',
   subsets: ['latin'],
+  display: 'swap',
 })
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const brandDisplay = Space_Grotesk({
+  variable: '--font-display',
   subsets: ['latin'],
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -27,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${brandSans.variable} ${brandDisplay.variable} antialiased`}>
         <ThemeProvider defaultTheme="system">
           <AuthProvider>
             {children}

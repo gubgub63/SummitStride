@@ -5,61 +5,61 @@
 
 export const designTokens = {
   colors: {
-    // Alpine Tech Primary Colors
+    // Aurora Trail Primary Colors
     primary: {
-      50: '#eff6ff',
-      100: '#dbeafe',
-      200: '#bfdbfe',
-      300: '#93c5fd',
-      400: '#60a5fa',
-      500: '#3b82f6',
-      600: '#2563eb', // Bleu glacier - Principal
-      700: '#1d4ed8',
-      800: '#1e40af',
-      900: '#1e3a8a',
-      950: '#172554',
+      50: '#eef2ff',
+      100: '#e1e7ff',
+      200: '#c1c7ff',
+      300: '#9fa5ff',
+      400: '#7d82ff',
+      500: '#5a5dfd',
+      600: '#4338f5', // Aurora indigo - principal
+      700: '#3125d3',
+      800: '#241c9f',
+      900: '#16126b',
+      950: '#0c0a3d',
     },
 
     secondary: {
-      50: '#fff7ed',
-      100: '#ffedd5',
-      200: '#fed7aa',
-      300: '#fdba74',
-      400: '#fb923c',
-      500: '#f97316',
-      600: '#ff6b35', // Orange ultra - Secondaire
-      700: '#c2410c',
-      800: '#9a3412',
-      900: '#7c2d12',
-      950: '#431407',
+      50: '#fff4ed',
+      100: '#ffe1d1',
+      200: '#ffc0a3',
+      300: '#ff9d73',
+      400: '#ff7b4b',
+      500: '#ff5c2b',
+      600: '#ff4516', // Sunrise flare - secondaire
+      700: '#d63210',
+      800: '#a3260e',
+      900: '#701808',
+      950: '#390b03',
     },
 
     success: {
-      50: '#ecfdf5',
-      100: '#d1fae5',
-      200: '#a7f3d0',
-      300: '#6ee7b7',
-      400: '#34d399',
-      500: '#10b981', // Vert montagne
-      600: '#059669',
-      700: '#047857',
-      800: '#065f46',
-      900: '#064e3b',
-      950: '#022c22',
+      50: '#ebfdf4',
+      100: '#cdf9e3',
+      200: '#9df2ca',
+      300: '#68e6ad',
+      400: '#3bd891',
+      500: '#1ecb80', // Alpine canopy
+      600: '#14ac69',
+      700: '#108a55',
+      800: '#0d6941',
+      900: '#09432b',
+      950: '#052619',
     },
 
     neutral: {
-      50: '#f8fafc',
-      100: '#f1f5f9',
-      200: '#e2e8f0',
-      300: '#cbd5e1',
-      400: '#94a3b8',
-      500: '#64748b', // Gris schiste
-      600: '#475569',
-      700: '#334155',
-      800: '#1e293b',
-      900: '#0f172a', // Noir charbon
-      950: '#020617',
+      50: '#f5f7fb',
+      100: '#e9ecf6',
+      200: '#d6daee',
+      300: '#b4bddc',
+      400: '#8f9dc6',
+      500: '#6d7baa', // Slate ridge
+      600: '#536091',
+      700: '#3d4873',
+      800: '#283156',
+      900: '#131a38',
+      950: '#0a1024',
     },
 
     error: {
@@ -97,7 +97,8 @@ export const designTokens = {
 
   typography: {
     fontFamily: {
-      sans: ['Inter Variable', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+      sans: ['var(--font-sans)', 'Manrope', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+      display: ['var(--font-display)', 'Space Grotesk', 'Manrope', 'Inter', 'system-ui', 'sans-serif'],
       mono: ['JetBrains Mono Variable', 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', 'monospace'],
       system: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
     },

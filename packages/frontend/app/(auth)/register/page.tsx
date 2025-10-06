@@ -31,11 +31,5 @@ export default function RegisterPage() {
     router.push('/onboarding')
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background">
-      <div className="w-full max-w-md">
-        <RegisterForm onSuccess={handleRegisterSuccess} />
-      </div>
-    </div>
-  )
+  return <RegisterForm onSuccess={handleRegisterSuccess} />
 }

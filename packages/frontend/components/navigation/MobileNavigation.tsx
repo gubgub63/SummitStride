@@ -53,8 +53,10 @@ interface NavLink {
 const navigationLinks: NavLink[] = [
   { href: '/dashboard', label: 'Tableau de bord', icon: '📊' },
   { href: '/training', label: 'Entraînement', icon: '🏃' },
+  { href: '/courses', label: 'Courses', icon: '🗺️' },
   { href: '/nutrition', label: 'Nutrition', icon: '🥗' },
   { href: '/premium', label: 'Premium', icon: '💎' },
+  { href: '/pricing', label: 'Tarifs', icon: '💳' },
   { href: '/profile', label: 'Profil', icon: '👤' },
 ]
 
@@ -124,14 +126,15 @@ export function MobileNavigation({ className = '' }: MobileNavigationProps) {
   }
 
   return (
-    <div className={`mobile-nav ${className}`}>
+    <div className={`mobile-nav glass ${className}`} style={{ backdropFilter: 'blur(18px)' }}>
       <div className="flex items-center justify-between h-16 px-4">
         {/* Logo */}
-        <Link href="/dashboard" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
+        <Link href="/dashboard" className="group flex items-center space-x-2">
+          <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-500 shadow-[0_18px_40px_-24px_rgba(90,93,253,0.75)]">
+            <span className="text-white font-semibold text-base">S</span>
+            <div className="absolute inset-0 opacity-0 transition-opacity duration-300 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.45),transparent_65%)] group-hover:opacity-100" />
           </div>
-          <span className="font-bold text-lg text-foreground">SummitStride</span>
+          <span className="font-semibold text-lg text-foreground">SummitStride</span>
         </Link>
 
         <button
@@ -160,7 +163,7 @@ export function MobileNavigation({ className = '' }: MobileNavigationProps) {
         className={`mobile-menu-panel ${isMenuOpen ? 'open' : ''}`}
         aria-hidden={!isMenuOpen}
       >
-        <div className="py-4">
+        <div className="py-5">
           {navigationLinks.map(link => {
             const isActive = pathname === link.href
 
@@ -168,13 +171,17 @@ export function MobileNavigation({ className = '' }: MobileNavigationProps) {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`mobile-nav-item ${isActive ? 'active' : ''}`}
+                className={`mobile-nav-item transition-all duration-200 ${
+                  isActive
+                    ? 'active bg-gradient-to-r from-primary-600/90 to-primary-500/80 text-white shadow-[0_18px_45px_-28px_rgba(90,93,253,0.65)]'
+                    : 'bg-transparent text-muted-foreground hover:text-foreground'
+                }`}
                 onClick={closeMenu}
               >
                 <span className="mr-3">{link.icon}</span>
                 <span>{link.label}</span>
                 {isActive && (
-                  <span className="ml-auto text-blue-600">
+                  <span className="ml-auto text-white">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                     </svg>
@@ -185,21 +192,28 @@ export function MobileNavigation({ className = '' }: MobileNavigationProps) {
           })}
 
           {/* Section supplémentaire */}
-          <div className="mobile-nav-item border-t border-gray-200 mt-4 pt-4">
-            <Link href="/settings" className="mobile-nav-item" onClick={closeMenu}>
-              <span className="mr-3">⚙️</span>
-              <span>Paramètres</span>
+          <div className="mt-6 space-y-2 border-t border-border/60 pt-4">
+            <Link
+              href="/settings"
+              className="flex items-center justify-between rounded-xl border border-border/70 px-4 py-3 text-sm font-medium text-muted-foreground transition hover:border-border-hover/80 hover:text-foreground"
+              onClick={closeMenu}
+            >
+              <span className="flex items-center gap-3">
+                <span>⚙️</span>
+                Paramètres
+              </span>
+              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Bêta</span>
             </Link>
 
             <button
-              className="mobile-nav-item w-full text-left text-red-600"
+              className="flex w-full items-center gap-3 rounded-xl bg-error-500/10 px-4 py-3 text-sm font-semibold text-error-600 transition hover:bg-error-500/15"
               onClick={() => {
                 closeMenu()
                 logout()
                 console.log('Déconnexion')
               }}
             >
-              <span className="mr-3">🚪</span>
+              <span>🚪</span>
               <span>Déconnexion</span>
             </button>
           </div>

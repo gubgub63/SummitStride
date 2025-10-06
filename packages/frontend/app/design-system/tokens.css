@@ -6,56 +6,56 @@
   /* ===== COLORS - Alpine Tech Palette ===== */
 
   /* Primary Colors */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb; /* Bleu glacier - Principal */
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e1e7ff;
+  --color-primary-200: #c1c7ff;
+  --color-primary-300: #9fa5ff;
+  --color-primary-400: #7d82ff;
+  --color-primary-500: #5a5dfd;
+  --color-primary-600: #4338f5; /* Aurora indigo - Principal */
+  --color-primary-700: #3125d3;
+  --color-primary-800: #241c9f;
+  --color-primary-900: #16126b;
+  --color-primary-950: #0c0a3d;
 
   /* Secondary Colors - Vert montagne comme secondaire */
-  --color-secondary-50: #ecfdf5;
-  --color-secondary-100: #d1fae5;
-  --color-secondary-200: #a7f3d0;
-  --color-secondary-300: #6ee7b7;
-  --color-secondary-400: #34d399;
-  --color-secondary-500: #10b981;
-  --color-secondary-600: #10b981; /* Vert montagne - Secondaire */
-  --color-secondary-700: #047857;
-  --color-secondary-800: #065f46;
-  --color-secondary-900: #064e3b;
-  --color-secondary-950: #022c22;
+  --color-secondary-50: #fff4ed;
+  --color-secondary-100: #ffe1d1;
+  --color-secondary-200: #ffc0a3;
+  --color-secondary-300: #ff9d73;
+  --color-secondary-400: #ff7b4b;
+  --color-secondary-500: #ff5c2b;
+  --color-secondary-600: #ff4516; /* Sunrise flare - Secondaire */
+  --color-secondary-700: #d63210;
+  --color-secondary-800: #a3260e;
+  --color-secondary-900: #701808;
+  --color-secondary-950: #390b03;
 
   /* Success Colors */
-  --color-success-50: #ecfdf5;
-  --color-success-100: #d1fae5;
-  --color-success-200: #a7f3d0;
-  --color-success-300: #6ee7b7;
-  --color-success-400: #34d399;
-  --color-success-500: #10b981; /* Vert montagne */
-  --color-success-600: #059669;
-  --color-success-700: #047857;
-  --color-success-800: #065f46;
-  --color-success-900: #064e3b;
-  --color-success-950: #022c22;
+  --color-success-50: #ebfdf4;
+  --color-success-100: #cdf9e3;
+  --color-success-200: #9df2ca;
+  --color-success-300: #68e6ad;
+  --color-success-400: #3bd891;
+  --color-success-500: #1ecb80; /* Alpine canopy */
+  --color-success-600: #14ac69;
+  --color-success-700: #108a55;
+  --color-success-800: #0d6941;
+  --color-success-900: #09432b;
+  --color-success-950: #052619;
 
   /* Neutral Colors */
-  --color-neutral-50: #f8fafc;
-  --color-neutral-100: #f1f5f9;
-  --color-neutral-200: #e2e8f0;
-  --color-neutral-300: #cbd5e1;
-  --color-neutral-400: #94a3b8;
-  --color-neutral-500: #64748b; /* Gris schiste */
-  --color-neutral-600: #475569;
-  --color-neutral-700: #334155;
-  --color-neutral-800: #1e293b;
-  --color-neutral-900: #0f172a; /* Noir charbon */
-  --color-neutral-950: #020617;
+  --color-neutral-50: #f5f7fb;
+  --color-neutral-100: #e9ecf6;
+  --color-neutral-200: #d6daee;
+  --color-neutral-300: #b4bddc;
+  --color-neutral-400: #8f9dc6;
+  --color-neutral-500: #6d7baa; /* Slate ridge */
+  --color-neutral-600: #536091;
+  --color-neutral-700: #3d4873;
+  --color-neutral-800: #283156;
+  --color-neutral-900: #131a38; /* Midnight summit */
+  --color-neutral-950: #0a1024;
 
   /* Semantic Colors */
   --color-white: #ffffff; /* Blanc neige */
@@ -90,7 +90,8 @@
   /* ===== TYPOGRAPHY ===== */
 
   /* Font Families */
-  --font-family-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-sans: var(--font-sans, 'Manrope', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
+  --font-family-display: var(--font-display, 'Space Grotesk', 'Manrope', 'Inter', system-ui, sans-serif);
   --font-family-mono: 'JetBrains Mono Variable', 'JetBrains Mono', 'Fira Code', Consolas, 'Courier New', monospace;
   --font-family-system: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
@@ -235,17 +236,17 @@
   /* ===== THEME VARIABLES ===== */
 
   /* Light Theme (Default) */
-  --background: var(--color-white);
+  --background: var(--color-neutral-50);
   --foreground: var(--color-neutral-900);
-  --surface: var(--color-neutral-50);
-  --surface-elevated: var(--color-white);
-  --border: var(--color-neutral-200);
-  --border-hover: var(--color-neutral-300);
-  --input: var(--color-neutral-100);
-  --ring: var(--color-primary-600);
-  --muted: var(--color-neutral-100);
-  --muted-foreground: var(--color-neutral-500);
-  --accent: var(--color-neutral-100);
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-elevated: #ffffff;
+  --border: rgba(109, 123, 170, 0.2);
+  --border-hover: rgba(109, 123, 170, 0.35);
+  --input: rgba(233, 236, 246, 0.9);
+  --ring: var(--color-primary-500);
+  --muted: rgba(233, 236, 246, 0.65);
+  --muted-foreground: rgba(61, 72, 115, 0.8);
+  --accent: rgba(90, 93, 253, 0.08);
   --accent-foreground: var(--color-neutral-900);
   --destructive: var(--color-error-600);
   --destructive-foreground: var(--color-white);
@@ -254,18 +255,18 @@
 /* Dark Theme */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: var(--color-neutral-950);
-    --foreground: var(--color-neutral-50);
-    --surface: var(--color-neutral-900);
-    --surface-elevated: var(--color-neutral-800);
-    --border: var(--color-neutral-800);
-    --border-hover: var(--color-neutral-700);
-    --input: var(--color-neutral-800);
-    --ring: var(--color-primary-500);
-    --muted: var(--color-neutral-800);
-    --muted-foreground: var(--color-neutral-400);
-    --accent: var(--color-neutral-800);
-    --accent-foreground: var(--color-neutral-50);
+    --background: #050714;
+    --foreground: rgba(245, 247, 251, 0.95);
+    --surface: rgba(15, 20, 45, 0.92);
+    --surface-elevated: rgba(26, 33, 70, 0.94);
+    --border: rgba(90, 93, 253, 0.25);
+    --border-hover: rgba(125, 130, 255, 0.35);
+    --input: rgba(26, 33, 70, 0.9);
+    --ring: rgba(122, 126, 255, 0.9);
+    --muted: rgba(27, 35, 78, 0.85);
+    --muted-foreground: rgba(214, 218, 238, 0.75);
+    --accent: rgba(67, 56, 245, 0.15);
+    --accent-foreground: rgba(245, 247, 251, 0.95);
     --destructive: var(--color-error-500);
     --destructive-foreground: var(--color-white);
   }
@@ -273,18 +274,18 @@
 
 /* Force dark theme class */
 .dark {
-  --background: var(--color-neutral-950);
-  --foreground: var(--color-neutral-50);
-  --surface: var(--color-neutral-900);
-  --surface-elevated: var(--color-neutral-800);
-  --border: var(--color-neutral-800);
-  --border-hover: var(--color-neutral-700);
-  --input: var(--color-neutral-800);
-  --ring: var(--color-primary-500);
-  --muted: var(--color-neutral-800);
-  --muted-foreground: var(--color-neutral-400);
-  --accent: var(--color-neutral-800);
-  --accent-foreground: var(--color-neutral-50);
+  --background: #050714;
+  --foreground: rgba(245, 247, 251, 0.95);
+  --surface: rgba(15, 20, 45, 0.92);
+  --surface-elevated: rgba(26, 33, 70, 0.94);
+  --border: rgba(90, 93, 253, 0.25);
+  --border-hover: rgba(125, 130, 255, 0.35);
+  --input: rgba(26, 33, 70, 0.9);
+  --ring: rgba(122, 126, 255, 0.9);
+  --muted: rgba(27, 35, 78, 0.85);
+  --muted-foreground: rgba(214, 218, 238, 0.75);
+  --accent: rgba(67, 56, 245, 0.15);
+  --accent-foreground: rgba(245, 247, 251, 0.95);
   --destructive: var(--color-error-500);
   --destructive-foreground: var(--color-white);
 }

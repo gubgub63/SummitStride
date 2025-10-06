@@ -11,19 +11,19 @@ import { cn } from '../../lib/utils';
 
 const inputVariants = cva(
   // Base styles
-  'input flex h-10 w-full rounded-md border bg-input px-3 py-2 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50',
+  'input flex h-12 w-full rounded-2xl border border-border/60 bg-background/80 px-4 py-3 text-sm transition-all duration-200 ease-out file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-200 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 backdrop-blur-sm',
   {
     variants: {
       variant: {
-        default: 'border-border focus-visible:ring-ring',
-        error: 'border-error-500 focus-visible:ring-error-500 text-error-700',
-        success: 'border-success-500 focus-visible:ring-success-500 text-success-700',
-        warning: 'border-warning-500 focus-visible:ring-warning-500 text-warning-700',
+        default: 'border-border/60 focus-visible:ring-primary-200',
+        error: 'border-error-500 focus-visible:ring-error-400 text-error-600',
+        success: 'border-success-500 focus-visible:ring-success-400 text-success-600',
+        warning: 'border-warning-500 focus-visible:ring-warning-400 text-warning-600',
       },
       inputSize: {
-        sm: 'h-8 px-2 py-1 text-xs',
-        default: 'h-10 px-3 py-2 text-sm',
-        lg: 'h-12 px-4 py-3 text-base',
+        sm: 'h-9 rounded-xl px-3 py-2 text-xs',
+        default: 'h-12 rounded-2xl px-4 py-3 text-sm',
+        lg: 'h-14 rounded-3xl px-5 py-3 text-base',
       },
     },
     defaultVariants: {
@@ -76,7 +76,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block"
+            className="mb-2 block text-sm font-semibold leading-none text-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             {label}
             {isRequired && (

@@ -10,21 +10,23 @@ import { cn } from '../../lib/utils';
  */
 
 const cardVariants = cva(
-  'card rounded-lg border bg-surface text-foreground shadow-sm',
+  'card relative overflow-hidden rounded-3xl border border-border/70 bg-surface text-foreground shadow-[0_22px_48px_-30px_rgba(19,26,56,0.55)] backdrop-blur-sm transition-all duration-300 ease-out hover:translate-y-[-2px] hover:shadow-[0_30px_68px_-40px_rgba(19,26,56,0.65)]',
   {
     variants: {
       variant: {
-        default: 'border-border',
-        outline: 'border-2 border-border',
-        elevated: 'border-border shadow-md',
-        ghost: 'border-transparent shadow-none bg-transparent',
-        gradient: 'border-border bg-gradient-alpine text-white',
+        default: 'border-border/70 bg-surface/95',
+        outline: 'border border-border/60 bg-surface/80',
+        elevated:
+          'border border-primary-500/15 bg-surface/95 shadow-[0_35px_80px_-45px_rgba(67,56,245,0.45)]',
+        ghost: 'border-transparent shadow-none bg-transparent backdrop-blur-none hover:translate-y-0',
+        gradient: 'border border-primary-500/40 bg-gradient-to-br from-primary-600/95 via-primary-500/90 to-secondary-500/90 text-white shadow-[0_45px_120px_-65px_rgba(90,93,253,0.85)]',
+        glass: 'border border-white/20 bg-white/10 text-white backdrop-blur-xl shadow-[0_32px_80px_-60px_rgba(255,255,255,0.45)]',
       },
       padding: {
         none: 'p-0',
-        sm: 'p-4',
-        default: 'p-6',
-        lg: 'p-8',
+        sm: 'p-5',
+        default: 'p-7',
+        lg: 'p-9',
       },
     },
     defaultVariants: {
@@ -63,7 +65,7 @@ const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
       <div
         ref={ref}
         className={cn(
-          'flex flex-col space-y-1.5 p-6',
+          'flex flex-col space-y-1.5 p-7',
           bordered && 'border-b border-border',
           className
         )}
@@ -125,7 +127,7 @@ const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
       <div
         ref={ref}
         className={cn(
-          noPadding ? 'p-0' : 'p-6 pt-0',
+          noPadding ? 'p-0' : 'p-7 pt-0',
           className
         )}
         {...props}

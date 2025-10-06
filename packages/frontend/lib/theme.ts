@@ -198,10 +198,10 @@ export function ThemeToggle({ className, size = 'md' }: ThemeToggleProps) {
     {
       type: 'button',
       className: [
-        'inline-flex items-center justify-center rounded-md border border-border',
-        'bg-transparent hover:bg-accent hover:text-accent-foreground',
-        'transition-colors focus-visible:outline-none focus-visible:ring-2',
-        'focus-visible:ring-ring',
+        'inline-flex items-center justify-center rounded-full border border-border/70',
+        'bg-surface/70 text-muted-foreground backdrop-blur-md transition-all duration-200 ease-out',
+        'hover:text-foreground hover:border-border-hover/80 hover:bg-surface/90',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-200 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         sizeClasses[size],
         className || '',
       ].join(' '),
