@@ -18,6 +18,55 @@ interface ConsumeCreditsOptions {
 
 const DEFAULT_CONSUMPTION_DESCRIPTION = 'Consommation de crédits'
 
+type QuotaInterval = 'month'
+
+interface FreeQuotaRule {
+  limit: number
+  interval: QuotaInterval
+  description: string
+}
+
+const DEFAULT_AI_INSIGHTS_LIMIT = Number.parseInt(
+  process.env.FREE_AI_INSIGHTS_MONTHLY_LIMIT ?? '2',
+  10
+)
+
+const NORMALIZED_AI_INSIGHTS_LIMIT = Number.isFinite(DEFAULT_AI_INSIGHTS_LIMIT)
+  ? Math.max(DEFAULT_AI_INSIGHTS_LIMIT, 0)
+  : 2
+
+const FREE_QUOTA_RULES: Record<string, FreeQuotaRule> = {
+  'ai-insights': {
+    limit: NORMALIZED_AI_INSIGHTS_LIMIT,
+    interval: 'month',
+    description: 'Quota gratuit - Insights IA',
+  },
+}
+
+function getQuotaRule(featureKey: string): FreeQuotaRule | undefined {
+  const rule = FREE_QUOTA_RULES[featureKey]
+  if (!rule) {
+    return undefined
+  }
+
+  // Garantit que la limite est au moins 0 (fallback si override invalide)
+  const limit = Math.max(rule.limit, 0)
+  return {
+    ...rule,
+    limit,
+  }
+}
+
+function getIntervalStart(interval: QuotaInterval): Date {
+  const now = new Date()
+  switch (interval) {
+    case 'month':
+      return new Date(now.getFullYear(), now.getMonth(), 1)
+    default:
+      return new Date(now.getFullYear(), now.getMonth(), 1)
+  }
+}
+
 export async function ensureCreditBalance(prisma: PrismaClient, userId: string) {
   return prisma.userCreditBalance.upsert({
     where: { userId },
@@ -140,4 +189,89 @@ export async function addCredits(
 
     return updatedBalance
   })
+}
+
+interface ConsumeWithQuotaOptions extends ConsumeCreditsOptions {
+  featureKey?: string
+  allowQuotaFallback?: boolean
+}
+
+export async function consumeCreditsWithQuota(
+  prisma: PrismaClient,
+  options: ConsumeWithQuotaOptions
+) {
+  const { featureKey, allowQuotaFallback = true, ...creditOptions } = options
+
+  try {
+    return await consumeCredits(prisma, creditOptions)
+  } catch (error) {
+    if (
+      !(error instanceof InsufficientCreditsError) ||
+      !allowQuotaFallback ||
+      !featureKey
+    ) {
+      throw error
+    }
+
+    const quotaRule = getQuotaRule(featureKey)
+    if (!quotaRule || quotaRule.limit <= 0) {
+      throw error
+    }
+
+    const periodStart = getIntervalStart(quotaRule.interval)
+
+    const usageCount = await prisma.creditTransaction.count({
+      where: {
+        userId: creditOptions.userId,
+        type: CreditTransactionType.FREE_QUOTA_USAGE,
+        createdAt: {
+          gte: periodStart,
+        },
+        metadata: {
+          path: ['featureKey'],
+          equals: featureKey,
+        },
+      },
+    })
+
+    if (usageCount >= quotaRule.limit) {
+      throw error
+    }
+
+    const balance = await ensureCreditBalance(prisma, creditOptions.userId)
+
+    const quotaMetadata: Prisma.JsonObject = {
+      featureKey,
+      quotaInterval: quotaRule.interval,
+      quotaLimit: quotaRule.limit,
+      quotaUsage: usageCount + 1,
+      appliedAt: new Date().toISOString(),
+    }
+
+    if (
+      creditOptions.metadata &&
+      typeof creditOptions.metadata === 'object' &&
+      creditOptions.metadata !== null &&
+      !Array.isArray(creditOptions.metadata) &&
+      creditOptions.metadata !== Prisma.DbNull
+    ) {
+      Object.assign(quotaMetadata, creditOptions.metadata as Prisma.JsonObject)
+    }
+
+    await prisma.creditTransaction.create({
+      data: {
+        userId: creditOptions.userId,
+        amount: 0,
+        type: CreditTransactionType.FREE_QUOTA_USAGE,
+        balanceSnapshot: balance.balance + balance.bonusBalance,
+        description:
+          creditOptions.description || quotaRule.description || 'Quota gratuit utilisé',
+        metadata: quotaMetadata,
+        balanceId: balance.id,
+        subscriptionPlanId: creditOptions.subscriptionPlanId ?? null,
+      },
+    })
+
+    return balance
+  }
 }

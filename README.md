@@ -124,6 +124,12 @@ Types TypeScript, schemas Zod, et utilitaires partagés.
 
 ### Variables d'Environnement
 Consultez `.env.example` pour les variables disponibles.
+Pour l'intégration Strava, renseignez également :
+- `STRAVA_CLIENT_ID`
+- `STRAVA_CLIENT_SECRET`
+- `STRAVA_REDIRECT_URI` (par défaut `http://localhost:4000/api/integrations/strava/callback`)
+- `FRONTEND_URL` (ex. `http://localhost:3000`)
+- `FREE_AI_INSIGHTS_MONTHLY_LIMIT` (quota gratuit mensuel pour les insights IA)
 
 ### APIs Externes
 - Strava API pour synchronisation des activités

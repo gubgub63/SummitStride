@@ -1,0 +1,4 @@
+DO $$
+BEGIN
+    ALTER TYPE "CreditTransactionType" ADD VALUE IF NOT EXISTS 'FREE_QUOTA_USAGE';
+END $$;

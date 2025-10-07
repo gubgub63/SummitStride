@@ -26,48 +26,42 @@ const BREAKPOINTS = {
   '2xl': 1536,
 } as const
 
+function calculateResponsiveState(width: number, height: number): ResponsiveState {
+  let currentBreakpoint: BreakpointKey = 'sm'
+  if (width >= BREAKPOINTS['2xl']) currentBreakpoint = '2xl'
+  else if (width >= BREAKPOINTS.xl) currentBreakpoint = 'xl'
+  else if (width >= BREAKPOINTS.lg) currentBreakpoint = 'lg'
+  else if (width >= BREAKPOINTS.md) currentBreakpoint = 'md'
+
+  return {
+    isMobile: width < BREAKPOINTS.md,
+    isTablet: width >= BREAKPOINTS.md && width < BREAKPOINTS.lg,
+    isDesktop: width >= BREAKPOINTS.lg,
+    currentBreakpoint,
+    windowWidth: width,
+    windowHeight: height,
+  }
+}
+
+function getInitialState(): ResponsiveState {
+  if (typeof window === 'undefined') {
+    return calculateResponsiveState(BREAKPOINTS.lg, 0)
+  }
+
+  return calculateResponsiveState(window.innerWidth, window.innerHeight)
+}
+
 export function useResponsive(): ResponsiveState {
-  const [state, setState] = useState<ResponsiveState>({
-    isMobile: true,
-    isTablet: false,
-    isDesktop: false,
-    currentBreakpoint: 'sm',
-    windowWidth: 0,
-    windowHeight: 0,
-  })
+  const [state, setState] = useState<ResponsiveState>(getInitialState)
 
   useEffect(() => {
-    const calculateResponsiveState = (): ResponsiveState => {
-      const width = window.innerWidth
-      const height = window.innerHeight
-
-      let currentBreakpoint: BreakpointKey = 'sm'
-      if (width >= BREAKPOINTS['2xl']) currentBreakpoint = '2xl'
-      else if (width >= BREAKPOINTS.xl) currentBreakpoint = 'xl'
-      else if (width >= BREAKPOINTS.lg) currentBreakpoint = 'lg'
-      else if (width >= BREAKPOINTS.md) currentBreakpoint = 'md'
-
-      return {
-        isMobile: width < BREAKPOINTS.md,
-        isTablet: width >= BREAKPOINTS.md && width < BREAKPOINTS.lg,
-        isDesktop: width >= BREAKPOINTS.lg,
-        currentBreakpoint,
-        windowWidth: width,
-        windowHeight: height,
-      }
-    }
-
     const handleResize = () => {
-      setState(calculateResponsiveState())
+      setState(calculateResponsiveState(window.innerWidth, window.innerHeight))
     }
 
-    // Initialize state
-    setState(calculateResponsiveState())
-
-    // Add event listener
+    handleResize()
     window.addEventListener('resize', handleResize)
 
-    // Cleanup
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 

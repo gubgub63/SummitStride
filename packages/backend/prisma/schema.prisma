@@ -29,6 +29,8 @@ model User {
   raceRegistrations  RaceRegistration[]
   creditBalance      UserCreditBalance?
   creditTransactions CreditTransaction[]
+  stravaIntegration  StravaIntegration?
+  stravaActivities   StravaActivity[]
 
   @@map("users")
 }
@@ -437,9 +439,59 @@ enum CreditTransactionType {
   CREDIT_ADJUSTMENT
   SUBSCRIPTION_CHARGE
   SUBSCRIPTION_BONUS
+  FREE_QUOTA_USAGE
 }
 
 enum SubscriptionInterval {
   MONTHLY
   YEARLY
+}
+
+model StravaIntegration {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  athleteId      Int
+  athleteUsername String?
+  athleteFirstName String?
+  athleteLastName  String?
+  accessToken    String
+  refreshToken   String
+  tokenType      String?
+  scope          String?
+  expiresAt      DateTime
+  lastSyncAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("strava_integrations")
+}
+
+model StravaActivity {
+  id                 String   @id @default(cuid())
+  userId             String
+  stravaId           BigInt   @unique
+  name               String
+  type               String
+  sportType          String?
+  distance           Float    @default(0)
+  movingTime         Int      @default(0)
+  elapsedTime        Int      @default(0)
+  totalElevationGain Float?   @default(0)
+  startDate          DateTime
+  startDateLocal     DateTime?
+  averageSpeed       Float?
+  maxSpeed           Float?
+  averageHeartRate   Float?
+  maxHeartRate       Float?
+  sufferScore        Int?
+  raw                Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startDate])
+  @@map("strava_activities")
 }

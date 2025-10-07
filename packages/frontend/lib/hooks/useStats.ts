@@ -1,12 +1,26 @@
 /**
  * Hook de Statistiques Utilisateur - SummitStride
- * Hook pour gérer les statistiques d'entraînement et de progression
- *
- * TODO: Replace with real API when backend statistics endpoints are available
- * Currently using mocked data for development
+ * Récupère les statistiques d'entraînement en s'appuyant sur l'intégration Strava.
  */
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import stravaService, { StravaActivity, StravaStatus } from '../services/stravaService'
+
+interface StatsCacheData {
+  stats: UserStats | null
+  progress: ProgressData[]
+  recentActivities: RecentActivity[]
+  upcomingActivities: UpcomingActivity[]
+  needsStravaConnection: boolean
+  stravaStatus: StravaStatus | null
+}
+
+interface StatsCache {
+  timestamp: number
+  data: StatsCacheData
+}
+
+let statsCache: StatsCache | null = null
 
 export interface UserStats {
   totalSessions: number
@@ -48,119 +62,6 @@ export interface UpcomingActivity {
   intensity: 'low' | 'moderate' | 'high' | 'very-high'
 }
 
-// TODO: Replace with real API data
-const MOCK_STATS: UserStats = {
-  totalSessions: 127,
-  totalDistance: 1254.8,
-  totalDuration: 7890, // 131.5 heures
-  completedRaces: 5,
-  upcomingRaces: 2,
-  currentWeekDistance: 45.2,
-  currentWeekDuration: 280, // 4h40
-  averagePace: 5.8, // 5:48 min/km
-  lastActivityDate: new Date('2024-01-15T08:30:00')
-}
-
-// TODO: Replace with real API data
-const MOCK_PROGRESS: ProgressData[] = [
-  { week: 'S-11', distance: 32.5, duration: 240, sessions: 4 },
-  { week: 'S-10', distance: 38.2, duration: 280, sessions: 5 },
-  { week: 'S-9', distance: 35.1, duration: 260, sessions: 4 },
-  { week: 'S-8', distance: 42.3, duration: 310, sessions: 5 },
-  { week: 'S-7', distance: 39.8, duration: 295, sessions: 4 },
-  { week: 'S-6', distance: 45.2, duration: 340, sessions: 6 },
-  { week: 'S-5', distance: 41.7, duration: 315, sessions: 5 },
-  { week: 'S-4', distance: 48.9, duration: 365, sessions: 6 },
-  { week: 'S-3', distance: 46.3, duration: 350, sessions: 5 },
-  { week: 'S-2', distance: 52.1, duration: 390, sessions: 6 },
-  { week: 'S-1', distance: 49.7, duration: 375, sessions: 5 },
-  { week: 'Cette semaine', distance: 45.2, duration: 280, sessions: 4 }
-]
-
-// TODO: Replace with real API data
-const MOCK_RECENT_ACTIVITIES: RecentActivity[] = [
-  {
-    id: '1',
-    date: new Date('2024-01-15T08:30:00'),
-    type: 'run',
-    name: 'Course longue matinale',
-    distance: 18.5,
-    duration: 105,
-    intensity: 'moderate',
-    completed: true
-  },
-  {
-    id: '2',
-    date: new Date('2024-01-13T18:00:00'),
-    type: 'run',
-    name: 'Fractionné 5x1000m',
-    distance: 8.2,
-    duration: 45,
-    intensity: 'high',
-    completed: true
-  },
-  {
-    id: '3',
-    date: new Date('2024-01-11T07:15:00'),
-    type: 'run',
-    name: 'Récupération active',
-    distance: 6.5,
-    duration: 40,
-    intensity: 'low',
-    completed: true
-  },
-  {
-    id: '4',
-    date: new Date('2024-01-09T19:30:00'),
-    type: 'strength',
-    name: 'Renforcement musculaire',
-    duration: 60,
-    intensity: 'moderate',
-    completed: true
-  },
-  {
-    id: '5',
-    date: new Date('2024-01-07T09:00:00'),
-    type: 'run',
-    name: 'Tempo run',
-    distance: 12.8,
-    duration: 72,
-    intensity: 'high',
-    completed: true
-  }
-]
-
-// TODO: Replace with real API data
-const MOCK_UPCOMING_ACTIVITIES: UpcomingActivity[] = [
-  {
-    id: 'up1',
-    date: new Date('2024-01-17T08:00:00'),
-    type: 'run',
-    name: 'Sortie longue',
-    plannedDistance: 22,
-    plannedDuration: 130,
-    intensity: 'moderate'
-  },
-  {
-    id: 'up2',
-    date: new Date('2024-01-19T18:30:00'),
-    type: 'run',
-    name: 'Interval training',
-    plannedDistance: 10,
-    plannedDuration: 55,
-    intensity: 'very-high'
-  },
-  {
-    id: 'up3',
-    date: new Date('2024-01-21T12:00:00'),
-    type: 'cross-training',
-    name: 'Vélo de route',
-    plannedDistance: 40,
-    plannedDuration: 120,
-    intensity: 'moderate'
-  }
-]
-
 export function useStats() {
   const [stats, setStats] = useState<UserStats | null>(null)
   const [progress, setProgress] = useState<ProgressData[]>([])
@@ -168,31 +69,96 @@ export function useStats() {
   const [upcomingActivities, setUpcomingActivities] = useState<UpcomingActivity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [needsStravaConnection, setNeedsStravaConnection] = useState(false)
+  const [stravaStatus, setStravaStatus] = useState<StravaStatus | null>(null)
 
   useEffect(() => {
-    loadStats()
+    loadStats(false)
+
+    const refreshListener = () => {
+      statsCache = null
+      loadStats(true).catch(err => console.error('Erreur refresh stats:', err))
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('summitstride-stats-refresh', refreshListener)
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('summitstride-stats-refresh', refreshListener)
+      }
+    }
   }, [])
 
-  const loadStats = async () => {
+  const loadStats = async (force = false) => {
     try {
       setLoading(true)
       setError(null)
+      setNeedsStravaConnection(false)
 
-      // TODO: Replace with real API calls when available
-      // const [statsRes, progressRes, recentRes, upcomingRes] = await Promise.all([
-      //   apiClient.get('/user/stats'),
-      //   apiClient.get('/user/progress?period=12weeks'),
-      //   apiClient.get('/training-sessions?limit=5&completed=true'),
-      //   apiClient.get('/training-sessions?limit=3&upcoming=true')
-      // ])
+      if (!force && statsCache && Date.now() - statsCache.timestamp < 60_000) {
+        const cached = statsCache.data
+        setStats(cached.stats)
+        setProgress(cached.progress)
+        setRecentActivities(cached.recentActivities)
+        setUpcomingActivities(cached.upcomingActivities)
+        setNeedsStravaConnection(cached.needsStravaConnection)
+        setStravaStatus(cached.stravaStatus)
+        return
+      }
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800))
+      const status = await stravaService.getStatus()
+      setStravaStatus(status)
 
-      setStats(MOCK_STATS)
-      setProgress(MOCK_PROGRESS)
-      setRecentActivities(MOCK_RECENT_ACTIVITIES)
-      setUpcomingActivities(MOCK_UPCOMING_ACTIVITIES)
+      if (!status.connected) {
+        const data: StatsCacheData = {
+          stats: null,
+          progress: [],
+          recentActivities: [],
+          upcomingActivities: [],
+          needsStravaConnection: true,
+          stravaStatus: status,
+        }
+
+        statsCache = {
+          timestamp: Date.now(),
+          data,
+        }
+
+        setStats(null)
+        setProgress([])
+        setRecentActivities([])
+        setUpcomingActivities([])
+        setNeedsStravaConnection(true)
+        return
+      }
+
+      const activitiesResponse = await stravaService.getActivities({ perPage: 200, afterDays: 180 })
+      const mappedActivities = mapStravaActivities(activitiesResponse.activities)
+
+  const computedStats = computeStatsFromActivities(mappedActivities)
+  const computedProgress = computeProgressFromActivities(mappedActivities)
+
+      const data: StatsCacheData = {
+        stats: computedStats,
+        progress: computedProgress,
+        recentActivities: mappedActivities.slice(0, 20),
+        upcomingActivities: [],
+        needsStravaConnection: false,
+        stravaStatus: status,
+      }
+
+      statsCache = {
+        timestamp: Date.now(),
+        data,
+      }
+
+      setStats(computedStats)
+      setProgress(computedProgress)
+      setRecentActivities(mappedActivities.slice(0, 20))
+      setUpcomingActivities([])
+      setNeedsStravaConnection(false)
     } catch (error) {
       console.error('Erreur lors du chargement des statistiques:', error)
       setError('Impossible de charger les statistiques')
@@ -202,7 +168,8 @@ export function useStats() {
   }
 
   const refreshStats = async () => {
-    await loadStats()
+    statsCache = null
+    await loadStats(true)
   }
 
   // Fonctions utilitaires pour formatter les données
@@ -262,6 +229,8 @@ export function useStats() {
     upcomingActivities,
     loading,
     error,
+    needsStravaConnection,
+    stravaStatus,
     refreshStats,
     // Utilities
     formatDuration,
@@ -271,4 +240,148 @@ export function useStats() {
     getIntensityLabel,
     getIntensityColor
   }
+}
+
+function mapStravaActivities(activities: StravaActivity[]): RecentActivity[] {
+  return activities
+    .map(activity => {
+      const distanceKm = activity.distance ? activity.distance / 1000 : 0
+      const movingMinutes = activity.moving_time ? Math.round(activity.moving_time / 60) : 0
+      const intensity = determineIntensity(activity, distanceKm, movingMinutes)
+      const type = normalizeActivityType(activity)
+      const startDate = new Date(activity.start_date_local || activity.start_date)
+
+      return {
+        id: String(activity.id),
+        date: startDate,
+        type,
+        name: activity.name,
+        distance: distanceKm > 0 ? distanceKm : undefined,
+        duration: movingMinutes,
+        intensity,
+        completed: true,
+      } as RecentActivity
+    })
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+}
+
+function normalizeActivityType(activity: StravaActivity): RecentActivity['type'] {
+  const sportType = (activity.sport_type || activity.type || '').toLowerCase()
+
+  if (sportType.includes('run')) {
+    return 'run'
+  }
+
+  if (sportType.includes('ride') || sportType.includes('bike')) {
+    return 'bike'
+  }
+
+  if (sportType.includes('strength') || sportType.includes('workout')) {
+    return 'strength'
+  }
+
+  return 'cross-training'
+}
+
+function determineIntensity(
+  activity: StravaActivity,
+  distanceKm: number,
+  movingMinutes: number
+): RecentActivity['intensity'] {
+  if (typeof activity.suffer_score === 'number') {
+    if (activity.suffer_score < 20) return 'low'
+    if (activity.suffer_score < 40) return 'moderate'
+    if (activity.suffer_score < 60) return 'high'
+    return 'very-high'
+  }
+
+  if (distanceKm <= 0 || movingMinutes <= 0) {
+    return 'moderate'
+  }
+
+  const pace = movingMinutes / distanceKm
+
+  if (pace <= 4) return 'very-high'
+  if (pace <= 5) return 'high'
+  if (pace <= 6.5) return 'moderate'
+  return 'low'
+}
+
+function computeStatsFromActivities(activities: RecentActivity[]): UserStats {
+  const totalSessions = activities.length
+  const totalDistance = activities.reduce((acc, activity) => acc + (activity.distance || 0), 0)
+  const totalDuration = activities.reduce((acc, activity) => acc + activity.duration, 0)
+
+  const completedRaces = activities.filter(activity => activity.type === 'run' && activity.intensity === 'very-high').length
+
+  const currentWeekStart = startOfWeek(new Date())
+  let currentWeekDistance = 0
+  let currentWeekDuration = 0
+  let lastActivityDate: Date | null = null
+
+  activities.forEach(activity => {
+    if (!lastActivityDate || activity.date > lastActivityDate) {
+      lastActivityDate = activity.date
+    }
+
+    if (activity.date >= currentWeekStart) {
+      currentWeekDistance += activity.distance || 0
+      currentWeekDuration += activity.duration
+    }
+  })
+
+  const averagePace = totalDistance > 0 ? totalDuration / totalDistance : 0
+
+  return {
+    totalSessions,
+    totalDistance: Number.parseFloat(totalDistance.toFixed(1)),
+    totalDuration,
+    completedRaces,
+    upcomingRaces: 0,
+    currentWeekDistance: Number.parseFloat(currentWeekDistance.toFixed(1)),
+    currentWeekDuration,
+    averagePace,
+    lastActivityDate,
+  }
+}
+
+function computeProgressFromActivities(activities: RecentActivity[]): ProgressData[] {
+  const weeklyMap = new Map<string, { distance: number; duration: number; sessions: number; start: Date }>()
+
+  activities.forEach(activity => {
+    const start = startOfWeek(activity.date)
+    const key = start.toISOString()
+    const current = weeklyMap.get(key) ?? { distance: 0, duration: 0, sessions: 0, start }
+
+    current.distance += activity.distance || 0
+    current.duration += activity.duration
+    current.sessions += 1
+
+    weeklyMap.set(key, current)
+  })
+
+  const sortedWeeks = Array.from(weeklyMap.values()).sort((a, b) => a.start.getTime() - b.start.getTime())
+
+  const weeksWithLabels = sortedWeeks.map((week, index) => {
+    const isLast = index === sortedWeeks.length - 1
+    const label = isLast ? 'Cette semaine' : `S-${sortedWeeks.length - 1 - index}`
+
+    return {
+      week: label,
+      distance: Number.parseFloat(week.distance.toFixed(1)),
+      duration: Math.round(week.duration),
+      sessions: week.sessions,
+    }
+  })
+
+  return weeksWithLabels
+}
+
+function startOfWeek(date: Date): Date {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  d.setDate(d.getDate() + diff)
+  d.setHours(0, 0, 0, 0)
+  return d
 }

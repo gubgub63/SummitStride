@@ -1,9 +1,6 @@
 /**
  * ProfileStats Component - SummitStride
- * Affiche les statistiques générales d'entraînement de l'utilisateur
- *
- * TODO: Replace with real API when backend statistics endpoints are available
- * Currently using mocked data from useStats hook
+ * Affiche les statistiques générales d'entraînement basées sur la synchronisation Strava.
  */
 
 'use client'
@@ -57,7 +54,15 @@ function StatCard({ title, value, subtitle, icon, trend }: StatCardProps) {
 }
 
 export function ProfileStats() {
-  const { stats, loading, error, formatDuration, formatDistance, formatPace } = useStats()
+  const {
+    stats,
+    loading,
+    error,
+    needsStravaConnection,
+    formatDuration,
+    formatDistance,
+    formatPace,
+  } = useStats()
 
   if (loading) {
     return (
@@ -72,6 +77,18 @@ export function ProfileStats() {
           </Card>
         ))}
       </div>
+    )
+  }
+
+  if (needsStravaConnection) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Connectez votre compte Strava pour visualiser vos statistiques d'entraînement.
+          </p>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -156,14 +173,12 @@ export function ProfileStats() {
             title="Distance"
             value={formatDistance(stats.currentWeekDistance)}
             subtitle="Cette semaine"
-            trend={{ value: 12, isPositive: true }}
           />
 
           <StatCard
             title="Durée"
             value={formatDuration(stats.currentWeekDuration)}
             subtitle="Cette semaine"
-            trend={{ value: 8, isPositive: true }}
           />
 
           <StatCard

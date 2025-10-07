@@ -1,9 +1,6 @@
 /**
  * Profile Page - SummitStride
- * Page principale de gestion du profil utilisateur avec statistiques
- *
- * TODO: Replace mocked statistics with real API when backend endpoints are available
- * Currently using stubbed data for development
+ * Page principale de gestion du profil utilisateur avec statistiques synchronisées (Strava).
  */
 
 'use client'
@@ -16,6 +13,7 @@ import { ProfileStats } from '../../../components/profile/ProfileStats'
 import { ProgressCharts } from '../../../components/profile/ProgressCharts'
 import { ActivitySummary } from '../../../components/profile/ActivitySummary'
 import { useProfile } from '../../../lib/hooks/useProfile'
+import { StravaIntegrationCard } from '../../../components/profile/StravaIntegrationCard'
 import { useAuth } from '../../../lib/hooks/useAuth'
 
 type ProfileSection = 'overview' | 'stats' | 'activity' | 'progress'
@@ -276,33 +274,14 @@ export default function ProfilePage() {
     <div className="container mx-auto py-8 px-4 space-y-6">
       <ProfileHeader user={user} profile={profile} completion={completion} />
 
+      <StravaIntegrationCard />
+
       <SectionNavigation
         activeSection={activeSection}
         onSectionChange={setActiveSection}
       />
 
       {renderSectionContent()}
-
-      {/* Section d'aide/info sur les stubs */}
-      <Card className="border-blue-200 bg-blue-50">
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <div className="text-blue-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-blue-900!">Données de développement</h4>
-              <p className="text-sm text-blue-800 mt-1">
-                Les statistiques et données d'activité affichées sont actuellement des données de démonstration.
-                Elles seront remplacées par vos vraies données d'entraînement une fois les APIs backend développées.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

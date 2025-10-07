@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '../components/ui/Button'
@@ -135,15 +135,35 @@ const pricingTeasers = [
   },
 ]
 
+const landingNavLinks = [
+  { href: '#features', label: 'Capacités' },
+  { href: '#ia', label: 'Pipeline IA' },
+  { href: '#temoignages', label: 'Témoignages' },
+  { href: '/pricing', label: 'Tarifs' },
+]
+
 export default function HomePage() {
   const router = useRouter()
   const { isAuthenticated, isLoading } = useAuth()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       router.push('/dashboard')
     }
   }, [isAuthenticated, isLoading, router])
+
+  useEffect(() => {
+    if (mobileNavOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [mobileNavOpen])
 
   if (isLoading) {
     return (
@@ -166,43 +186,106 @@ export default function HomePage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,rgba(255,92,43,0.15),transparent_55%)]" />
 
       <header className="relative z-20 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto flex h-20 items-center justify-between px-4">
-          <Link href="/" className="group flex items-center space-x-3">
-            <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-500 shadow-[0_18px_40px_-24px_rgba(90,93,253,0.75)]">
-              <span className="text-white font-semibold">S</span>
-              <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.45),transparent_65%)]" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-semibold tracking-tight text-foreground">SummitStride</span>
-              <span className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Ultra-trail intelligence</span>
-            </div>
-          </Link>
+        <div className="container mx-auto h-20 px-4">
+          <div className="flex h-full items-center justify-between gap-4">
+            <Link href="/" className="group flex flex-shrink-0 items-center space-x-3">
+              <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-500 shadow-[0_18px_40px_-24px_rgba(90,93,253,0.75)]">
+                <span className="text-white font-semibold">S</span>
+                <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.45),transparent_65%)]" />
+              </div>
+              <div className="hidden sm:flex flex-col">
+                <span className="text-lg font-semibold tracking-tight text-foreground">SummitStride</span>
+                <span className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Ultra-trail intelligence</span>
+              </div>
+            </Link>
 
-          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-muted-foreground">
-            <Link href="#features" className="transition hover:text-foreground">
-              Capacités
-            </Link>
-            <Link href="#ia" className="transition hover:text-foreground">
-              Pipeline IA
-            </Link>
-            <Link href="#temoignages" className="transition hover:text-foreground">
-              Témoignages
-            </Link>
-            <Link href="/pricing" className="transition hover:text-foreground">
-              Tarifs
-            </Link>
-          </nav>
+            <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-muted-foreground">
+              {landingNavLinks.map(link => (
+                <Link key={link.href} href={link.href} className="transition hover:text-foreground">
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
 
-          <div className="flex items-center space-x-3">
-            <ThemeToggle size="sm" />
-            <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
-              <Link href="/login">Connexion</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link href="/register">Commencer</Link>
-            </Button>
+            <div className="flex items-center gap-2 md:gap-3">
+              <ThemeToggle size="sm" className="hidden sm:flex" />
+              <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
+                <Link href="/login">Connexion</Link>
+              </Button>
+              <Button asChild size="sm" className="hidden md:inline-flex">
+                <Link href="/register">Commencer</Link>
+              </Button>
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen(true)}
+                className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-surface/70 text-foreground transition hover:border-border-hover/80 hover:bg-surface/90"
+                aria-label="Ouvrir la navigation"
+              >
+                <span className="sr-only">Ouvrir la navigation</span>
+                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M3 6h14M3 10h14M3 14h10" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
+
+        {mobileNavOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+              onClick={() => setMobileNavOpen(false)}
+            />
+            <div className="fixed inset-y-0 right-0 z-50 w-[min(80vw,320px)] bg-background/95 backdrop-blur-xl border-l border-border/60 p-6 shadow-[0_35px_80px_-45px_rgba(19,26,56,0.55)] md:hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                  Navigation
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition hover:text-foreground"
+                  aria-label="Fermer la navigation"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M5 5l10 10M15 5L5 15" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-4">
+                {landingNavLinks.map(link => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileNavOpen(false)}
+                    className="rounded-2xl border border-border/60 bg-surface/80 px-4 py-3 text-sm font-medium text-foreground transition hover:border-border-hover/80"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+
+              <div className="mt-6 space-y-3">
+                <Button asChild size="lg" variant="ghost" className="w-full justify-center">
+                  <Link href="/login" onClick={() => setMobileNavOpen(false)}>
+                    Connexion
+                  </Link>
+                </Button>
+                <Button asChild size="lg" className="w-full justify-center">
+                  <Link href="/register" onClick={() => setMobileNavOpen(false)}>
+                    Commencer
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="mt-6 flex items-center justify-between rounded-2xl border border-border/60 bg-surface/80 px-4 py-3 text-xs text-muted-foreground">
+                <span>Mode visuel</span>
+                <ThemeToggle size="sm" />
+              </div>
+            </div>
+          </>
+        )}
       </header>
 
       <main className="relative z-10">
@@ -255,7 +338,7 @@ export default function HomePage() {
                     <svg className="h-5 w-5 text-secondary-500" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
-                    <span>Note 4.9/5 sur les courses > 100 km</span>
+                    <span>Note 4.9/5 sur les courses &gt; 100 km</span>
                   </div>
                 </div>
               </div>
@@ -392,7 +475,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="container mx-auto px-4 py-24">
+        <section id="temoignages" className="container mx-auto px-4 py-24">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div className="space-y-6">
               <span className="text-xs uppercase tracking-[0.3em] text-primary-600">

@@ -7,7 +7,7 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 - **Phase 1**: Architecture et Base ✅ **TERMINÉE**
 - **Phase 2**: Authentification et Profils ✅ **TERMINÉE**
 - **Phase 3**: Course et Inscription ✅ **TERMINÉE**
-- **Phase 4**: Interface Utilisateur ✅ **TERMINÉE** (8/8 sections terminées)
+- **Phase 4**: Interface Utilisateur ✅ **TERMINÉE** (9/9 sections terminées)
   - 4.1 Design System ✅ TERMINÉ
   - 4.2 Authentification et Onboarding ✅ TERMINÉ
   - 4.3 Gestion des Profils Utilisateur ✅ TERMINÉ
@@ -15,7 +15,8 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
   - 4.5 Inscription et Gestion des Objectifs ✅ **TERMINÉ**
   - 4.6 Plans d'Entraînement (UI) ⭐ **EN COURS** - Infrastructure prête, composant d'apprentissage à finaliser
   - 4.7 Nutrition et Suivi ⭐ **EN COURS** - Infrastructure prête, composant d'apprentissage useEffect à finaliser
-  - 4.8 Responsive et Mobile ✅ **TERMINÉ**
+  - 4.8 Responsive et Mobile ✅ **TERMINÉ** (passe d'optimisation mars 2025)
+  - 4.9 Landing & Pricing marketing ✅ **TERMINÉ**
 - **Phase 5**: Training Plans - **PRÉVU**
 - **Phase 6**: Intelligence Artificielle - **PRÉVU**
 
@@ -133,18 +134,16 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 - [x] Système de grille et layout responsive
 - [x] Guidelines d'accessibilité (WCAG 2.1)
 
-**✅ Implémentation terminée:**
-- Identité visuelle "Alpine Tech" avec palette moderne (Bleu glacier, Orange ultra, Vert montagne, Gris schiste)
-- Design tokens complets avec CSS Custom Properties et TypeScript
-- Configuration Tailwind CSS 4 avec thème personnalisé et animations
-- Typographie "Performance Outdoor" avec Inter Variable et JetBrains Mono
-- Composants UI de base : Button (12 variants), Input (validation), Card (6 types), Modal (accessible)
+**✅ Implémentation terminée (mise à jour mars 2025):**
+- Identité visuelle "Aurora Trail" (palette Indigo polaire / Sunrise flare / Alpine canopy / Midnight summit)
+- Design tokens remaniés (CSS Custom Properties + TypeScript) et synchronisés avec Tailwind 4
+- Typographies brand : Manrope (sans), Space Grotesk (display) et JetBrains Mono (UI technique)
+- Composants UI piliers : Button (CTA pill gradients, états loading), Input (glass + focus offset), Card (glass/gradient/ghost), Modal accessibles
 - Composants spécialisés : StatsCard, CourseCard, ConfirmationModal
-- Système responsive avec breakpoints mobile-first
-- ThemeProvider pour gestion thème clair/sombre/système
-- Guidelines d'accessibilité WCAG 2.1 intégrées (focus, contraste, navigation clavier)
-- Utilitaires et hooks pour développement : cn(), formatters, theme management
-- Page de démonstration interactive du design system
+- ThemeProvider clair/sombre/système + ThemeToggle pill revisité
+- Hooks & utilitaires communs (`useResponsive` v2, `useBreakpoint`, `cn`, formatters)
+- Guidelines WCAG 2.1 (contrastes, focus visibles, navigation clavier)
+- Page design-system interactive toujours synchronisée avec les tokens
 
 ### 4.2 Authentification et Onboarding
 - [x] Pages de connexion/inscription
@@ -323,60 +322,44 @@ Application web complète pour aider les ultra-traileurs à se préparer de mani
 - **Recommandations nutritionnelles** : Hydratation, glucides, électrolytes
 - **Validation complète** : Poids, durée, types d'activités
 
-### 4.8 Responsive et Mobile ✅ **TERMINÉ**
-- [x] **Optimisation mobile (responsive design)** ✅
-  - Hook `useResponsive` pour détecter les breakpoints
-  - Hook `useBreakpoint` et `useMediaQuery` pour réactivité
-  - Système de détection mobile/tablet/desktop
-- [x] **Navigation mobile avec hamburger** ✅
-  - Composant `MobileNavigation` (🎯 **Composant d'apprentissage**)
-  - Menu hamburger animé avec transformation en X
-  - Overlay et panel déroulant avec transitions CSS
-  - Gestion des clics outside et touches clavier
-- [x] **Interface tactile optimisée** ✅
-  - Tailles de cibles tactiles minimales (44px)
-  - Optimisation des formulaires pour mobile
-  - Prévention du zoom automatique sur iOS
-  - Support des safe areas et notch
-- [x] **Styles CSS mobiles complets** ✅
-  - Variables CSS pour navigation mobile intégrées dans globals.css
-  - Animations optimisées pour mobile
-  - Support mode sombre mobile
-  - Performance et reduced motion
+### 4.8 Responsive et Mobile ✅ **TERMINÉ** (passe d'optimisation mars 2025)
+- [x] Refonte `useResponsive` (détection SSR-safe + mobile/tablette/desktop)
+- [x] Barre de navigation responsive (drawer mobile, body locking, transitions)
+- [x] Harmonisation des layouts publics & authentifiés (fonds radiaux, espacements container)
+- [x] Optimisations tactiles (cibles 44px, focus offset, safe areas)
+- [x] Nettoyage Tailwind (`.btn`, `.card`, `.input`) pour cohérence petits écrans
 
-**📋 Fonctionnalités PWA (Phase future - non critiques pour MVP) :**
-- [ ] Progressive Web App (PWA) - *Nécessite manifest.json et service workers*
-- [ ] Mode hors-ligne basique - *Dépend de l'architecture backend finalisée (Phase 5+)*
-- [ ] Notifications push web - *Requiert infrastructure serveur et fonctionnalités métier*
+**✅ Implémentation livrée (mars 2025)**
+- Landing & Pricing : menu hamburger partagé, drawer mobile, ancres (#features/#comparatif)
+- Authentifié : header sticky ajusté, mobile drawer aligné, suppression route pricing côté connecté
+- `useResponsive` v2 + helpers `useBreakpoint`, `useMediaQuery` (refactor SSR/hydratation)
+- Composants UI (Button/Input/Card) pivotés en pills glassy compatibles mobile
+- Styles globaux (`globals.css`, tokens) avec fonds radiaux light/dark et gradients adaptatifs
 
-**✅ Implémentation terminée :**
-- Infrastructure complète responsive avec hooks `useResponsive.ts`, `useBreakpoint`, `useMediaQuery`
-- Composant `MobileNavigation.tsx` entièrement fonctionnel avec état et animations
-- Fichier `mobile.css` avec styles complets intégré dans `globals.css`
-- Layout authentifié adapté pour mobile avec espacement correct
-- Navigation conditionnelle dans `Header.tsx` (desktop vs mobile)
-- Composants UI optimisés pour les interactions tactiles
-- Support complet des safe areas et optimisations iOS/Android
+**🎯 Héritage pédagogique** : `components/navigation/MobileNavigation.tsx`
+- Concepts : useState/useEffect/useResponsive, gestion overlay & clics outside
+- Challenge : animations hamburger → X, transitions panel, accessibilité clavier
 
-**🎯 Composant d'apprentissage créé** : `MobileNavigation.tsx`
-- **Concepts React enseignés** : useState, useEffect, useResponsive, conditional rendering, event handlers
-- **Challenge** : Implémenter hamburger menu avec animations CSS et gestion d'état
-- **Infrastructure fournie** : Hooks responsive, utilitaires device, styles CSS mobiles
+**📁 Fichiers clés**
+- `lib/hooks/useResponsive.ts` (refactor)
+- `components/navigation/Header.tsx` & `MobileNavigation.tsx`
+- `app/page.tsx`, `app/pricing/page.tsx` (menus marketing)
+- `components/ui/Button.tsx`, `Card.tsx`, `Input.tsx`
+- `app/globals.css`, `app/design-system/tokens.css`, `tailwind.config.ts`
 
-**📁 Fichiers créés/modifiés :**
-- `lib/hooks/useResponsive.ts` - Hook responsive complet
-- `components/navigation/MobileNavigation.tsx` - Navigation mobile complète
-- `styles/mobile.css` - Styles CSS mobiles intégrés
-- `app/globals.css` - Import des styles mobile ajouté
-- `components/navigation/Header.tsx` - Navigation conditionnelle
-- `app/(authenticated)/layout.tsx` - Layout mobile-friendly
+### 4.9 Landing & Pricing marketing ✅
+- [x] Refonte complète de la landing page (hero, stats, pipeline IA, témoignages, CTA)
+- [x] Nouvelle page `/pricing` (toggle mensuel/annuel, comparatif, FAQ, section démo)
+- [x] Intégration des nouveaux tokens (palette Aurora Trail, typographies brand)
+- [x] Responsive complet (grid adaptative, drawer mobile partagé)
+- [x] Alignement CTA (register/pricing) et ancres (#plans, #faq, #contact)
 
-**🎨 Note d'implémentation Phase 4:**
-La Phase 4 (Interface Utilisateur) est maintenant **complètement terminée** avec tous les composants UI essentiels :
-1. **4.1-4.2** : Fondations et authentification ✅
-2. **4.3-4.4** : Profils et courses ✅
-3. **4.5-4.7** : Features avancées ✅
-4. **4.8** : Responsive et mobile ✅
+**✅ Implémentation livrée (mars 2025)**
+- `app/page.tsx` réécrit avec contenu marketing, social proof, section pipeline
+- `app/pricing/page.tsx` ajoutée + navigation mobile dédiée
+- Mise à jour `premiumService.createCheckoutSession` consommée par la page Premium
+- Expérience mobile fluide (body scroll lock, overlay, ThemeToggle intégré)
+- Contenu marketing mis à jour (copie FR, logos partenaires, stats)
 
 **📋 Tests et Optimisation UX (reportés après Phase 5-6) :**
 - [ ] Tests utilisateurs avec ultra-traileurs - *Nécessite des fonctionnalités core complètes*
@@ -590,22 +573,23 @@ La Phase 4 (Interface Utilisateur) est maintenant **complètement terminée** av
 - [ ] Gestion des crédits gratuits (nouveau utilisateur, promotions)
 
 ### 7.2 Intégration de paiement
-- [x] Configuration Stripe pour paiements sécurisés *(SDK backend, variables d'environnement, endpoint Checkout).* 
+- [x] Configuration Stripe pour paiements sécurisés *(SDK backend, variables d'environnement, endpoint Checkout)*
 - [x] Packages de crédits (20, 50, 100 crédits avec remises)
-- [x] Abonnement Premium annuel/mensuel *(sessions Stripe dynamiques + seed premium-monthly/premium-annual).* 
+- [x] Abonnement Premium annuel/mensuel *(sessions Stripe dynamiques + seed premium-monthly/premium-annual)*
 - [ ] Gestion des remboursements et litiges
-- [x] Webhooks Stripe pour synchronisation automatique *(route `/api/stripe/webhook` avec vérification de signature et mise à jour du solde).* 
+- [x] Webhooks Stripe pour synchronisation automatique *(route `/api/stripe/webhook` + signature et mise à jour du solde)*
+- [x] Checkout front → back : `premiumService.createCheckoutSession` → `POST /premium/checkout/session` → `stripe.checkout.sessions.create`
 
 ### 7.3 Logique métier premium
 - [x] Middleware de vérification des crédits *(consommation appliquée sur les insights IA, retour 402 en cas d'insuffisance)*
 - [x] Décompte automatique lors d'actions premium *(appel aux insights IA retranche 3 crédits et journalise la transaction)*
-- [ ] Système de quotas pour comptes gratuits
+- [x] Système de quotas pour comptes gratuits *(fallback mensuel pour les modules sans crédits)*
 - [ ] Alertes de solde faible et suggestions de recharge
 - [ ] Fonctionnalités exclusives Premium (analyses IA avancées)
 
 ### 7.4 Interface utilisateur premium
 - [x] Dashboard de gestion des crédits *(page /premium avec solde, transactions, offres)*
-- [ ] Pages d'achat et upgrade
+- [x] Pages d'achat et upgrade *(Landing + `/pricing` + CTA Stripe directs depuis PremiumDashboard)*
 - [x] Indicateurs visuels premium/gratuit *(cartes solde/recommandations + encart insuffisance)*
 - [ ] Historique des consommations et factures
 - [ ] Centre d'aide pour questions de facturation
@@ -637,21 +621,37 @@ La Phase 4 (Interface Utilisateur) est maintenant **complètement terminée** av
 └── Plan nutrition : 8 crédits
 ```
 
-**✅ Implémentation livrée (2025-10-03)**
-- Nouvelles tables Prisma (`user_credit_balances`, `credit_transactions`, `subscription_plans`) et migration appliquée.
-- Routes protégées `/api/premium/*` pour récupérer solde, historique et catalogue d'offres.
-- Service front `premiumService` consommable par l'UI, seed de plans & transactions demo.
-- À suivre : intégration Stripe, consommation automatique via middleware, quotas & alertes.
+**✅ Implémentation livrée (2025-03)**
+- Tables Prisma (`user_credit_balances`, `credit_transactions`, `subscription_plans`) + migrations en place
+- Routes protégées `/api/premium/*` (solde, transactions, plans) et middleware de consommation
+- Service front `premiumService` + `PremiumDashboard` (solde, historique, CTA checkout)
+- Flux Stripe complet : landing/pricing CTA → service front → endpoint Fastify → `stripe.checkout.sessions.create` → redirection utilisateur
+- Webhook Stripe opérationnel pour créditer/décrémenter automatiquement
+- Quotas free tier : usage gratuit mensuel (AI insights) journalisé (`FREE_QUOTA_USAGE`) avec fallback automatique sans crédits
+
+**À poursuivre**
+- Modèles de consommation affinés par fonctionnalité, gestion des crédits gratuits et quotas free tier
+- Alertes solde faible / upsell, historique factures, help center facturation
+- Support remboursements/litiges Stripe côté back-office
 
 ---
 
 ## Phase 8: Intégrations API Externes
 
-### 8.1 Intégration Strava
-- [ ] Configuration OAuth Strava
-- [ ] Synchronisation des activités
-- [ ] Import des données d'entraînement
-- [ ] Analyse des performances réelles vs planifiées
+### 8.1 Intégration Strava ✅
+- [x] Configuration OAuth Strava (auth-url + callback backend)
+- [x] Synchronisation des activités (API Strava v3, refresh token automatique)
+- [x] Import des données d'entraînement (stockage minimal + mapping vers UI)
+- [x] Analyse basique des performances réelles (agrégations hebdo, statistiques de volume)
+
+**✅ Implémentation livrée (mars 2025)**
+- Modèle Prisma `strava_integrations` + stockage tokens/athlète
+- Routes Fastify `/api/integrations/strava/*` (status, auth-url, activities, sync, callback)
+- Service Strava (refresh token, fetch activities, quotas JWT state)
+- Hook front `useStravaIntegration` + service `stravaService`
+- Persistance locale `strava_activities` & agrégations hebdo (progression, stats, activités récentes)
+- UI : carte de connexion Strava, page `/integrations/strava` de retour OAuth, stats/activités réelles sans mocks
+- Variables à renseigner : `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_REDIRECT_URI`, `FRONTEND_URL`, `FREE_AI_INSIGHTS_MONTHLY_LIMIT`
 
 ### 8.2 Autres intégrations possibles
 - [ ] Garmin Connect

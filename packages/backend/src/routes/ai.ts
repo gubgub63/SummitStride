@@ -2,7 +2,10 @@ import { FastifyPluginAsync } from 'fastify'
 import { authMiddleware } from '../middleware/auth.js'
 import { AiInsightsService } from '../services/aiInsights.js'
 import { TrainingPlanAnalytics } from '../services/trainingPlanAnalytics.js'
-import { consumeCredits, InsufficientCreditsError } from '../services/premiumCredits.js'
+import {
+  consumeCreditsWithQuota,
+  InsufficientCreditsError,
+} from '../services/premiumCredits.js'
 
 const AI_INSIGHT_CREDIT_COST = 3
 
@@ -42,7 +45,7 @@ export const aiRoutes: FastifyPluginAsync = async fastify => {
 
           const metrics = TrainingPlanAnalytics.summarizeSessions(plan.trainingSessions)
 
-          await consumeCredits(inner.prisma, {
+          await consumeCreditsWithQuota(inner.prisma, {
             userId,
             amount: AI_INSIGHT_CREDIT_COST,
             description: `Insights IA pour le plan ${plan.name}`,
@@ -50,6 +53,8 @@ export const aiRoutes: FastifyPluginAsync = async fastify => {
               module: 'ai-insights',
               planId: plan.id,
             },
+            featureKey: 'ai-insights',
+            allowQuotaFallback: true,
           })
 
           const insights = AiInsightsService.generatePlanInsights({

@@ -56,7 +56,6 @@ const navigationLinks: NavLink[] = [
   { href: '/courses', label: 'Courses', icon: '🗺️' },
   { href: '/nutrition', label: 'Nutrition', icon: '🥗' },
   { href: '/premium', label: 'Premium', icon: '💎' },
-  { href: '/pricing', label: 'Tarifs', icon: '💳' },
   { href: '/profile', label: 'Profil', icon: '👤' },
 ]
 

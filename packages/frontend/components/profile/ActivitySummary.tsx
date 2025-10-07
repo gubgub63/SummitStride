@@ -1,9 +1,6 @@
 /**
  * ActivitySummary Component - SummitStride
- * Affiche un résumé de l'activité récente et à venir
- *
- * TODO: Replace with real API when backend statistics endpoints are available
- * Currently using mocked data from useStats hook
+ * Affiche un résumé de l'activité récente synchronisée via Strava.
  */
 
 'use client'
@@ -153,7 +150,7 @@ function ActivityItem({ activity, isUpcoming = false }: ActivityItemProps) {
 }
 
 export function ActivitySummary() {
-  const { recentActivities, upcomingActivities, loading, error } = useStats()
+  const { recentActivities, upcomingActivities, loading, error, needsStravaConnection } = useStats()
   const [activeView, setActiveView] = useState<ActivityView>('recent')
 
   if (loading) {
@@ -178,6 +175,23 @@ export function ActivitySummary() {
                 <div className="w-16 h-4 bg-gray-200 rounded"></div>
               </div>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (needsStravaConnection) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Activité récente</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-sm text-muted-foreground">
+              Connectez Strava pour afficher vos dernières sorties et planifier vos prochaines séances.
+            </p>
           </div>
         </CardContent>
       </Card>

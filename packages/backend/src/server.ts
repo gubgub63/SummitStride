@@ -11,6 +11,7 @@ import registrationRoutes from './routes/registration.js'
 import { trainingRoutes } from './routes/training.js'
 import aiRoutes from './routes/ai.js'
 import premiumRoutes from './routes/premium.js'
+import stravaRoutes from './routes/strava.js'
 
 const envSchema = {
   type: 'object',
@@ -48,6 +49,11 @@ const envSchema = {
     STRIPE_PRICE_ID_CREDITS_100: { type: 'string', default: '' },
     STRIPE_PRICE_ID_PREMIUM_MONTHLY: { type: 'string', default: '' },
     STRIPE_PRICE_ID_PREMIUM_ANNUAL: { type: 'string', default: '' },
+    STRAVA_CLIENT_ID: { type: 'string', default: '' },
+    STRAVA_CLIENT_SECRET: { type: 'string', default: '' },
+    STRAVA_REDIRECT_URI: { type: 'string', default: '' },
+    FRONTEND_URL: { type: 'string', default: '' },
+    FREE_AI_INSIGHTS_MONTHLY_LIMIT: { type: 'string', default: '2' },
   },
 }
 
@@ -133,6 +139,9 @@ async function start() {
 
     // Premium & crédits routes (protected)
     await fastify.register(premiumRoutes, { prefix: '/api' })
+
+    // Strava integration routes
+    await fastify.register(stravaRoutes)
 
     // Database status endpoint
     fastify.get('/api/db-status', async (_request, reply) => {

@@ -124,7 +124,7 @@ function SimpleBarChart({ data, metric }: SimpleBarChartProps) {
 }
 
 export function ProgressCharts() {
-  const { progress, loading, error, formatDuration } = useStats()
+  const { progress, loading, error, needsStravaConnection, formatDuration } = useStats()
   const [selectedPeriod, setSelectedPeriod] = useState<ChartPeriod>('12weeks')
   const [selectedMetric, setSelectedMetric] = useState<ChartMetric>('distance')
 
@@ -148,6 +148,23 @@ export function ProgressCharts() {
                 </div>
               ))}
             </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (needsStravaConnection) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Progression d'entraînement</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-sm text-muted-foreground">
+              Connectez votre compte Strava pour suivre la progression de vos charges hebdomadaires.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -238,65 +255,65 @@ export function ProgressCharts() {
         />
 
         {chartData.length > 0 ? (
-          <SimpleBarChart data={chartData} metric={selectedMetric} />
+          <>
+            <SimpleBarChart data={chartData} metric={selectedMetric} />
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h4 className="text-sm font-medium mb-2 text-gray-900">
+                Résumé de la période
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Total:</span>
+                  <div className="font-medium text-gray-900">
+                    {selectedMetric === 'distance' &&
+                      `${chartData.reduce((sum, item) => sum + item.value, 0).toFixed(1)} km`}
+                    {selectedMetric === 'duration' &&
+                      formatDuration(chartData.reduce((sum, item) => sum + item.value, 0))}
+                    {selectedMetric === 'sessions' &&
+                      `${chartData.reduce((sum, item) => sum + item.value, 0)} séances`}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Moyenne:</span>
+                  <div className="font-medium text-gray-900">
+                    {selectedMetric === 'distance' &&
+                      `${(chartData.reduce((sum, item) => sum + item.value, 0) / chartData.length).toFixed(1)} km`}
+                    {selectedMetric === 'duration' &&
+                      formatDuration(chartData.reduce((sum, item) => sum + item.value, 0) / chartData.length)}
+                    {selectedMetric === 'sessions' &&
+                      `${Math.round(chartData.reduce((sum, item) => sum + item.value, 0) / chartData.length)} séances`}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Maximum:</span>
+                  <div className="font-medium text-gray-900">
+                    {selectedMetric === 'distance' &&
+                      `${Math.max(...chartData.map(d => d.value)).toFixed(1)} km`}
+                    {selectedMetric === 'duration' &&
+                      formatDuration(Math.max(...chartData.map(d => d.value)))}
+                    {selectedMetric === 'sessions' &&
+                      `${Math.max(...chartData.map(d => d.value))} séances`}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Minimum:</span>
+                  <div className="font-medium text-gray-900">
+                    {selectedMetric === 'distance' &&
+                      `${Math.min(...chartData.map(d => d.value)).toFixed(1)} km`}
+                    {selectedMetric === 'duration' &&
+                      formatDuration(Math.min(...chartData.map(d => d.value)))}
+                    {selectedMetric === 'sessions' &&
+                      `${Math.min(...chartData.map(d => d.value))} séances`}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
         ) : (
           <div className="text-center py-8 text-gray-500">
             Aucune donnée disponible pour cette période
           </div>
         )}
-
-        {/* Résumé statistique */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h4 className="text-sm font-medium mb-2 text-gray-900">
-            Résumé de la période
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="text-gray-600">Total:</span>
-              <div className="font-medium text-gray-900">
-                {selectedMetric === 'distance' &&
-                  `${chartData.reduce((sum, item) => sum + item.value, 0).toFixed(1)} km`}
-                {selectedMetric === 'duration' &&
-                  formatDuration(chartData.reduce((sum, item) => sum + item.value, 0))}
-                {selectedMetric === 'sessions' &&
-                  `${chartData.reduce((sum, item) => sum + item.value, 0)} séances`}
-              </div>
-            </div>
-            <div>
-              <span className="text-gray-600">Moyenne:</span>
-              <div className="font-medium text-gray-900">
-                {selectedMetric === 'distance' &&
-                  `${(chartData.reduce((sum, item) => sum + item.value, 0) / chartData.length).toFixed(1)} km`}
-                {selectedMetric === 'duration' &&
-                  formatDuration(chartData.reduce((sum, item) => sum + item.value, 0) / chartData.length)}
-                {selectedMetric === 'sessions' &&
-                  `${Math.round(chartData.reduce((sum, item) => sum + item.value, 0) / chartData.length)} séances`}
-              </div>
-            </div>
-            <div>
-              <span className="text-gray-600">Maximum:</span>
-              <div className="font-medium text-gray-900">
-                {selectedMetric === 'distance' &&
-                  `${Math.max(...chartData.map(d => d.value)).toFixed(1)} km`}
-                {selectedMetric === 'duration' &&
-                  formatDuration(Math.max(...chartData.map(d => d.value)))}
-                {selectedMetric === 'sessions' &&
-                  `${Math.max(...chartData.map(d => d.value))} séances`}
-              </div>
-            </div>
-            <div>
-              <span className="text-gray-600">Minimum:</span>
-              <div className="font-medium text-gray-900">
-                {selectedMetric === 'distance' &&
-                  `${Math.min(...chartData.map(d => d.value)).toFixed(1)} km`}
-                {selectedMetric === 'duration' &&
-                  formatDuration(Math.min(...chartData.map(d => d.value)))}
-                {selectedMetric === 'sessions' &&
-                  `${Math.min(...chartData.map(d => d.value))} séances`}
-              </div>
-            </div>
-          </div>
-        </div>
       </CardContent>
     </Card>
   )
