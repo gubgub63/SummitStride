@@ -1,13 +1,18 @@
 import { DarkTheme, NavigationContainer, type Theme } from '@react-navigation/native'
 import { createBottomTabNavigator, type BottomTabBarProps } from '@react-navigation/bottom-tabs'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { Feather } from '@expo/vector-icons'
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 import DashboardScreen from '../screens/DashboardScreen'
 import NutritionScreen from '../screens/NutritionScreen'
 import PlanLibraryScreen from '../screens/PlanLibraryScreen'
 import PlannerScreen from '../screens/PlannerScreen'
 import ProfileScreen from '../screens/ProfileScreen'
+import LoginScreen from '../screens/auth/LoginScreen'
+import RegisterScreen from '../screens/auth/RegisterScreen'
+import { useAuth } from '../context/AuthContext'
+import type { AuthStackParamList } from '../types/navigation'
 import { palette, radii, spacing } from '../theme'
 
 export type RootTabParamList = {
@@ -19,6 +24,7 @@ export type RootTabParamList = {
 }
 
 const Tab = createBottomTabNavigator<RootTabParamList>()
+const Stack = createNativeStackNavigator<AuthStackParamList>()
 
 const navTheme: Theme = {
   ...DarkTheme,
@@ -121,58 +127,87 @@ const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => 
   )
 }
 
-const RootNavigator = () => (
-  <NavigationContainer theme={navTheme}>
-    <Tab.Navigator
-      initialRouteName="Dashboard"
-      screenOptions={{
-        headerShown: false,
+const AppTabs = () => (
+  <Tab.Navigator
+    initialRouteName="Dashboard"
+    screenOptions={{
+      headerShown: false,
+    }}
+    tabBar={(props) => <CustomTabBar {...props} />}
+  >
+    <Tab.Screen
+      name="Dashboard"
+      component={DashboardScreen}
+      options={{
+        title: 'Accueil',
+        tabBarIcon: ({ color, size }) => <Feather name="home" size={size} color={color} />,
       }}
-      tabBar={(props) => <CustomTabBar {...props} />}
-    >
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{
-          title: 'Accueil',
-          tabBarIcon: ({ color, size }) => <Feather name="home" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Plans"
-        component={PlanLibraryScreen}
-        options={{
-          title: 'Plans',
-          tabBarIcon: ({ color, size }) => <Feather name="layers" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Planner"
-        component={PlannerScreen}
-        options={{
-          title: 'Planner',
-          tabBarIcon: ({ color, size }) => <Feather name="plus" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Nutrition"
-        component={NutritionScreen}
-        options={{
-          title: 'Nutrition',
-          tabBarIcon: ({ color, size }) => <Feather name="droplet" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          title: 'Profil',
-          tabBarIcon: ({ color, size }) => <Feather name="user" size={size} color={color} />,
-        }}
-      />
-    </Tab.Navigator>
-  </NavigationContainer>
+    />
+    <Tab.Screen
+      name="Plans"
+      component={PlanLibraryScreen}
+      options={{
+        title: 'Plans',
+        tabBarIcon: ({ color, size }) => <Feather name="layers" size={size} color={color} />,
+      }}
+    />
+    <Tab.Screen
+      name="Planner"
+      component={PlannerScreen}
+      options={{
+        title: 'Planner',
+        tabBarIcon: ({ color, size }) => <Feather name="plus" size={size} color={color} />,
+      }}
+    />
+    <Tab.Screen
+      name="Nutrition"
+      component={NutritionScreen}
+      options={{
+        title: 'Nutrition',
+        tabBarIcon: ({ color, size }) => <Feather name="droplet" size={size} color={color} />,
+      }}
+    />
+    <Tab.Screen
+      name="Profile"
+      component={ProfileScreen}
+      options={{
+        title: 'Profil',
+        tabBarIcon: ({ color, size }) => <Feather name="user" size={size} color={color} />,
+      }}
+    />
+  </Tab.Navigator>
 )
+
+const AuthStack = () => (
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: false,
+      contentStyle: { backgroundColor: palette.background },
+    }}
+  >
+    <Stack.Screen name="Login" component={LoginScreen} />
+    <Stack.Screen name="Register" component={RegisterScreen} />
+  </Stack.Navigator>
+)
+
+const RootNavigator = () => {
+  const { token, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={palette.primary} />
+        <Text style={styles.loadingText}>Chargement</Text>
+      </View>
+    )
+  }
+
+  return (
+    <NavigationContainer theme={navTheme}>
+      {token ? <AppTabs /> : <AuthStack />}
+    </NavigationContainer>
+  )
+}
 
 const styles = StyleSheet.create({
   tabWrapper: {
@@ -239,6 +274,18 @@ const styles = StyleSheet.create({
   },
   centerLabelActive: {
     color: palette.primary,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: palette.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing(2),
+  },
+  loadingText: {
+    color: palette.muted,
+    fontSize: 14,
+    letterSpacing: 1,
   },
 })
 

@@ -1,79 +1,151 @@
+import { useMemo } from 'react'
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
 import { Feather } from '@expo/vector-icons'
-import { StyleSheet, Text, View } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
+import { useQuery } from '@tanstack/react-query'
 
+import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { Screen } from '../components/Screen'
 import { SectionHeader } from '../components/SectionHeader'
-import { planLibrary, userProfileSummary } from '../data/mockData'
+import { useAuth } from '../context/AuthContext'
+import { getTrainingPlanTemplates } from '../services/training'
+import type { RootTabParamList } from '../navigation/RootNavigator'
 import { palette, radii, spacing, typography } from '../theme'
 
-const PlanLibraryScreen = () => (
-  <Screen>
-    <View style={styles.header}>
-      <Text style={styles.title}>Plans d’entraînement</Text>
-      <Text style={styles.subtitle}>Alignés sur ton profil {userProfileSummary.experience.toLowerCase()}</Text>
-    </View>
+const PlanLibraryScreen = () => {
+  const { token, profile } = useAuth()
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>()
 
-    <Card>
-      <SectionHeader title="À propos" subtitle="Sélection personnalisée" />
-      <View style={styles.aboutRow}>
-        <Feather name='sliders' size={18} color={palette.primary} />
-        <Text style={styles.aboutText}>
-          Ajuste les blocs selon tes disponibilités (max {userProfileSummary.maxTrainingHours} h/sem.).
+  const templatesQuery = useQuery({
+    queryKey: ['training-plan-templates'],
+    queryFn: () => getTrainingPlanTemplates(token!),
+    enabled: Boolean(token),
+  })
+
+  const experienceLevel = profile?.profile?.experienceLevel ?? 'INTERMEDIATE'
+
+  const recommendedTemplates = useMemo(() => {
+    const templates = templatesQuery.data?.data ?? []
+    return templates.filter(template => {
+      if (!template.targetExperience) return true
+      return template.targetExperience === experienceLevel
+    })
+  }, [experienceLevel, templatesQuery.data])
+
+  const alternativeTemplates = useMemo(() => {
+    const templates = templatesQuery.data?.data ?? []
+    return templates.filter(template => !recommendedTemplates.some(rec => rec.id === template.id))
+  }, [recommendedTemplates, templatesQuery.data])
+
+  return (
+    <Screen>
+      <View style={styles.header}>
+        <Text style={styles.title}>Plans SummitStride</Text>
+        <Text style={styles.subtitle}>
+          Refinés pour le niveau {experienceLevel.toLowerCase()} · adaptables à tes disponibilités.
         </Text>
       </View>
-      <View style={styles.pillRow}>
-        <View style={styles.pill}>
-          <Text style={styles.pillText}>UTMB focus</Text>
-        </View>
-        <View style={styles.pill}>
-          <Text style={styles.pillText}>Charge maîtrisée</Text>
-        </View>
-        <View style={styles.pill}>
-          <Text style={styles.pillText}>Nutrition intégrée</Text>
-        </View>
-      </View>
-    </Card>
 
-    <SectionHeader title="Recommandés pour toi" />
-    {planLibrary.map((plan) => (
-      <Card key={plan.id} style={styles.planCard}>
-        <View style={styles.planHead}>
-          <View style={styles.planTitleBlock}>
-            <Text style={styles.planTitle}>{plan.title}</Text>
-            <Text style={styles.planDuration}>{plan.durationWeeks} semaines</Text>
-          </View>
-          <View style={styles.badge}>
-            <Feather name='zap' size={14} color={palette.background} />
-            <Text style={styles.badgeLabel}>
-              {plan.suitableFor.includes(userProfileSummary.experience) ? 'Idéal' : 'Avancé'}
-            </Text>
-          </View>
+      <Card>
+        <SectionHeader title="Comment ça marche" subtitle="Sélectionne, personnalise, génère" />
+        <View style={styles.aboutRow}>
+          <Feather name="sliders" size={18} color={palette.primary} />
+          <Text style={styles.aboutText}>
+            Choisis un template, ajuste la durée et laisse SummitStride générer les séances avec charge contrôlée et
+            jalons nutritionnels. Tu peux le modifier ensuite dans le planner.
+          </Text>
         </View>
-        <View style={styles.focusList}>
-          {plan.focus.map((item) => (
-            <View key={item} style={styles.focusChip}>
-              <Text style={styles.focusText}>{item}</Text>
-            </View>
-          ))}
-        </View>
-        <View style={styles.planFooter}>
-          <View style={styles.footerItem}>
-            <Feather name='target' size={14} color={palette.secondary} />
-            <Text style={styles.footerText}>Progression guidée</Text>
-          </View>
-          <View style={styles.footerItem}>
-            <Feather name='bar-chart-2' size={14} color={palette.secondary} />
-            <Text style={styles.footerText}>Suivi charge</Text>
-          </View>
-          <View style={styles.footerItem}>
-            <Feather name='edit-3' size={14} color={palette.secondary} />
-            <Text style={styles.footerText}>Personnalisable</Text>
-          </View>
-        </View>
+        <Button onPress={() => navigation.navigate('Planner')} style={styles.button}>
+          Créer un plan depuis un template
+        </Button>
       </Card>
-    ))}
-  </Screen>
+
+      {templatesQuery.isLoading ? (
+        <Card style={styles.loadingCard}>
+          <ActivityIndicator color={palette.primary} />
+          <Text style={styles.loadingText}>Chargement de la bibliothèque</Text>
+        </Card>
+      ) : null}
+
+      {recommendedTemplates.length ? (
+        <>
+          <SectionHeader title="Recommandés" subtitle="Basés sur ton profil" />
+          {recommendedTemplates.map(template => (
+            <TemplateCard key={template.id} template={template} highlight />
+          ))}
+        </>
+      ) : null}
+
+      {alternativeTemplates.length ? (
+        <>
+          <SectionHeader title="Explorer plus" />
+          {alternativeTemplates.map(template => (
+            <TemplateCard key={template.id} template={template} />
+          ))}
+        </>
+      ) : null}
+
+      {!templatesQuery.isLoading && !templatesQuery.data?.data?.length ? (
+        <Card style={styles.emptyCard}>
+          <Feather name="inbox" size={22} color={palette.primary} />
+          <Text style={styles.emptyTitle}>Aucun template disponible</Text>
+          <Text style={styles.emptySubtitle}>
+            Les templates seront ajoutés prochainement. Tu peux créer un plan vide depuis le planner.
+          </Text>
+        </Card>
+      ) : null}
+    </Screen>
+  )
+}
+
+const TemplateCard = ({
+  template,
+  highlight = false,
+}: {
+  template: { id: string; name: string; description: string | null; durationWeeks: number; targetCategory: string; targetExperience: string | null }
+  highlight?: boolean
+}) => (
+  <Card style={[styles.templateCard, highlight && styles.templateHighlight]}>
+    <View style={styles.templateHead}>
+      <View style={styles.templateTitleBlock}>
+        <Text style={styles.templateTitle}>{template.name}</Text>
+        <Text style={styles.templateCategory}>{template.targetCategory}</Text>
+      </View>
+      <View style={[styles.badge, highlight && styles.badgeHighlight]}>
+        <Feather name="zap" size={14} color={highlight ? palette.background : palette.primary} />
+        <Text style={[styles.badgeLabel, highlight && styles.badgeLabelHighlight]}>
+          {highlight ? 'Idéal' : template.targetExperience ?? 'Tous niveaux'}
+        </Text>
+      </View>
+    </View>
+    <View style={styles.templateMeta}>
+      <View>
+        <Text style={styles.metaValue}>{template.durationWeeks} sem.</Text>
+        <Text style={styles.metaLabel}>Durée</Text>
+      </View>
+      <View>
+        <Text style={styles.metaValueSmall}>{template.targetExperience ?? '—'}</Text>
+        <Text style={styles.metaLabel}>Expérience cible</Text>
+      </View>
+    </View>
+    {template.description ? <Text style={styles.templateDescription}>{template.description}</Text> : null}
+    <View style={styles.templateFooter}>
+      <View style={styles.footerItem}>
+        <Feather name="target" size={14} color={palette.secondary} />
+        <Text style={styles.footerText}>Objectifs précis</Text>
+      </View>
+      <View style={styles.footerItem}>
+        <Feather name="edit-3" size={14} color={palette.secondary} />
+        <Text style={styles.footerText}>Personnalisable</Text>
+      </View>
+      <View style={styles.footerItem}>
+        <Feather name="clock" size={14} color={palette.secondary} />
+        <Text style={styles.footerText}>Charge progressive</Text>
+      </View>
+    </View>
+  </Card>
 )
 
 const styles = StyleSheet.create({
@@ -92,7 +164,6 @@ const styles = StyleSheet.create({
   aboutRow: {
     flexDirection: 'row',
     gap: spacing(1.5),
-    alignItems: 'flex-start',
   },
   aboutText: {
     flex: 1,
@@ -100,76 +171,72 @@ const styles = StyleSheet.create({
     fontSize: typography.body,
     lineHeight: 20,
   },
-  pillRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  button: {
+    marginTop: spacing(2),
+  },
+  loadingCard: {
+    marginTop: spacing(2),
+    alignItems: 'center',
     gap: spacing(1),
   },
-  pill: {
-    borderColor: palette.border,
-    borderWidth: 1,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing(1.5),
-    paddingVertical: spacing(0.75),
-  },
-  pillText: {
+  loadingText: {
     color: palette.secondary,
     fontSize: typography.caption,
   },
-  planCard: {
+  templateCard: {
     gap: spacing(1.5),
   },
-  planHead: {
+  templateHighlight: {
+    borderColor: palette.primary,
+    borderWidth: 1,
+  },
+  templateHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  planTitleBlock: {
+  templateTitleBlock: {
     flex: 1,
     gap: spacing(0.25),
   },
-  planTitle: {
+  templateTitle: {
     color: palette.primary,
     fontSize: typography.section,
     fontWeight: '600',
   },
-  planDuration: {
+  templateCategory: {
     color: palette.muted,
     fontSize: typography.caption,
     textTransform: 'uppercase',
   },
-  badge: {
+  templateMeta: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing(0.5),
-    backgroundColor: palette.primary,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing(1),
-    paddingVertical: spacing(0.5),
+    gap: spacing(2),
   },
-  badgeLabel: {
-    color: palette.background,
-    fontSize: typography.caption,
+  metaValue: {
+    color: palette.primary,
+    fontSize: typography.body,
     fontWeight: '600',
   },
-  focusList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing(1),
-  },
-  focusChip: {
-    backgroundColor: palette.surfaceMuted,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing(1.5),
-    paddingVertical: spacing(0.75),
-  },
-  focusText: {
+  metaValueSmall: {
     color: palette.secondary,
     fontSize: typography.caption,
   },
-  planFooter: {
+  metaLabel: {
+    color: palette.muted,
+    fontSize: typography.micro,
+    textTransform: 'uppercase',
+  },
+  templateDescription: {
+    color: palette.secondary,
+    fontSize: typography.caption,
+    lineHeight: 18,
+  },
+  templateFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing(1),
   },
   footerItem: {
     flexDirection: 'row',
@@ -179,6 +246,44 @@ const styles = StyleSheet.create({
   footerText: {
     color: palette.secondary,
     fontSize: typography.caption,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing(0.5),
+    paddingHorizontal: spacing(1),
+    paddingVertical: spacing(0.5),
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: palette.primary,
+  },
+  badgeHighlight: {
+    backgroundColor: palette.primary,
+  },
+  badgeLabel: {
+    color: palette.primary,
+    fontSize: typography.caption,
+    fontWeight: '600',
+  },
+  badgeLabelHighlight: {
+    color: palette.background,
+  },
+  emptyCard: {
+    marginTop: spacing(2),
+    alignItems: 'center',
+    gap: spacing(1),
+    textAlign: 'center',
+  },
+  emptyTitle: {
+    color: palette.primary,
+    fontSize: typography.section,
+    fontWeight: '600',
+  },
+  emptySubtitle: {
+    color: palette.secondary,
+    fontSize: typography.caption,
+    lineHeight: 18,
+    textAlign: 'center',
   },
 })
 

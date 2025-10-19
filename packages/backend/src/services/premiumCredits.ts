@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, CreditTransactionType } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 
 export class InsufficientCreditsError extends Error {
   constructor(message = 'Solde de crédits insuffisant.') {
@@ -143,7 +143,7 @@ export async function addCredits(
     description?: string
     metadata?: Prisma.JsonValue
     subscriptionPlanId?: string | null
-    transactionType?: CreditTransactionType
+    transactionType?: Prisma.CreditTransactionType
   }
 ) {
   const {
@@ -223,7 +223,7 @@ export async function consumeCreditsWithQuota(
     const usageCount = await prisma.creditTransaction.count({
       where: {
         userId: creditOptions.userId,
-        type: CreditTransactionType.FREE_QUOTA_USAGE,
+        type: Prisma.CreditTransactionType.FREE_QUOTA_USAGE,
         createdAt: {
           gte: periodStart,
         },
@@ -262,7 +262,7 @@ export async function consumeCreditsWithQuota(
       data: {
         userId: creditOptions.userId,
         amount: 0,
-        type: CreditTransactionType.FREE_QUOTA_USAGE,
+        type: Prisma.CreditTransactionType.FREE_QUOTA_USAGE,
         balanceSnapshot: balance.balance + balance.bonusBalance,
         description:
           creditOptions.description || quotaRule.description || 'Quota gratuit utilisé',

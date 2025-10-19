@@ -1,83 +1,284 @@
+import { useMemo } from 'react'
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
 import { Feather } from '@expo/vector-icons'
-import { StyleSheet, Text, View } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
+import { useQuery } from '@tanstack/react-query'
 
+import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { ProgressBar } from '../components/ProgressBar'
 import { Screen } from '../components/Screen'
 import { SectionHeader } from '../components/SectionHeader'
-import { nutritionSnapshot } from '../data/mockData'
+import { useAuth } from '../context/AuthContext'
+import { getStravaActivities, getStravaStatus } from '../services/strava'
+import { getTrainingPlanById, getTrainingPlans } from '../services/training'
+import type { RootTabParamList } from '../navigation/RootNavigator'
 import { palette, radii, spacing, typography } from '../theme'
 
-const NutritionScreen = () => (
-  <Screen>
-    <View style={styles.header}>
-      <Text style={styles.title}>{nutritionSnapshot.planName}</Text>
-      <Text style={styles.subtitle}>Macros adaptatifs selon ta charge d’entraînement.</Text>
-    </View>
+const addDays = (date: Date, days: number) => {
+  const result = new Date(date)
+  result.setDate(result.getDate() + days)
+  return result
+}
 
-    <Card style={styles.macroCard}>
-      <SectionHeader title='Macros journaliers' subtitle='Répartition actuelle' />
-      <View style={styles.macroList}>
-        {Object.entries(nutritionSnapshot.macroTargets).map(([macro, values]) => (
-          <View key={macro} style={styles.macroItem}>
-            <Text style={styles.macroLabel}>{macro}</Text>
-            <ProgressBar progress={values.current / values.target} valueLabel={`${values.current}% / ${values.target}%`} />
-          </View>
-        ))}
-      </View>
-      <View style={styles.macroFooter}>
-        <Feather name='refresh-cw' size={14} color={palette.secondary} />
-        <Text style={styles.macroFootnote}>Recalcul automatique après chaque séance clé.</Text>
-      </View>
-    </Card>
+const formatDate = (value: string | Date) => {
+  const date = typeof value === 'string' ? new Date(value) : value
+  return new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }).format(date)
+}
 
-    <SectionHeader title='Hydratation' />
-    <Card>
-      <View style={styles.hydrationRow}>
-        <View style={styles.hydrationBadge}>
-          <Feather name='droplet' size={18} color={palette.background} />
-        </View>
-        <View style={styles.hydrationContent}>
-          <Text style={styles.hydrationValue}>{nutritionSnapshot.hydration.dailyTargetLiters} L</Text>
-          <Text style={styles.hydrationLabel}>Cible quotidienne</Text>
-          <Text style={styles.hydrationStreak}>{nutritionSnapshot.hydration.streakDays} jours consécutifs validés</Text>
-        </View>
-      </View>
-    </Card>
+const formatDuration = (minutes: number) => `${(minutes / 60).toFixed(1)} h`
 
-    <SectionHeader title='Stratégie course' subtitle='Fenêtre énergétique' />
-    <Card style={styles.strategyCard}>
-      <View style={styles.strategyRow}>
-        <Text style={styles.strategyTitle}>Apport glucidique</Text>
-        <Text style={styles.strategyValue}>
-          {nutritionSnapshot.raceStrategy.carbsPerHour.min} - {nutritionSnapshot.raceStrategy.carbsPerHour.max} g/heure
+const formatDistance = (km: number) => `${km.toFixed(1)} km`
+
+const NutritionScreen = () => {
+  const { token, profile } = useAuth()
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>()
+
+  const plansQuery = useQuery({
+    queryKey: ['training-plans'],
+    queryFn: () => getTrainingPlans(token!),
+    enabled: Boolean(token),
+  })
+
+  const activePlan = useMemo(() => {
+    const plans = plansQuery.data?.data ?? []
+    return plans.find(plan => plan.status === 'ACTIVE') ?? plans[0]
+  }, [plansQuery.data])
+
+  const planDetailsQuery = useQuery({
+    queryKey: ['training-plan', activePlan?.id],
+    queryFn: () => getTrainingPlanById(token!, activePlan!.id),
+    enabled: Boolean(token && activePlan?.id),
+  })
+
+  const stravaStatusQuery = useQuery({
+    queryKey: ['strava-status'],
+    queryFn: () => getStravaStatus(token!),
+    enabled: Boolean(token),
+  })
+
+  const stravaActivitiesQuery = useQuery({
+    queryKey: ['strava-activities'],
+    queryFn: () => getStravaActivities(token!, { perPage: 3, afterDays: 30 }),
+    enabled: Boolean(token && stravaStatusQuery.data?.data.connected),
+  })
+
+  const sessions = planDetailsQuery.data?.data.trainingSessions ?? []
+  const now = new Date()
+  const nextWeek = addDays(now, 7)
+
+  const upcomingWeekSessions = useMemo(
+    () =>
+      sessions
+        .filter(session => {
+          const date = new Date(session.date)
+          return date >= now && date <= nextWeek
+        })
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [nextWeek, now, sessions]
+  )
+
+  const loadStats = useMemo(() => {
+    const totalMinutes = upcomingWeekSessions.reduce((acc, session) => acc + (session.duration ?? 0), 0)
+    const totalDistance = upcomingWeekSessions.reduce((acc, session) => acc + (session.distance ?? 0), 0)
+    const maxHours = (profile?.profile?.maxTrainingHoursPerWeek ?? 8) * 60
+    const loadIndex = maxHours ? Math.min(totalMinutes / maxHours, 1) : 0.6
+
+    const carbs = Math.round(50 + loadIndex * 20)
+    const protein = 20
+    const fat = Math.max(0, 100 - carbs - protein)
+
+    return {
+      totalMinutes,
+      totalDistance,
+      loadIndex,
+      macroTargets: {
+        carbs,
+        protein,
+        fat,
+      },
+    }
+  }, [profile?.profile?.maxTrainingHoursPerWeek, upcomingWeekSessions])
+
+  const hydrationTarget = useMemo(() => {
+    const weight = profile?.profile?.weight ?? 0
+    const base = weight > 0 ? Math.max(2.5, weight * 0.035) : 3
+    const adjustment = loadStats.loadIndex > 0.7 ? 0.4 : loadStats.loadIndex > 0.4 ? 0.2 : 0
+    return Number((base + adjustment).toFixed(1))
+  }, [loadStats.loadIndex, profile?.profile?.weight])
+
+  const keySession = useMemo(() => {
+    return [...upcomingWeekSessions].sort((a, b) => (b.duration ?? 0) - (a.duration ?? 0))[0]
+  }, [upcomingWeekSessions])
+
+  const fuelingStrategy = useMemo(() => {
+    if (!keySession || !keySession.duration) {
+      return null
+    }
+    const durationHours = keySession.duration / 60
+    const carbsPerHour = Math.min(90, Math.round(60 + durationHours * 12))
+    const gelsCount = Math.max(2, Math.round((carbsPerHour * durationHours) / 25))
+    return {
+      carbsPerHour,
+      gelsCount,
+      session: keySession,
+    }
+  }, [keySession])
+
+  const stravaActivities = stravaActivitiesQuery.data?.data.activities ?? []
+
+  return (
+    <Screen>
+      <View style={styles.header}>
+        <Text style={styles.title}>Nutrition & récupération</Text>
+        <Text style={styles.subtitle}>
+          Ajustées automatiquement à ta charge. {activePlan ? activePlan.name : 'Crée un plan pour recommandations dédiées.'}
         </Text>
       </View>
-      <View style={styles.gelList}>
-        {nutritionSnapshot.raceStrategy.gels.map((gel) => (
-          <View key={gel.time} style={styles.gelRow}>
-            <Text style={styles.gelTime}>{gel.time}</Text>
-            <Text style={styles.gelValue}>{gel.carbs} g</Text>
-            {gel.caffeinated ? (
-              <View style={styles.caffeinePill}>
-                <Text style={styles.caffeineText}>CAF</Text>
-              </View>
-            ) : null}
-          </View>
-        ))}
-      </View>
-    </Card>
 
-    <SectionHeader title='Recommandations IA' />
-    <Card style={styles.recoCard}>
-      {nutritionSnapshot.recommendations.map((item) => (
-        <View key={item} style={styles.recoRow}>
-          <Feather name='check' size={14} color={palette.primary} />
-          <Text style={styles.recoText}>{item}</Text>
+      <Card style={styles.macroCard}>
+      <SectionHeader title="Macros recommandées" subtitle="Adaptées à la semaine à venir" />
+      <View style={styles.macroList}>
+        <MacroRow label="Glucides" value={loadStats.macroTargets.carbs} progress={loadStats.macroTargets.carbs / 100} />
+        <MacroRow label="Protéines" value={loadStats.macroTargets.protein} progress={loadStats.macroTargets.protein / 100} />
+        <MacroRow label="Lipides" value={loadStats.macroTargets.fat} progress={loadStats.macroTargets.fat / 100} />
+      </View>
+      <Text style={styles.dataSource}>
+        {stravaStatusQuery.data?.data.connected
+          ? 'Basé sur tes activités Strava récentes.'
+          : 'Calculé à partir de ton plan actif.'}
+      </Text>
+      <View style={styles.macroFooter}>
+        <Feather name="refresh-cw" size={14} color={palette.secondary} />
+        <Text style={styles.macroFootnote}>
+          Mise à jour dès que tu modifies une séance ou synchronises Strava.
+        </Text>
         </View>
-      ))}
-    </Card>
-  </Screen>
+      </Card>
+
+      <SectionHeader title="Hydratation" />
+      <Card>
+        <View style={styles.hydrationRow}>
+          <View style={styles.hydrationBadge}>
+            <Feather name="droplet" size={18} color={palette.background} />
+          </View>
+          <View style={styles.hydrationContent}>
+            <Text style={styles.hydrationValue}>{hydrationTarget} L</Text>
+            <Text style={styles.hydrationLabel}>Cible quotidienne</Text>
+            <Text style={styles.hydrationDetails}>
+              Basé sur {profile?.profile?.weight ? `${profile.profile.weight} kg` : 'ton poids estimé'} + charge
+              hebdomadaire.
+            </Text>
+          </View>
+        </View>
+      </Card>
+
+      <SectionHeader title="Séance clé" subtitle="Focus énergétique" />
+      <Card style={styles.strategyCard}>
+        {planDetailsQuery.isLoading ? (
+          <View style={styles.loadingInline}>
+            <ActivityIndicator color={palette.primary} />
+            <Text style={styles.loadingText}>Analyse de tes séances</Text>
+          </View>
+        ) : null}
+        {fuelingStrategy ? (
+          <>
+            <View style={styles.strategyHeader}>
+              <Text style={styles.strategyTitle}>{fuelingStrategy.session.name}</Text>
+              <Text style={styles.strategyMeta}>
+                {formatDate(fuelingStrategy.session.date)} · {fuelingStrategy.session.duration} min ·{' '}
+                {fuelingStrategy.session.intensity.toLowerCase()}
+              </Text>
+            </View>
+            <View style={styles.strategyRow}>
+              <View>
+                <Text style={styles.strategyValue}>{fuelingStrategy.carbsPerHour} g/h</Text>
+                <Text style={styles.strategyLabel}>Glucides recommandés</Text>
+              </View>
+              <View>
+                <Text style={styles.strategyValue}>{fuelingStrategy.gelsCount}</Text>
+                <Text style={styles.strategyLabel}>Gels ou portions</Text>
+              </View>
+            </View>
+            <View style={styles.gelList}>
+              <Feather name="zap" size={16} color={palette.primary} />
+              <Text style={styles.gelText}>
+                Fractionne ton apport toutes les 30-35 minutes. Pense à alterner avec boisson isotonique si météo chaude.
+              </Text>
+            </View>
+          </>
+        ) : (
+          <Text style={styles.placeholderText}>
+            Aucune séance longue cette semaine. Ajoute-en une depuis le planner pour obtenir une stratégie détaillée.
+          </Text>
+        )}
+      </Card>
+
+      <SectionHeader title="Charge hebdo estimée" />
+      <Card style={styles.loadCard}>
+        <View style={styles.loadSummary}>
+          <View>
+            <Text style={styles.loadValue}>{formatDuration(loadStats.totalMinutes)}</Text>
+            <Text style={styles.loadLabel}>Volume prévu</Text>
+          </View>
+          <View>
+            <Text style={styles.loadValue}>{formatDistance(loadStats.totalDistance)}</Text>
+            <Text style={styles.loadLabel}>Distance totale</Text>
+          </View>
+        </View>
+        <ProgressBar progress={loadStats.loadIndex} valueLabel={`${Math.round(loadStats.loadIndex * 100)} % charge`} />
+      </Card>
+
+      <SectionHeader title="Dernières activités Strava" subtitle="Ajustement automatique du plan" />
+      <Card>
+        {stravaStatusQuery.isLoading ? (
+          <View style={styles.loadingInline}>
+            <ActivityIndicator color={palette.primary} />
+            <Text style={styles.loadingText}>Lecture des activités</Text>
+          </View>
+        ) : null}
+        {stravaStatusQuery.data?.data.connected ? (
+          stravaActivities.length ? (
+            stravaActivities.map(activity => (
+              <View key={activity.id} style={styles.activityRow}>
+                <View style={styles.activityIcon}>
+                  <Feather name="activity" size={16} color={palette.primary} />
+                </View>
+                <View style={styles.activityText}>
+                  <Text style={styles.activityTitle}>{activity.name}</Text>
+                  <Text style={styles.activityMeta}>
+                    {formatDate(activity.start_date)} · {formatDistance(activity.distance / 1000)} ·{' '}
+                    {(activity.moving_time / 60).toFixed(0)} min
+                  </Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.placeholderText}>
+              Aucune activité récente. Lance une synchro depuis le dashboard après ta prochaine sortie.
+            </Text>
+          )
+        ) : (
+          <View style={styles.stravaDisconnected}>
+            <Text style={styles.placeholderText}>
+              Connecte Strava depuis le dashboard pour intégrer tes données réelles et recalibrer nutrition et charge.
+            </Text>
+            <Button onPress={() => navigation.navigate('Dashboard')} variant="ghost" style={styles.stravaButton}>
+              Gérer Strava
+            </Button>
+          </View>
+        )}
+      </Card>
+    </Screen>
+  )
+}
+
+const MacroRow = ({ label, value, progress }: { label: string; value: number; progress: number }) => (
+  <View style={styles.macroItem}>
+    <Text style={styles.macroLabel}>{label}</Text>
+    <ProgressBar progress={progress} valueLabel={`${value}%`} />
+  </View>
 )
 
 const styles = StyleSheet.create({
@@ -98,6 +299,10 @@ const styles = StyleSheet.create({
   },
   macroList: {
     gap: spacing(1.5),
+  },
+  dataSource: {
+    color: palette.muted,
+    fontSize: typography.caption,
   },
   macroItem: {
     gap: spacing(0.5),
@@ -146,72 +351,116 @@ const styles = StyleSheet.create({
     fontSize: typography.caption,
     textTransform: 'uppercase',
   },
-  hydrationStreak: {
+  hydrationDetails: {
     color: palette.secondary,
     fontSize: typography.caption,
   },
   strategyCard: {
     gap: spacing(1.5),
   },
-  strategyRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  loadingInline: {
     alignItems: 'center',
+    gap: spacing(1),
+    marginVertical: spacing(1),
+  },
+  loadingText: {
+    color: palette.secondary,
+    fontSize: typography.caption,
+  },
+  strategyHeader: {
+    gap: spacing(0.5),
   },
   strategyTitle: {
     color: palette.primary,
     fontSize: typography.body,
     fontWeight: '600',
   },
+  strategyMeta: {
+    color: palette.muted,
+    fontSize: typography.caption,
+  },
+  strategyRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing(1),
+  },
   strategyValue: {
+    color: palette.primary,
+    fontSize: typography.body,
+    fontWeight: '600',
+  },
+  strategyLabel: {
     color: palette.secondary,
     fontSize: typography.caption,
   },
   gelList: {
-    gap: spacing(1),
-  },
-  gelRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing(0.75),
-    borderBottomColor: palette.border,
-    borderBottomWidth: 1,
-  },
-  gelTime: {
-    color: palette.muted,
-    fontSize: typography.caption,
-  },
-  gelValue: {
-    color: palette.primary,
-    fontSize: typography.body,
-  },
-  caffeinePill: {
-    borderRadius: radii.xs,
-    borderWidth: 1,
-    borderColor: palette.primary,
-    paddingHorizontal: spacing(1),
-    paddingVertical: spacing(0.25),
-  },
-  caffeineText: {
-    color: palette.primary,
-    fontSize: typography.micro,
-    fontWeight: '600',
-    letterSpacing: 1,
-  },
-  recoCard: {
     gap: spacing(1),
-  },
-  recoRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing(1),
+    marginTop: spacing(1.5),
   },
-  recoText: {
+  gelText: {
     flex: 1,
     color: palette.secondary,
     fontSize: typography.caption,
     lineHeight: 18,
+  },
+  placeholderText: {
+    color: palette.muted,
+    fontSize: typography.caption,
+    lineHeight: 18,
+  },
+  loadCard: {
+    gap: spacing(1.5),
+  },
+  loadSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  loadValue: {
+    color: palette.primary,
+    fontSize: typography.body,
+    fontWeight: '600',
+  },
+  loadLabel: {
+    color: palette.muted,
+    fontSize: typography.caption,
+  },
+  activityRow: {
+    flexDirection: 'row',
+    gap: spacing(1),
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+    paddingVertical: spacing(1),
+  },
+  activityIcon: {
+    width: spacing(3.5),
+    height: spacing(3.5),
+    borderRadius: radii.sm,
+    backgroundColor: palette.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityText: {
+    flex: 1,
+    gap: spacing(0.25),
+  },
+  activityTitle: {
+    color: palette.primary,
+    fontSize: typography.body,
+    fontWeight: '600',
+  },
+  activityMeta: {
+    color: palette.secondary,
+    fontSize: typography.caption,
+  },
+  stravaDisconnected: {
+    gap: spacing(1.5),
+    alignItems: 'flex-start',
+  },
+  stravaButton: {
+    borderColor: palette.border,
   },
 })
 

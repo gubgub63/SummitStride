@@ -8,7 +8,7 @@ import {
   isSubscriptionSlug,
 } from '../utils/stripe.js'
 import { ensureCreditBalance, addCredits } from '../services/premiumCredits.js'
-import { CreditTransactionType } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
 const DEFAULT_TRANSACTION_LIMIT = 25
 
@@ -223,8 +223,8 @@ export const premiumRoutes: FastifyPluginAsync = async fastify => {
               },
               subscriptionPlanId: plan.id,
               transactionType: isSubscriptionSlug(planSlug)
-                ? CreditTransactionType.SUBSCRIPTION_BONUS
-                : CreditTransactionType.CREDIT_PURCHASE,
+                ? Prisma.CreditTransactionType.SUBSCRIPTION_BONUS
+                : Prisma.CreditTransactionType.CREDIT_PURCHASE,
             })
           }
 
@@ -287,7 +287,7 @@ export const premiumRoutes: FastifyPluginAsync = async fastify => {
                 subscriptionId,
               },
               subscriptionPlanId: plan.id,
-              transactionType: CreditTransactionType.SUBSCRIPTION_BONUS,
+              transactionType: Prisma.CreditTransactionType.SUBSCRIPTION_BONUS,
             })
           }
 
