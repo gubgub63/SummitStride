@@ -321,6 +321,52 @@ const courseRoutes: FastifyPluginAsync = async fastify => {
       }
     })
 
+    // Create a new course (athlete contribution)
+    fastify.post<{ Body: CreateCourseRequest }>('/user', async (request, reply) => {
+      try {
+        const courseData = request.body
+
+        // Basic validation (reuse existing helper)
+        const validationErrors = CourseUtils.validateCourseData(courseData)
+        if (validationErrors.length > 0) {
+          return reply.code(400).send({
+            error: 'Validation failed',
+            details: validationErrors,
+          })
+        }
+
+        const difficulty =
+          courseData.difficulty ||
+          CourseUtils.calculateAutomaticDifficulty(courseData.distance, courseData.elevationGain)
+
+        const course = await prisma.course.create({
+          data: {
+            name: courseData.name.trim(),
+            location: courseData.location.trim(),
+            distance: courseData.distance,
+            elevationGain: courseData.elevationGain,
+            elevationLoss: courseData.elevationLoss ?? courseData.elevationGain,
+            difficulty,
+            description: courseData.description?.trim() || null,
+            routeData: courseData.routeData || null,
+          },
+          include: { raceRegistrations: true },
+        })
+
+        const formattedCourse = CourseUtils.formatCourseResponse(course)
+
+        return reply.code(201).send({
+          message: 'Course created successfully',
+          course: formattedCourse,
+        })
+      } catch (error) {
+        fastify.log.error(error)
+        return reply.code(500).send({
+          error: 'Internal server error',
+        })
+      }
+    })
+
     // Update a course (admin only)
     fastify.put<{ Params: { id: string }; Body: UpdateCourseRequest }>(
       '/admin/:id',

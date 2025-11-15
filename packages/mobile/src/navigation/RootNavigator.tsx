@@ -6,9 +6,9 @@ import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View }
 
 import DashboardScreen from '../screens/DashboardScreen'
 import NutritionScreen from '../screens/NutritionScreen'
-import PlanLibraryScreen from '../screens/PlanLibraryScreen'
 import PlannerScreen from '../screens/PlannerScreen'
 import ProfileScreen from '../screens/ProfileScreen'
+import RaceManagerScreen from '../screens/RaceManagerScreen'
 import LoginScreen from '../screens/auth/LoginScreen'
 import RegisterScreen from '../screens/auth/RegisterScreen'
 import { useAuth } from '../context/AuthContext'
@@ -17,7 +17,7 @@ import { palette, radii, spacing } from '../theme'
 
 export type RootTabParamList = {
   Dashboard: undefined
-  Plans: undefined
+  Races: undefined
   Planner: undefined
   Nutrition: undefined
   Profile: undefined
@@ -144,11 +144,11 @@ const AppTabs = () => (
       }}
     />
     <Tab.Screen
-      name="Plans"
-      component={PlanLibraryScreen}
+      name="Races"
+      component={RaceManagerScreen}
       options={{
-        title: 'Plans',
-        tabBarIcon: ({ color, size }) => <Feather name="layers" size={size} color={color} />,
+        title: 'Courses',
+        tabBarIcon: ({ color, size }) => <Feather name="map" size={size} color={color} />,
       }}
     />
     <Tab.Screen

@@ -40,3 +40,43 @@ export async function getUserProfile(token: string) {
     token,
   })
 }
+
+export interface UpdateUserProfilePayload {
+  dateOfBirth?: string | null
+  weight?: number | null
+  height?: number | null
+  experienceLevel?: string
+  fitnessGoals?: string[]
+  medicalConditions?: string[]
+  preferredTrainingDays?: number[]
+  maxTrainingHoursPerWeek?: number
+  vma?: number | null
+}
+
+export async function updateUserProfile(token: string, payload: UpdateUserProfilePayload) {
+  return apiRequest<UserProfileResponse>('/api/users/detailed-profile', {
+    method: 'PUT',
+    token,
+    body: payload,
+  })
+}
+
+export interface ExperienceLevelOption {
+  value: string
+  label: string
+  description?: string | null
+}
+
+export async function getExperienceLevels(token: string) {
+  return apiRequest<{ experienceLevels: ExperienceLevelOption[] }>('/api/users/experience-levels', {
+    method: 'GET',
+    token,
+  })
+}
+
+export async function getDaysOfWeek(token: string) {
+  return apiRequest<{ daysOfWeek: Array<{ value: number; label: string }> }>('/api/users/days-of-week', {
+    method: 'GET',
+    token,
+  })
+}

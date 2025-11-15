@@ -90,6 +90,44 @@ export async function createTrainingPlan(token: string, payload: CreateTrainingP
   })
 }
 
+export async function deleteTrainingPlan(token: string, planId: string) {
+  return apiRequest<{ success: boolean }>(`/api/training-plans/${planId}`, {
+    method: 'DELETE',
+    token,
+  })
+}
+
+export interface GenerateTrainingPlanPayload {
+  targetRaceId: string
+  startDate: string
+  endDate: string
+  preferences?: {
+    sessionsPerWeek?: number
+    preferredDays?: number[]
+    maxSessionDuration?: number
+    includeStrength?: boolean
+    includeCrossTraining?: boolean
+  }
+}
+
+export interface GenerateTrainingPlanResponse {
+  success: boolean
+  data: {
+    plan: TrainingPlanSummary
+    sessions: TrainingSession[]
+    analysis: unknown
+  }
+  message?: string
+}
+
+export async function generateTrainingPlan(token: string, payload: GenerateTrainingPlanPayload) {
+  return apiRequest<GenerateTrainingPlanResponse>('/api/training-plans/generate', {
+    method: 'POST',
+    token,
+    body: payload,
+  })
+}
+
 export interface TrainingPlanTemplate {
   id: string
   name: string

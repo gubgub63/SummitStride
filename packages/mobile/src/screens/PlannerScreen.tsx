@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  Alert,
   ActivityIndicator,
   Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native'
 import { Feather } from '@expo/vector-icons'
@@ -19,7 +22,14 @@ import { Input } from '../components/Input'
 import { Screen } from '../components/Screen'
 import { SectionHeader } from '../components/SectionHeader'
 import { useAuth } from '../context/AuthContext'
-import { createTrainingPlan, getTrainingPlanById, getTrainingPlans, type TrainingSession } from '../services/training'
+import {
+  deleteTrainingPlan,
+  generateTrainingPlan,
+  getTrainingPlanById,
+  getTrainingPlans,
+  type TrainingSession,
+} from '../services/training'
+import { getRegistrations, type RaceRegistration } from '../services/registrations'
 import { palette, radii, spacing, typography } from '../theme'
 
 const weekDays = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
@@ -38,6 +48,20 @@ const formatDate = (value: string | Date) => {
   return new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }).format(date)
 }
 
+const REGISTRATION_STATUS_LABELS: Record<string, string> = {
+  REGISTERED: 'Inscrit',
+  PREPARATION: 'Préparation',
+  COMPLETED: 'Terminé',
+  CANCELLED: 'Annulé',
+}
+
+const REGISTRATION_STATUS_TONE: Record<string, string> = {
+  REGISTERED: '#23C076',
+  PREPARATION: '#FFB020',
+  COMPLETED: '#8E8EA0',
+  CANCELLED: '#C94C4C',
+}
+
 const PlannerScreen = () => {
   const { token } = useAuth()
   const queryClient = useQueryClient()
@@ -45,16 +69,15 @@ const PlannerScreen = () => {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [createModalVisible, setCreateModalVisible] = useState(false)
 
-  const [planName, setPlanName] = useState('')
-  const [planDescription, setPlanDescription] = useState('')
   const [startDate, setStartDate] = useState(() => new Date())
   const [endDate, setEndDate] = useState(() => addWeeks(new Date(), 12))
   const [showStartPicker, setShowStartPicker] = useState(false)
   const [showEndPicker, setShowEndPicker] = useState(false)
-  const [distanceKm, setDistanceKm] = useState('')
-  const [elevationGain, setElevationGain] = useState('')
-  const [raceDate, setRaceDate] = useState<Date | null>(null)
-  const [showRacePicker, setShowRacePicker] = useState(false)
+  const [targetRaceId, setTargetRaceId] = useState<string | null>(null)
+  const [sessionsPerWeek, setSessionsPerWeek] = useState('')
+  const [maxSessionDuration, setMaxSessionDuration] = useState('')
+  const [includeStrength, setIncludeStrength] = useState(true)
+  const [includeCrossTraining, setIncludeCrossTraining] = useState(false)
   const [selectedWeekKey, setSelectedWeekKey] = useState<string | null>(null)
   const [selectedSession, setSelectedSession] = useState<TrainingSession | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -65,12 +88,46 @@ const PlannerScreen = () => {
     enabled: Boolean(token),
   })
 
+  const registrationsQuery = useQuery({
+    queryKey: ['registrations'],
+    queryFn: () => getRegistrations(token!),
+    enabled: Boolean(token),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const registrations = registrationsQuery.data?.registrations ?? []
+  const handleSelectRace = (raceId: string) => {
+    const registration = registrations.find(reg => reg.id === raceId)
+    if (!registration) return
+
+    setTargetRaceId(registration.course.id)
+    setFormError(null)
+    if (registration?.targetDate) {
+      const targetDate = new Date(registration.targetDate)
+      setEndDate(targetDate)
+      const suggestedStart = addWeeks(targetDate, -12)
+      if (suggestedStart < targetDate) {
+        setStartDate(suggestedStart)
+      }
+    }
+  }
+
   useEffect(() => {
     if (!plansQuery.data?.data?.length) return
     if (selectedPlanId) return
     const active = plansQuery.data.data.find(plan => plan.status === 'ACTIVE') ?? plansQuery.data.data[0]
     setSelectedPlanId(active.id)
   }, [plansQuery.data, selectedPlanId])
+
+useEffect(() => {
+  setSelectedSession(null)
+}, [selectedPlanId])
+
+useEffect(() => {
+  if (createModalVisible && registrations.length > 0 && !targetRaceId) {
+    handleSelectRace(registrations[0].id)
+  }
+}, [createModalVisible, registrations, targetRaceId])
 
   const selectedPlan = useMemo(() => {
     return plansQuery.data?.data.find(plan => plan.id === selectedPlanId)
@@ -82,53 +139,75 @@ const PlannerScreen = () => {
     enabled: Boolean(token && selectedPlanId),
   })
 
-  const createPlanMutation = useMutation({
+  const generatePlanMutation = useMutation({
     mutationFn: () => {
-      const descriptionLines: string[] = []
-      const distanceValue = Number.parseFloat(distanceKm)
-      const elevationValue = Number.parseInt(elevationGain, 10)
-
-      if (planDescription.trim()) {
-        descriptionLines.push(planDescription.trim())
-      }
-      if (!Number.isNaN(distanceValue)) {
-        descriptionLines.push(`Distance cible: ${distanceValue.toFixed(1)} km`)
-      }
-      if (!Number.isNaN(elevationValue)) {
-        descriptionLines.push(`D+ cible: ${elevationValue} m`)
-      }
-      if (raceDate) {
-        descriptionLines.push(`Course: ${raceDate.toISOString().split('T')[0]}`)
+      const preferences: {
+        sessionsPerWeek?: number
+        maxSessionDuration?: number
+        includeStrength: boolean
+        includeCrossTraining: boolean
+      } = {
+        includeStrength,
+        includeCrossTraining,
       }
 
-      return createTrainingPlan(token!, {
-        name: planName.trim(),
-        description: descriptionLines.length ? descriptionLines.join('\n') : undefined,
+      const sessionsValue = Number.parseInt(sessionsPerWeek, 10)
+      if (!Number.isNaN(sessionsValue) && sessionsValue > 0) {
+        preferences.sessionsPerWeek = sessionsValue
+      }
+
+      const durationValue = Number.parseInt(maxSessionDuration, 10)
+      if (!Number.isNaN(durationValue) && durationValue > 0) {
+        preferences.maxSessionDuration = durationValue
+      }
+
+      return generateTrainingPlan(token!, {
+        targetRaceId: targetRaceId!,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
+        preferences,
       })
     },
     onSuccess: async response => {
-      await queryClient.invalidateQueries({ queryKey: ['training-plans'] })
-      await queryClient.invalidateQueries({ queryKey: ['training-plan', response.data.id] })
-      setSelectedPlanId(response.data.id)
+      const newPlanId = response.data.plan.id
+      const firstSession = response.data.sessions[0]
+
       setCreateModalVisible(false)
-      setPlanName('')
-      setPlanDescription('')
-      setDistanceKm('')
-      setElevationGain('')
-      setRaceDate(null)
+      setTargetRaceId(null)
+      setSessionsPerWeek('')
+      setMaxSessionDuration('')
+      setIncludeStrength(true)
+      setIncludeCrossTraining(false)
       setStartDate(new Date())
       setEndDate(addWeeks(new Date(), 12))
       setShowStartPicker(false)
       setShowEndPicker(false)
-      setShowRacePicker(false)
-      setSelectedWeekKey(null)
+      setSelectedWeekKey(firstSession ? getWeekKey(new Date(firstSession.date)) : null)
+      setSelectedSession(null)
       setFormError(null)
+
+      await queryClient.invalidateQueries({ queryKey: ['training-plans'] })
+      await queryClient.invalidateQueries({ queryKey: ['training-plan', newPlanId] })
+
+      setSelectedPlanId(newPlanId)
     },
     onError: error => {
       console.error(error)
       setFormError(error instanceof Error ? error.message : 'Création impossible.')
+    },
+  })
+
+  const deletePlanMutation = useMutation({
+    mutationFn: (planId: string) => deleteTrainingPlan(token!, planId),
+    onSuccess: async () => {
+      setSelectedSession(null)
+      setSelectedWeekKey(null)
+      setSelectedPlanId(null)
+      await queryClient.invalidateQueries({ queryKey: ['training-plans'] })
+      await queryClient.invalidateQueries({ queryKey: ['training-plan'] })
+    },
+    onError: error => {
+      console.error(error)
     },
   })
 
@@ -231,6 +310,22 @@ const PlannerScreen = () => {
     setCreateModalVisible(true)
   }
 
+  const handleDeletePlan = () => {
+    if (!selectedPlanId || deletePlanMutation.isPending) return
+    Alert.alert(
+      'Supprimer le plan',
+      'Cette action supprimera toutes les séances générées pour ce plan.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => deletePlanMutation.mutate(selectedPlanId),
+        },
+      ]
+    )
+  }
+
   const handleDateChange =
     (type: 'start' | 'end') =>
     (_event: DateTimePickerEvent, date?: Date) => {
@@ -254,34 +349,23 @@ const PlannerScreen = () => {
     }
 
   const submitCreatePlan = () => {
-    if (!planName.trim()) {
-      setFormError('Un nom est requis.')
+    if (generatePlanMutation.isPending) {
+      return
+    }
+    if (!registrations.length) {
+      setFormError('Ajoute une inscription à une course avant de générer un plan.')
+      return
+    }
+    if (!targetRaceId) {
+      setFormError('Sélectionne une course cible.')
       return
     }
     if (endDate <= startDate) {
       setFormError('La date de fin doit être postérieure au début.')
       return
     }
-    const parsedDistance = Number.parseFloat(distanceKm)
-    if (!distanceKm.trim() || Number.isNaN(parsedDistance) || parsedDistance <= 0) {
-      setFormError('Indique une distance cible (en km).')
-      return
-    }
-    const parsedElevation = Number.parseInt(elevationGain, 10)
-    if (!elevationGain.trim() || Number.isNaN(parsedElevation) || parsedElevation < 0) {
-      setFormError('Indique un dénivelé positif cible (en mètres).')
-      return
-    }
-    if (!raceDate) {
-      setFormError('Sélectionne la date de course.')
-      return
-    }
-    if (raceDate.getTime() <= endDate.getTime()) {
-      setFormError('La date de course doit être postérieure à la fin du plan.')
-      return
-    }
     setFormError(null)
-    createPlanMutation.mutate()
+    generatePlanMutation.mutate()
   }
 
   const isLoading = plansQuery.isLoading || planDetailsQuery.isLoading
@@ -308,6 +392,16 @@ const PlannerScreen = () => {
         <Button onPress={handleCreatePlan} style={styles.heroButton}>
           Nouveau plan
         </Button>
+        {selectedPlan ? (
+          <Button
+            onPress={handleDeletePlan}
+            variant="ghost"
+            style={styles.heroSecondaryButton}
+            loading={deletePlanMutation.isPending}
+          >
+            Supprimer le plan
+          </Button>
+        ) : null}
       </Card>
 
       {plansQuery.isLoading ? (
@@ -451,42 +545,30 @@ const PlannerScreen = () => {
           setFormError(null)
           setShowStartPicker(false)
           setShowEndPicker(false)
-          setShowRacePicker(false)
         }}
         onSubmit={submitCreatePlan}
-        loading={createPlanMutation.isPending}
-        planName={planName}
-        onPlanNameChange={setPlanName}
-        planDescription={planDescription}
-        onPlanDescriptionChange={setPlanDescription}
+        loading={generatePlanMutation.isPending}
         startDate={startDate}
         endDate={endDate}
         showStartPicker={showStartPicker}
         showEndPicker={showEndPicker}
-      setShowStartPicker={setShowStartPicker}
-      setShowEndPicker={setShowEndPicker}
-      onDateChange={handleDateChange}
-      distanceKm={distanceKm}
-      onDistanceChange={setDistanceKm}
-      elevationGain={elevationGain}
-      onElevationChange={setElevationGain}
-      raceDate={raceDate}
-      showRacePicker={showRacePicker}
-      setShowRacePicker={setShowRacePicker}
-      onRaceDateChange={(event, date) => {
-        if (!date) {
-          if (Platform.OS !== 'ios') {
-            setShowRacePicker(false)
-          }
-          return
-        }
-        setRaceDate(date)
-        if (Platform.OS !== 'ios') {
-          setShowRacePicker(false)
-        }
-      }}
-      formError={formError}
-    />
+        setShowStartPicker={setShowStartPicker}
+        setShowEndPicker={setShowEndPicker}
+        onDateChange={handleDateChange}
+        registrations={registrations}
+        registrationsLoading={registrationsQuery.isLoading}
+        selectedRaceId={targetRaceId}
+        onSelectRace={handleSelectRace}
+        sessionsPerWeek={sessionsPerWeek}
+        onSessionsPerWeekChange={setSessionsPerWeek}
+        maxSessionDuration={maxSessionDuration}
+        onMaxSessionDurationChange={setMaxSessionDuration}
+        includeStrength={includeStrength}
+        onToggleIncludeStrength={setIncludeStrength}
+        includeCrossTraining={includeCrossTraining}
+        onToggleIncludeCrossTraining={setIncludeCrossTraining}
+        formError={formError}
+      />
     <SessionDetailModal session={selectedSession} onClose={() => setSelectedSession(null)} />
   </Screen>
 )
@@ -497,10 +579,6 @@ interface CreatePlanModalProps {
   onClose: () => void
   onSubmit: () => void
   loading: boolean
-  planName: string
-  onPlanNameChange: (value: string) => void
-  planDescription: string
-  onPlanDescriptionChange: (value: string) => void
   startDate: Date
   endDate: Date
   showStartPicker: boolean
@@ -508,14 +586,18 @@ interface CreatePlanModalProps {
   setShowStartPicker: (value: boolean) => void
   setShowEndPicker: (value: boolean) => void
   onDateChange: (type: 'start' | 'end') => (event: DateTimePickerEvent, date?: Date) => void
-  distanceKm: string
-  onDistanceChange: (value: string) => void
-  elevationGain: string
-  onElevationChange: (value: string) => void
-  raceDate: Date | null
-  showRacePicker: boolean
-  setShowRacePicker: (value: boolean) => void
-  onRaceDateChange: (event: DateTimePickerEvent, date?: Date) => void
+  registrations: RaceRegistration[]
+  registrationsLoading: boolean
+  selectedRaceId: string | null
+  onSelectRace: (raceId: string) => void
+  sessionsPerWeek: string
+  onSessionsPerWeekChange: (value: string) => void
+  maxSessionDuration: string
+  onMaxSessionDurationChange: (value: string) => void
+  includeStrength: boolean
+  onToggleIncludeStrength: (value: boolean) => void
+  includeCrossTraining: boolean
+  onToggleIncludeCrossTraining: (value: boolean) => void
   formError: string | null
 }
 
@@ -524,10 +606,6 @@ const CreatePlanModal = ({
   onClose,
   onSubmit,
   loading,
-  planName,
-  onPlanNameChange,
-  planDescription,
-  onPlanDescriptionChange,
   startDate,
   endDate,
   showStartPicker,
@@ -535,96 +613,224 @@ const CreatePlanModal = ({
   setShowStartPicker,
   setShowEndPicker,
   onDateChange,
-  distanceKm,
-  onDistanceChange,
-  elevationGain,
-  onElevationChange,
-  raceDate,
-  showRacePicker,
-  setShowRacePicker,
-  onRaceDateChange,
+  registrations,
+  registrationsLoading,
+  selectedRaceId,
+  onSelectRace,
+  sessionsPerWeek,
+  onSessionsPerWeekChange,
+  maxSessionDuration,
+  onMaxSessionDurationChange,
+  includeStrength,
+  onToggleIncludeStrength,
+  includeCrossTraining,
+  onToggleIncludeCrossTraining,
   formError,
-}: CreatePlanModalProps) => (
-  <Modal visible={visible} animationType="slide" transparent>
-    <View style={styles.modalBackdrop}>
-      <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>Nouveau plan</Text>
-        <Input label="Nom du plan" value={planName} onChangeText={onPlanNameChange} placeholder="Bloc OCC spécifique" />
-        <Input
-          label="Description"
-          value={planDescription}
-          onChangeText={onPlanDescriptionChange}
-          placeholder="Objectifs, contraintes..."
-        />
-        <View style={styles.dateRow}>
-          <Pressable style={styles.datePicker} onPress={() => setShowStartPicker(true)}>
-            <Text style={styles.dateLabel}>Début</Text>
-            <Text style={styles.dateValue}>{formatDate(startDate.toISOString())}</Text>
-          </Pressable>
-          <Pressable style={styles.datePicker} onPress={() => setShowEndPicker(true)}>
-            <Text style={styles.dateLabel}>Fin</Text>
-            <Text style={styles.dateValue}>{formatDate(endDate.toISOString())}</Text>
-          </Pressable>
-        </View>
-        <View style={styles.metricRow}>
-          <View style={styles.metricColumn}>
-            <Input
-              label="Distance cible (km)"
-              value={distanceKm}
-              onChangeText={onDistanceChange}
-              placeholder="50"
-              keyboardType="decimal-pad"
-            />
+}: CreatePlanModalProps) => {
+  const canSubmit = !!selectedRaceId && registrations.length > 0 && !loading
+  const isIOS = Platform.OS === 'ios'
+  const pickerDisplay: 'default' | 'spinner' | 'compact' | 'inline' = isIOS ? 'spinner' : 'default'
+  const pickerThemeVariant = isIOS ? 'light' : undefined
+  const shouldStackPickers = isIOS && (showStartPicker || showEndPicker)
+
+  const handleToggleStartPicker = () => {
+    if (Platform.OS === 'android') {
+      setShowStartPicker(true)
+      setShowEndPicker(false)
+      return
+    }
+    setShowStartPicker(prev => {
+      const next = !prev
+      if (next) setShowEndPicker(false)
+      return next
+    })
+  }
+
+  const handleToggleEndPicker = () => {
+    if (Platform.OS === 'android') {
+      setShowEndPicker(true)
+      setShowStartPicker(false)
+      return
+    }
+    setShowEndPicker(prev => {
+      const next = !prev
+      if (next) setShowStartPicker(false)
+      return next
+    })
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Générer un plan automatique</Text>
+          <Text style={styles.modalSubtitle}>
+            Sélectionne une course enregistrée et ajuste la fenêtre d'entraînement.
+          </Text>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Course cible</Text>
+            {registrationsLoading ? (
+              <ActivityIndicator color={palette.primary} />
+            ) : registrations.length ? (
+              <ScrollView style={styles.registrationList}>
+                {registrations.map(registration => {
+                  const isActive = registration.id === selectedRaceId
+                  const targetDate = registration.targetDate
+                    ? new Date(registration.targetDate)
+                    : null
+                  const targetDateLabel = targetDate
+                    ? new Intl.DateTimeFormat('fr-FR', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      }).format(targetDate)
+                    : 'Date à confirmer'
+                  const statusLabel = REGISTRATION_STATUS_LABELS[registration.status] ?? registration.status
+                  const statusTone = REGISTRATION_STATUS_TONE[registration.status] ?? palette.muted
+
+                  return (
+                    <Pressable
+                      key={registration.id}
+                      style={[
+                        styles.registrationItem,
+                        isActive && styles.registrationItemActive,
+                      ]}
+                      onPress={() => onSelectRace(registration.id)}
+                    >
+                      <View style={styles.registrationRow}>
+                        <View style={styles.registrationInfo}>
+                          <Text style={styles.registrationTitle}>{registration.course.name}</Text>
+                          <Text style={styles.registrationSubtitle}>
+                            {registration.course.distance} km · {targetDateLabel}
+                          </Text>
+                          <Text style={styles.registrationMeta}>
+                            D+ {registration.course.elevationGain ?? 0} m · {registration.course.difficulty}
+                          </Text>
+                        </View>
+                        <View
+                          style={[styles.registrationStatus, { backgroundColor: `${statusTone}22`, borderColor: statusTone }]}
+                        >
+                          <Text style={[styles.registrationStatusLabel, { color: statusTone }]}>{statusLabel}</Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  )
+                })}
+              </ScrollView>
+            ) : (
+              <Text style={styles.emptyRegistrations}>
+                Aucun dossard enregistré. Ajoute une course depuis la web app (onglet Courses).
+              </Text>
+            )}
           </View>
-          <View style={styles.metricColumn}>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Fenêtre d'entraînement</Text>
+            <View style={[styles.dateRow, shouldStackPickers && styles.dateRowStacked]}>
+              <View style={[styles.datePickerColumn, shouldStackPickers && styles.datePickerColumnFull]}>
+                <Pressable style={styles.datePicker} onPress={handleToggleStartPicker}>
+                  <Text style={styles.dateLabel}>Début</Text>
+                  <Text style={styles.dateValue}>{formatDate(startDate)}</Text>
+                </Pressable>
+                {Platform.OS !== 'android' && showStartPicker ? (
+                  <View style={styles.inlinePicker}>
+                    <DateTimePicker
+                      value={startDate}
+                      mode="date"
+                      display={pickerDisplay}
+                      themeVariant={pickerThemeVariant}
+                      textColor={isIOS ? '#000000' : undefined}
+                      onChange={onDateChange('start')}
+                    />
+                  </View>
+                ) : null}
+              </View>
+              <View style={[styles.datePickerColumn, shouldStackPickers && styles.datePickerColumnFull]}>
+                <Pressable style={styles.datePicker} onPress={handleToggleEndPicker}>
+                  <Text style={styles.dateLabel}>Fin</Text>
+                  <Text style={styles.dateValue}>{formatDate(endDate)}</Text>
+                </Pressable>
+                {Platform.OS !== 'android' && showEndPicker ? (
+                  <View style={styles.inlinePicker}>
+                    <DateTimePicker
+                      value={endDate}
+                      mode="date"
+                      display={pickerDisplay}
+                      themeVariant={pickerThemeVariant}
+                      textColor={isIOS ? '#000000' : undefined}
+                      onChange={onDateChange('end')}
+                    />
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Paramètres</Text>
             <Input
-              label="D+ cible (m)"
-              value={elevationGain}
-              onChangeText={onElevationChange}
-              placeholder="2500"
+              label="Séances / semaine"
+              value={sessionsPerWeek}
+              onChangeText={onSessionsPerWeekChange}
+              placeholder="4"
               keyboardType="number-pad"
             />
+            <Input
+              label="Durée max d'une séance (min)"
+              value={maxSessionDuration}
+              onChangeText={onMaxSessionDurationChange}
+              placeholder="120"
+              keyboardType="number-pad"
+            />
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>Inclure renforcement</Text>
+              <Switch
+                value={includeStrength}
+                onValueChange={onToggleIncludeStrength}
+                trackColor={{ true: palette.primary, false: palette.surfaceMuted }}
+                thumbColor={includeStrength ? palette.background : palette.surface}
+              />
+            </View>
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>Inclure cross-training</Text>
+              <Switch
+                value={includeCrossTraining}
+                onValueChange={onToggleIncludeCrossTraining}
+                trackColor={{ true: palette.primary, false: palette.surfaceMuted }}
+                thumbColor={includeCrossTraining ? palette.background : palette.surface}
+              />
+            </View>
           </View>
-        </View>
-        <Pressable style={[styles.datePicker, styles.datePickerFull]} onPress={() => setShowRacePicker(true)}>
-          <Text style={styles.dateLabel}>Course</Text>
-          <Text style={styles.dateValue}>{raceDate ? formatDate(raceDate.toISOString()) : 'Sélectionner'}</Text>
-        </Pressable>
-        {formError ? <Text style={styles.error}>{formError}</Text> : null}
-        <View style={styles.modalActions}>
-          <Button onPress={onClose} variant="ghost" style={styles.modalButton}>
-            Annuler
-          </Button>
-          <Button onPress={onSubmit} loading={loading} style={styles.modalButton}>
-            Créer
-          </Button>
-        </View>
 
-        {(showStartPicker || showEndPicker || showRacePicker) && Platform.OS !== 'android' ? (
-          <View style={styles.inlinePicker}>
-            {showStartPicker ? (
-              <DateTimePicker value={startDate} mode="date" onChange={onDateChange('start')} />
-            ) : null}
-            {showEndPicker ? <DateTimePicker value={endDate} mode="date" onChange={onDateChange('end')} /> : null}
-            {showRacePicker ? (
-              <DateTimePicker value={raceDate ?? endDate} mode="date" onChange={onRaceDateChange} />
-            ) : null}
+          {formError ? <Text style={styles.error}>{formError}</Text> : null}
+
+          <View style={styles.modalActions}>
+            <Button onPress={onClose} variant="ghost" style={styles.modalButton}>
+              Annuler
+            </Button>
+            <Button
+              onPress={() => {
+                if (canSubmit) onSubmit()
+              }}
+              loading={loading}
+              style={[styles.modalButton, !canSubmit && styles.disabledButton]}
+            >
+              Générer le plan
+            </Button>
           </View>
-        ) : null}
 
-        {showStartPicker && Platform.OS === 'android' ? (
-          <DateTimePicker value={startDate} mode="date" onChange={onDateChange('start')} />
-        ) : null}
-        {showEndPicker && Platform.OS === 'android' ? (
-          <DateTimePicker value={endDate} mode="date" onChange={onDateChange('end')} />
-        ) : null}
-        {showRacePicker && Platform.OS === 'android' ? (
-          <DateTimePicker value={raceDate ?? endDate} mode="date" onChange={onRaceDateChange} />
-        ) : null}
+          {showStartPicker && Platform.OS === 'android' ? (
+            <DateTimePicker value={startDate} mode="date" onChange={onDateChange('start')} />
+          ) : null}
+          {showEndPicker && Platform.OS === 'android' ? (
+            <DateTimePicker value={endDate} mode="date" onChange={onDateChange('end')} />
+          ) : null}
+        </View>
       </View>
-    </View>
-  </Modal>
-)
+    </Modal>
+  )
+}
 
 interface SessionDetailModalProps {
   session: TrainingSession | null
@@ -641,44 +847,46 @@ const SessionDetailModal = ({ session, onClose }: SessionDetailModalProps) => {
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.sessionDetailBackdrop}>
-        <View style={styles.sessionDetailContent}>
-          <View style={styles.sessionDetailHeader}>
-            <View style={styles.sessionDetailIcon}>
-              <Feather name={iconName} size={18} color={palette.background} />
+      <Pressable style={styles.sessionDetailBackdrop} onPress={onClose}>
+        <TouchableWithoutFeedback>
+          <View style={styles.sessionDetailContent}>
+            <View style={styles.sessionDetailHeader}>
+              <View style={styles.sessionDetailIcon}>
+                <Feather name={iconName} size={18} color={palette.background} />
+              </View>
+              <View style={styles.sessionDetailTitleBlock}>
+                <Text style={styles.sessionDetailTitle}>{session.name}</Text>
+                <Text style={styles.sessionDetailMeta}>
+                  {formatDate(session.date)} · {session.type.toLowerCase()}
+                </Text>
+              </View>
             </View>
-            <View style={styles.sessionDetailTitleBlock}>
-              <Text style={styles.sessionDetailTitle}>{session.name}</Text>
-              <Text style={styles.sessionDetailMeta}>
-                {formatDate(session.date)} · {session.type.toLowerCase()}
-              </Text>
+            <View style={styles.sessionDetailStats}>
+              <View style={styles.sessionDetailStat}>
+                <Text style={styles.sessionDetailStatLabel}>Durée</Text>
+                <Text style={styles.sessionDetailStatValue}>{durationLabel}</Text>
+              </View>
+              <View style={styles.sessionDetailStat}>
+                <Text style={styles.sessionDetailStatLabel}>Distance</Text>
+                <Text style={styles.sessionDetailStatValue}>{distanceLabel}</Text>
+              </View>
+              <View style={styles.sessionDetailStat}>
+                <Text style={styles.sessionDetailStatLabel}>Intensité</Text>
+                <Text style={styles.sessionDetailStatValue}>{intensityLabel}</Text>
+              </View>
             </View>
+            {session.description ? (
+              <View style={styles.sessionDetailNotes}>
+                <Text style={styles.sessionDetailNotesTitle}>Notes</Text>
+                <Text style={styles.sessionDetailNotesText}>{session.description}</Text>
+              </View>
+            ) : null}
+            <Button onPress={onClose} variant="ghost" style={styles.modalButton}>
+              Fermer
+            </Button>
           </View>
-          <View style={styles.sessionDetailStats}>
-            <View style={styles.sessionDetailStat}>
-              <Text style={styles.sessionDetailStatLabel}>Durée</Text>
-              <Text style={styles.sessionDetailStatValue}>{durationLabel}</Text>
-            </View>
-            <View style={styles.sessionDetailStat}>
-              <Text style={styles.sessionDetailStatLabel}>Distance</Text>
-              <Text style={styles.sessionDetailStatValue}>{distanceLabel}</Text>
-            </View>
-            <View style={styles.sessionDetailStat}>
-              <Text style={styles.sessionDetailStatLabel}>Intensité</Text>
-              <Text style={styles.sessionDetailStatValue}>{intensityLabel}</Text>
-            </View>
-          </View>
-          {session.description ? (
-            <View style={styles.sessionDetailNotes}>
-              <Text style={styles.sessionDetailNotesTitle}>Notes</Text>
-              <Text style={styles.sessionDetailNotesText}>{session.description}</Text>
-            </View>
-          ) : null}
-          <Button onPress={onClose} variant="ghost" style={styles.modalButton}>
-            Fermer
-          </Button>
-        </View>
-      </View>
+        </TouchableWithoutFeedback>
+      </Pressable>
     </Modal>
   )
 }
@@ -745,6 +953,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   heroButton: {
+    marginTop: spacing(0.5),
+  },
+  heroSecondaryButton: {
     marginTop: spacing(0.5),
   },
   loadingCard: {
@@ -926,13 +1137,18 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radii.lg,
     gap: spacing(1.5),
   },
-  metricRow: {
-    flexDirection: 'row',
+  modalSubtitle: {
+    color: palette.muted,
+    fontSize: typography.caption,
+  },
+  section: {
     gap: spacing(1),
   },
-  metricColumn: {
-    flex: 1,
-    alignSelf: 'stretch',
+  sectionLabel: {
+    color: palette.secondary,
+    fontSize: typography.caption,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   modalTitle: {
     color: palette.primary,
@@ -943,13 +1159,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing(1),
   },
-  datePicker: {
+  dateRowStacked: {
+    flexDirection: 'column',
+  },
+  datePickerColumn: {
     flex: 1,
+    gap: spacing(0.5),
+  },
+  datePickerColumnFull: {
+    width: '100%',
+  },
+  datePicker: {
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: palette.border,
     padding: spacing(1),
     backgroundColor: palette.surfaceMuted,
+    width: '100%',
   },
   dateLabel: {
     color: palette.muted,
@@ -962,9 +1188,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: spacing(0.5),
   },
-  datePickerFull: {
-    marginTop: spacing(1),
-  },
   modalActions: {
     flexDirection: 'row',
     gap: spacing(1),
@@ -972,11 +1195,82 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
   },
+  disabledButton: {
+    opacity: 0.5,
+  },
   inlinePicker: {
-    gap: spacing(1),
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: '#E1E1E1',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
   },
   error: {
     color: '#D96C6C',
+    fontSize: typography.caption,
+  },
+  registrationList: {
+    maxHeight: spacing(20),
+  },
+  registrationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing(1),
+  },
+  registrationInfo: {
+    flex: 1,
+    gap: spacing(0.25),
+  },
+  registrationItem: {
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: palette.border,
+    paddingVertical: spacing(1.25),
+    paddingHorizontal: spacing(1.5),
+    marginBottom: spacing(1),
+    gap: spacing(0.25),
+  },
+  registrationItemActive: {
+    borderColor: palette.primary,
+    backgroundColor: palette.surfaceMuted,
+  },
+  registrationTitle: {
+    color: palette.primary,
+    fontSize: typography.body,
+    fontWeight: '600',
+  },
+  registrationSubtitle: {
+    color: palette.muted,
+    fontSize: typography.caption,
+  },
+  registrationMeta: {
+    color: palette.subtle,
+    fontSize: typography.micro,
+    textTransform: 'uppercase',
+  },
+  registrationStatus: {
+    borderWidth: 1,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing(1),
+    paddingVertical: spacing(0.25),
+  },
+  registrationStatusLabel: {
+    fontSize: typography.micro,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  emptyRegistrations: {
+    color: palette.muted,
+    fontSize: typography.caption,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  toggleLabel: {
+    color: palette.secondary,
     fontSize: typography.caption,
   },
   sessionDetailBackdrop: {

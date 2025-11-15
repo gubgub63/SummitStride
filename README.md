@@ -1,153 +1,65 @@
-# SummitStride - Application d'Entraînement Ultra Trail
+# SummitStride
 
-Application web complète pour aider les ultra-traileurs à se préparer de manière optimale à leurs courses, avec génération de plans d'entraînement personnalisés, suivi via APIs externes, gestion nutritionnelle et planification calendaire.
+Full‑stack training companion for ultra‑trail runners: build personalized plans, track sessions and nutrition, sync activities, and plan races — all in one modern monorepo.
 
-## 🏗️ Architecture
+## Tech Stack
+- Frontend: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4
+- Backend: Fastify 4 (TypeScript), Prisma 5, PostgreSQL 16 + PostGIS, Redis
+- Shared: TypeScript contracts and Zod schemas
+- Monorepo: Turborepo + npm workspaces
+- Tooling: ESLint, Prettier, Husky
 
-### Stack Technique
-- **Frontend**: Next.js 15 + TypeScript + Tailwind CSS
-- **Backend**: Fastify + TypeScript
-- **Base de données**: PostgreSQL 16 + PostGIS
-- **Cache**: Redis
-- **ORM**: Prisma
-- **Monorepo**: npm workspaces + Turbo
+## What It Does
+- Generates structured training plans (base/build/peak/taper) with sessions
+- Tracks workouts and nutrition, with course and race planning
+- Syncs activities via Strava (integration routes included)
+- Exposes a typed API and shared models between backend and frontend
 
-### Structure du Projet
+## Monorepo Structure
 ```
 SummitStride/
-├── packages/
-│   ├── frontend/     # Application Next.js
-│   ├── backend/      # API Fastify
-│   └── shared/       # Types et schemas communs
-├── docker/           # Configuration Docker
-├── scripts/          # Scripts utilitaires
-└── docs/            # Documentation
+├─ packages/
+│  ├─ frontend/   # Next.js app (app/)
+│  ├─ backend/    # Fastify API + Prisma schema (prisma/)
+│  └─ shared/     # Shared TS types, Zod schemas, utils
+├─ docker/        # Docker compose & assets (Postgres, Redis)
+├─ scripts/       # Automation scripts (e.g., seeding)
+├─ docs/          # Additional documentation
+└─ seed-test-data.js
 ```
 
-## 🚀 Démarrage Rapide
+## Getting Started
+Prereqs: Node 18+, npm 8+, Docker Compose (for DB/Redis)
 
-### Prérequis
-- Node.js 18+
-- Docker & Docker Compose
-- Git
-
-### Installation Automatique
-```bash
-# Cloner le repository
-git clone <repository-url>
-cd SummitStride
-
-# Lancer le script de configuration
-./scripts/setup.sh
-```
-
-### Installation Manuelle
-
-1. **Installer les dépendances**
 ```bash
 npm install
-```
-
-2. **Configuration de l'environnement**
-```bash
 cp .env.example .env
 cp packages/backend/.env.example packages/backend/.env
-```
+docker-compose up -d   # start Postgres + Redis
 
-3. **Démarrer les services Docker**
-```bash
-docker-compose up -d
-```
-
-4. **Construire le package partagé**
-```bash
-npm run build --workspace=@summitstride/shared
-```
-
-5. **Démarrer le développement**
-```bash
+# develop all workspaces in parallel
 npm run dev
+
+# or scope to one package
+npm run dev -- --filter=@summitstride/backend
 ```
 
-## 📝 Scripts Disponibles
-
+## Useful Scripts
 ```bash
-# Développement
-npm run dev              # Démarre tous les serveurs de développement
-npm run build            # Construit tous les packages
-npm run start            # Démarre en production
-
-# Qualité du code
-npm run lint             # Lint tous les packages
-npm run type-check       # Vérification des types
-npm run format           # Formatage du code
-npm run format:check     # Vérification du formatage
-
-# Base de données
-npm run db:generate      # Génère le client Prisma
-npm run db:push          # Push les changements de schéma
-npm run db:migrate       # Applique les migrations
-npm run db:studio        # Ouvre Prisma Studio
-
-# Utilitaires
-npm run clean            # Nettoie les builds
+npm run build             # turbo build across workspaces
+npm run lint              # lint all packages
+npm run type-check        # TS type checking
+npm run format:check      # verify Prettier formatting
+npm run db:migrate -- --filter=@summitstride/backend  # Prisma migrations
+npm run db:studio  -- --filter=@summitstride/backend  # Prisma Studio
+npm run seed:test-data    # seed sample data
 ```
 
-## 🐳 Services Docker
+## Local URLs
+- Frontend: http://localhost:3000
+- API: http://localhost:4000
+- Health: http://localhost:4000/health
 
-### PostgreSQL + PostGIS
-- Port: 5432
-- Database: summitstride_dev
-- User: summit_user
-
-### Redis
-- Port: 6379
-
-## 🌐 URLs de Développement
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:4000
-- **API Health**: http://localhost:4000/health
-
-## 📁 Packages
-
-### @summitstride/frontend
-Application Next.js avec interface utilisateur complète.
-
-### @summitstride/backend
-API Fastify avec authentification, gestion des utilisateurs, et intégrations externes.
-
-### @summitstride/shared
-Types TypeScript, schemas Zod, et utilitaires partagés.
-
-## 🔧 Configuration
-
-### Variables d'Environnement
-Consultez `.env.example` pour les variables disponibles.
-Pour l'intégration Strava, renseignez également :
-- `STRAVA_CLIENT_ID`
-- `STRAVA_CLIENT_SECRET`
-- `STRAVA_REDIRECT_URI` (par défaut `http://localhost:4000/api/integrations/strava/callback`)
-- `FRONTEND_URL` (ex. `http://localhost:3000`)
-- `FREE_AI_INSIGHTS_MONTHLY_LIMIT` (quota gratuit mensuel pour les insights IA)
-
-### APIs Externes
-- Strava API pour synchronisation des activités
-- Google Maps API pour données géographiques
-
-## 📚 Documentation
-
-- [Roadmap du projet](./roadmap-ultratrail-app.md)
-- [Configuration Docker](./docker/README.md)
-
-## 🤝 Contribution
-
-1. Fork le projet
-2. Créer une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
-3. Commit les changements (`git commit -m 'Ajouter nouvelle fonctionnalité'`)
-4. Push vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
-5. Ouvrir une Pull Request
-
-## 📄 Licence
-
-Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de détails.
+## Configuration
+- Copy `.env.example` files (root and `packages/backend/`) and adjust values
+- See `docker-compose.yml` for default DB/Redis credentials

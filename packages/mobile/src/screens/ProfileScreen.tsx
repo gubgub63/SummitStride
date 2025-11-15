@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Feather } from '@expo/vector-icons'
-import { StyleSheet, Text, View } from 'react-native'
-import { useQuery } from '@tanstack/react-query'
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { Card } from '../components/Card'
 import { Screen } from '../components/Screen'
@@ -9,10 +9,42 @@ import { SectionHeader } from '../components/SectionHeader'
 import { useAuth } from '../context/AuthContext'
 import { getStravaStatus } from '../services/strava'
 import { getTrainingPlanById, getTrainingPlans } from '../services/training'
+import {
+  getDaysOfWeek,
+  getExperienceLevels,
+  updateUserProfile,
+  type ExperienceLevelOption,
+} from '../services/user'
+import { Input } from '../components/Input'
 import { palette, radii, spacing, typography } from '../theme'
 
+const DEFAULT_EXPERIENCE_LEVELS: ExperienceLevelOption[] = [
+  { value: 'BEGINNER', label: 'Débutant' },
+  { value: 'INTERMEDIATE', label: 'Intermédiaire' },
+  { value: 'ADVANCED', label: 'Avancé' },
+  { value: 'EXPERT', label: 'Expert' },
+]
+
+const DEFAULT_DAYS_OF_WEEK: Array<{ value: number; label: string }> = [
+  { value: 0, label: 'Dimanche' },
+  { value: 1, label: 'Lundi' },
+  { value: 2, label: 'Mardi' },
+  { value: 3, label: 'Mercredi' },
+  { value: 4, label: 'Jeudi' },
+  { value: 5, label: 'Vendredi' },
+  { value: 6, label: 'Samedi' },
+]
+
 const ProfileScreen = () => {
-  const { profile: userProfile, token } = useAuth()
+  const { profile: userProfile, token, refreshProfile } = useAuth()
+  const [editing, setEditing] = useState(false)
+  const [experienceLevel, setExperienceLevel] = useState('INTERMEDIATE')
+  const [weight, setWeight] = useState('')
+  const [height, setHeight] = useState('')
+  const [vma, setVma] = useState('')
+  const [maxHours, setMaxHours] = useState('')
+  const [preferredDays, setPreferredDays] = useState<number[]>([])
+  const [formError, setFormError] = useState<string | null>(null)
 
   const plansQuery = useQuery({
     queryKey: ['training-plans'],
@@ -37,6 +69,80 @@ const ProfileScreen = () => {
     enabled: Boolean(token),
   })
 
+  const experienceLevelsQuery = useQuery({
+    queryKey: ['experience-levels'],
+    queryFn: () => getExperienceLevels(token!),
+    enabled: Boolean(token),
+  })
+
+  const daysOfWeekQuery = useQuery({
+    queryKey: ['days-of-week'],
+    queryFn: () => getDaysOfWeek(token!),
+    enabled: Boolean(token),
+  })
+
+  const experienceOptions = useMemo(() => {
+    const options = experienceLevelsQuery.data?.experienceLevels
+    if (options?.length) {
+      return options.map(option => ({
+        value: option.value,
+        label: option.label ?? option.value,
+        description: option.description ?? null,
+      }))
+    }
+    return DEFAULT_EXPERIENCE_LEVELS
+  }, [experienceLevelsQuery.data?.experienceLevels])
+
+  const dayOptions = useMemo(() => {
+    const options = daysOfWeekQuery.data?.daysOfWeek
+    if (options?.length) {
+      return options
+    }
+    return DEFAULT_DAYS_OF_WEEK
+  }, [daysOfWeekQuery.data?.daysOfWeek])
+
+  useEffect(() => {
+    if (!userProfile?.profile) return
+    const profile = userProfile.profile
+    setExperienceLevel(profile.experienceLevel)
+    setWeight(profile.weight ? profile.weight.toString() : '')
+    setHeight(profile.height ? profile.height.toString() : '')
+    setVma(profile.vma ? profile.vma.toString() : '')
+    setMaxHours(profile.maxTrainingHoursPerWeek ? profile.maxTrainingHoursPerWeek.toString() : '')
+    setPreferredDays((profile.preferredTrainingDays ?? []).slice().sort((a, b) => a - b))
+  }, [userProfile?.profile])
+
+  const updateProfileMutation = useMutation({
+    mutationFn: () => {
+      const payload: Record<string, unknown> = {
+        experienceLevel,
+        preferredTrainingDays: preferredDays,
+      }
+
+      if (weight.trim()) payload.weight = Number.parseFloat(weight)
+      else payload.weight = null
+
+      if (height.trim()) payload.height = Number.parseFloat(height)
+      else payload.height = null
+
+      if (vma.trim()) payload.vma = Number.parseFloat(vma)
+      else payload.vma = null
+
+      if (maxHours.trim()) payload.maxTrainingHoursPerWeek = Number.parseInt(maxHours, 10)
+      else payload.maxTrainingHoursPerWeek = null
+
+      return updateUserProfile(token!, payload)
+    },
+    onSuccess: async () => {
+      await refreshProfile()
+      setEditing(false)
+      setFormError(null)
+    },
+    onError: error => {
+      setFormError(error instanceof Error ? error.message : 'Impossible de mettre à jour le profil.')
+    },
+  })
+
   const sessions = planDetailsQuery.data?.data.trainingSessions ?? []
   const totalDistance = sessions.reduce((acc, session) => acc + (session.distance ?? 0), 0)
   const totalMinutes = sessions.reduce((acc, session) => acc + (session.duration ?? 0), 0)
@@ -58,6 +164,18 @@ const ProfileScreen = () => {
     totalDistance,
   })
 
+  const toggleDay = (value: number) => {
+    setPreferredDays(prev =>
+      prev.includes(value) ? prev.filter(day => day !== value) : [...prev, value].sort((a, b) => a - b)
+    )
+  }
+
+  const canSave = useMemo(() => {
+    if (updateProfileMutation.isPending) return false
+    if (!experienceLevel) return false
+    return true
+  }, [experienceLevel, updateProfileMutation.isPending])
+
   return (
     <Screen>
       <Card style={styles.identityCard}>
@@ -78,7 +196,105 @@ const ProfileScreen = () => {
           />
           <MetricBlock label="Plans actifs" value={plansQuery.data?.data.length ? plansQuery.data.data.length.toString() : '0'} />
         </View>
+        <View style={styles.identityActions}>
+          <Pressable style={styles.editButton} onPress={() => setEditing(prev => !prev)}>
+            <Feather name={editing ? 'x' : 'edit-3'} size={16} color={palette.primary} />
+            <Text style={styles.editButtonText}>{editing ? 'Annuler' : 'Modifier'}</Text>
+          </Pressable>
+        </View>
       </Card>
+
+      {editing ? (
+        <Card style={styles.formCard}>
+          <SectionHeader title="Profil d'entraînement" />
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Niveau d'expérience</Text>
+            <View style={styles.chipRow}>
+              {experienceOptions.map(levelOption => {
+                const active = levelOption.value === experienceLevel
+                return (
+                  <Pressable
+                    key={levelOption.value}
+                    style={[styles.chip, active && styles.chipActive]}
+                    onPress={() => setExperienceLevel(levelOption.value)}
+                  >
+                    <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>{levelOption.label}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </View>
+
+          <Input label="VMA (km/h)" value={vma} onChangeText={setVma} keyboardType="decimal-pad" placeholder="15" />
+          <Input label="Poids (kg)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="70" />
+          <Input label="Taille (cm)" value={height} onChangeText={setHeight} keyboardType="number-pad" placeholder="175" />
+          <Input
+            label="Heures d'entraînement / semaine"
+            value={maxHours}
+            onChangeText={setMaxHours}
+            keyboardType="number-pad"
+            placeholder="8"
+          />
+
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Jours préférés</Text>
+            <View style={styles.chipRow}>
+              {dayOptions.map(day => {
+                const active = preferredDays.includes(day.value)
+                return (
+                  <Pressable
+                    key={day.value}
+                    style={[styles.chip, active && styles.chipActive]}
+                    onPress={() => toggleDay(day.value)}
+                  >
+                    <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>{day.label.slice(0, 3)}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </View>
+
+          {formError ? <Text style={styles.error}>{formError}</Text> : null}
+          <View style={styles.actionsRow}>
+            <Pressable
+              style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}
+              onPress={() => {
+                if (!canSave) return
+                const parsedWeight = weight.trim() ? Number.parseFloat(weight) : undefined
+                const parsedHeight = height.trim() ? Number.parseFloat(height) : undefined
+                const parsedVma = vma.trim() ? Number.parseFloat(vma) : undefined
+                const parsedHours = maxHours.trim() ? Number.parseInt(maxHours, 10) : undefined
+
+                if (parsedWeight !== undefined && (Number.isNaN(parsedWeight) || parsedWeight <= 0)) {
+                  setFormError('Poids invalide')
+                  return
+                }
+                if (parsedHeight !== undefined && (Number.isNaN(parsedHeight) || parsedHeight <= 0)) {
+                  setFormError('Taille invalide')
+                  return
+                }
+                if (parsedVma !== undefined && (Number.isNaN(parsedVma) || parsedVma <= 0)) {
+                  setFormError('VMA invalide')
+                  return
+                }
+                if (parsedHours !== undefined && (Number.isNaN(parsedHours) || parsedHours <= 0)) {
+                  setFormError('Heures par semaine invalides')
+                  return
+                }
+
+                setFormError(null)
+                updateProfileMutation.mutate()
+              }}
+            >
+              {updateProfileMutation.isPending ? (
+                <ActivityIndicator color={palette.background} />
+              ) : (
+                <Text style={styles.saveButtonText}>Enregistrer</Text>
+              )}
+            </Pressable>
+          </View>
+        </Card>
+      ) : null}
 
       <SectionHeader title="Statistiques plan actuel" />
       <Card style={styles.statsCard}>
@@ -212,6 +428,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  identityActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing(0.5),
+  },
+  editButtonText: {
+    color: palette.primary,
+    fontSize: typography.caption,
+  },
   metaLabel: {
     color: palette.muted,
     fontSize: typography.micro,
@@ -291,6 +520,64 @@ const styles = StyleSheet.create({
     color: palette.background,
     fontSize: typography.caption,
     fontWeight: '600',
+  },
+  formCard: {
+    gap: spacing(1.5),
+  },
+  section: {
+    gap: spacing(1),
+  },
+  sectionLabel: {
+    color: palette.secondary,
+    fontSize: typography.caption,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing(1),
+  },
+  chip: {
+    borderColor: palette.border,
+    borderWidth: 1,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing(1.5),
+    paddingVertical: spacing(0.75),
+  },
+  chipActive: {
+    borderColor: palette.primary,
+    backgroundColor: palette.surfaceMuted,
+  },
+  chipLabel: {
+    color: palette.secondary,
+    fontSize: typography.caption,
+  },
+  chipLabelActive: {
+    color: palette.primary,
+    fontWeight: '600',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  saveButton: {
+    backgroundColor: palette.primary,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing(2),
+    paddingVertical: spacing(1),
+  },
+  saveButtonDisabled: {
+    opacity: 0.5,
+  },
+  saveButtonText: {
+    color: palette.background,
+    fontSize: typography.caption,
+    fontWeight: '600',
+  },
+  error: {
+    color: '#D96C6C',
+    fontSize: typography.caption,
   },
 })
 

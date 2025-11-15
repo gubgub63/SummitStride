@@ -23,6 +23,8 @@
 - Documentation des dépendances Expo supplémentaires (Secure Store, Web Browser, DateTime Picker).
 - Dashboard & nutrition alimentés par Strava : progression hebdo réelle, macros et hydratation recalculées.
 - Planner repensé (sélecteur de semaine, détail de séance, création de plan avec distance/D+/date de course).
+- Génération de plan mobile alignée avec le web (sélection course, fenêtre d'entraînement, préférences IA, suppression de plan).
+- Gestion des dossards sur mobile (consultation, inscription/suppression, catalogue de courses filtrables).
 
 ### Prochaines étapes suggérées
 

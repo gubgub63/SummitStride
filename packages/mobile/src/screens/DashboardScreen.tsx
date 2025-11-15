@@ -297,7 +297,7 @@ const DashboardScreen = () => {
               <View style={styles.nextSession}>
                 <Feather name="trending-up" size={18} color={palette.primary} />
                 <View style={styles.nextSessionText}>
-                  <Text style={styles.nextSessionTitle}>Prochaine séance</Text>
+                  <Text style={styles.nextSessionTitle}>Prochaine séance 2</Text>
                   <Text style={styles.nextSessionSubtitle}>
                     {formatDate(nextSession.date)} · {nextSession.name} · {nextSession.type.toLowerCase()}
                   </Text>
@@ -494,6 +494,7 @@ const styles = StyleSheet.create({
   nextSessionSubtitle: {
     color: palette.primary,
     fontSize: typography.body,
+
   },
   weeklyWrap: {
     gap: spacing(1.5),
